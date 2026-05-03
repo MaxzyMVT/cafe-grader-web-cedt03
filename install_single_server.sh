@@ -142,11 +142,28 @@ cd web
 
 # Initialise config files from samples (required for Rails to boot)
 [ ! -f config/application.rb ] && cp config/application.rb.SAMPLE config/application.rb
-[ ! -f config/database.yml ]   && cp config/database.yml.SAMPLE   config/database.yml
 [ ! -f config/llm.yml ]        && cp config/llm.yml.SAMPLE        config/llm.yml
 [ ! -f config/worker.yml ]     && cp config/worker.yml.SAMPLE     config/worker.yml
 
+# Always regenerate database.yml from sample and patch credentials automatically
+cp config/database.yml.SAMPLE config/database.yml
+sed -i "s/username:.*/username: $DB_USER/" config/database.yml
+sed -i "s/password:.*/password: $DB_PASS/" config/database.yml
+sed -i "s/host:.*/host: localhost/"        config/database.yml
+echo "  config/database.yml patched with DB credentials."
+
 bundle install
+
+# Auto-generate Rails master key from credentials sample if not already present
+if [ ! -f config/master.key ]; then
+  echo "[6b/8] Generating Rails master key..."
+  cp config/credentials.yml.SAMPLE config/credentials.yml.enc
+  MASTER_KEY=$(openssl rand -hex 32)
+  echo "$MASTER_KEY" > config/master.key
+  chmod 600 config/master.key
+  echo "  Master key generated at config/master.key"
+  echo "  WARNING: Back up config/master.key — losing it means losing access to credentials."
+fi
 
 # ---------------------------------------------------------------
 # 7. Setup systemd service for Solid Queue
@@ -186,45 +203,35 @@ echo "============================================================"
 echo " Installation script complete! Manual steps remaining:"
 echo "============================================================"
 echo ""
-echo "STEP A — Set admin password (do this BEFORE db:setup):"
-echo "  export GRADER_ADMIN_PASSWORD='your_secure_password_here'"
-echo ""
-echo "STEP B — Create Rails master key:"
+echo "STEP A — Initialise the database and precompile assets:"
 echo "  cd $APP_DIR"
-echo "  export EDITOR=nano"
-echo "  bundle exec rails credentials:edit"
-echo ""
-echo "STEP C — Update config/database.yml with DB credentials:"
-echo "  host:     localhost"
-echo "  database: $DB_NAME"
-echo "  username: $DB_USER"
-echo "  password: $DB_PASS"
-echo ""
-echo "STEP D — Initialise the database and precompile assets:"
 echo "  bundle exec rails db:setup DISABLE_DATABASE_ENVIRONMENT_CHECK=1 RAILS_ENV=production"
 echo "  bundle exec rails db:seed RAILS_ENV=production"
 echo "  bundle exec rails dartsass:build RAILS_ENV=production"
 echo "  bundle exec rails assets:precompile RAILS_ENV=production"
 echo ""
-echo "STEP E — Enable memory cgroups in GRUB (required for isolate):"
+echo "  Default login: username=root, password=ioionrails"
+echo "  Change the root password immediately after first login."
+echo ""
+echo "STEP B — Enable memory cgroups in GRUB (required for isolate):"
 echo "  sudo vi /etc/default/grub"
 echo "  # Add cgroup_enable=memory to GRUB_CMDLINE_LINUX_DEFAULT, e.g.:"
 echo "  #   GRUB_CMDLINE_LINUX_DEFAULT=\"quiet splash cgroup_enable=memory\""
 echo "  sudo update-grub"
 echo ""
-echo "STEP F — Reboot to apply kernel and swap changes:"
+echo "STEP C — Reboot to apply kernel and swap changes:"
 echo "  sudo reboot"
 echo ""
-echo "STEP G — After reboot, start grader workers:"
+echo "STEP D — After reboot, start grader workers:"
 echo "  cd $APP_DIR"
 echo "  RAILS_ENV=production bundle exec rails r \"Grader.restart(4)\""
 echo "  bundle exec whenever --update-crontab"
 echo ""
-echo "STEP H — Configure Apache + Phusion Passenger:"
+echo "STEP E — Configure Apache + Phusion Passenger:"
 echo "  Follow https://www.phusionpassenger.com/docs/tutorials/deploy_to_production/"
 echo "  DocumentRoot: $APP_DIR/public"
 echo ""
-echo "STEP I — Start Solid Queue service:"
+echo "STEP F — Start Solid Queue service:"
 echo "  sudo systemctl start solid_queue.service"
 echo ""
-echo "Default login: username=root, password=<value of GRADER_ADMIN_PASSWORD>"
+echo "Default login: username=root, password=ioionrails  (change this after first login!)"
