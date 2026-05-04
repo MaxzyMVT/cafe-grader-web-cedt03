@@ -258,14 +258,25 @@ echo "  Database and assets ready."
 # 11. Phusion Passenger + Apache vhost
 # ---------------------------------------------------------------
 echo "[11/13] Installing Phusion Passenger and configuring Apache..."
-gem install passenger --no-document
-gem install rack --no-document   # Passenger pre-flight check requires rack
+
+# Resolve the exact rbenv-managed ruby/gem binaries so every install
+# lands in the same gem home that Passenger's pre-flight check inspects.
+RBENV_RUBY="$(rbenv which ruby)"
+RBENV_GEM="$(rbenv which gem)"
+
+"$RBENV_GEM" install passenger --no-document
+# Install rack via the SAME ruby binary Passenger will use for its check.
+# Using plain `gem install` or `sudo gem install` targets a different gem
+# home and the pre-flight check still reports rack as missing.
+"$RBENV_GEM" install rack --no-document
 
 # Build Apache module
-PASSENGER_INSTALL=$(gem contents passenger 2>/dev/null \
+# Run the installer as the current user (no sudo) so it inherits the rbenv
+# environment and finds rack in the correct gem home.
+PASSENGER_INSTALL=$("$RBENV_GEM" contents passenger 2>/dev/null \
   | grep "passenger-install-apache2-module$" | head -1)
 if [ -n "$PASSENGER_INSTALL" ]; then
-  sudo "$(which ruby)" "$PASSENGER_INSTALL" --auto --languages ruby
+  "$RBENV_RUBY" "$PASSENGER_INSTALL" --auto --languages ruby
 else
   passenger-install-apache2-module --auto --languages ruby
 fi
