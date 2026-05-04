@@ -40,7 +40,8 @@ sudo apt install -y \
   libmysqlclient-dev libcap-dev libsystemd-dev libseccomp-dev pkg-config \
   apt-transport-https \
   postgresql postgresql-server-dev-all \
-  openssl unzip curl
+  openssl unzip curl \
+  libcurl4-openssl-dev   # provides curl-config, required by Passenger
 
 # Language compilers / runtimes
 sudo apt install -y \
@@ -96,7 +97,7 @@ sudo mysql -u root -e "FLUSH PRIVILEGES;"
 # 4. ioi/isolate
 # ---------------------------------------------------------------
 echo "[4/13] Building and installing ioi/isolate..."
-if[ ! -d "/tmp/isolate" ]; then
+if [ ! -d "/tmp/isolate" ]; then
   git clone https://github.com/ioi/isolate.git /tmp/isolate
 fi
 cd /tmp/isolate
@@ -237,7 +238,7 @@ cd "$APP_DIR"
 TABLE_COUNT=$(sudo mysql -u root -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME';")
 TABLE_COUNT=${TABLE_COUNT:-0}
 
-if[ "$TABLE_COUNT" -eq 0 ]; then
+if [ "$TABLE_COUNT" -eq 0 ]; then
   echo "  Database is empty. Loading schema (db:setup)..."
   RAILS_ENV=production bundle exec rails db:setup DISABLE_DATABASE_ENVIRONMENT_CHECK=1
 else
@@ -258,11 +259,12 @@ echo "  Database and assets ready."
 # ---------------------------------------------------------------
 echo "[11/13] Installing Phusion Passenger and configuring Apache..."
 gem install passenger --no-document
+gem install rack --no-document   # Passenger pre-flight check requires rack
 
 # Build Apache module
 PASSENGER_INSTALL=$(gem contents passenger 2>/dev/null \
   | grep "passenger-install-apache2-module$" | head -1)
-if[ -n "$PASSENGER_INSTALL" ]; then
+if [ -n "$PASSENGER_INSTALL" ]; then
   sudo "$(which ruby)" "$PASSENGER_INSTALL" --auto --languages ruby
 else
   passenger-install-apache2-module --auto --languages ruby
