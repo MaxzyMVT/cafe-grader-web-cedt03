@@ -97,25 +97,48 @@ sudo mysql -u root -e "FLUSH PRIVILEGES;"
 # 4. ioi/isolate
 # ---------------------------------------------------------------
 echo "[4/13] Building and installing ioi/isolate..."
-if [ ! -d "/tmp/isolate" ]; then
-  git clone https://github.com/ioi/isolate.git /tmp/isolate
+
+# Clone into a permanent location (NOT /tmp — it is wiped on reboot,
+# which breaks the isolate.service symlink and /run/isolate/cgroup).
+ISOLATE_SRC_DIR="$HOME/isolate"
+if [ ! -d "$ISOLATE_SRC_DIR" ]; then
+  git clone https://github.com/ioi/isolate.git "$ISOLATE_SRC_DIR"
 fi
-cd /tmp/isolate
+cd "$ISOLATE_SRC_DIR"
 make isolate
 sudo make install
 
+# Create the isolate system user required by ioi/isolate (errors if missing).
+# Also register it in /etc/subuid and /etc/subgid so isolate can set up
+# user namespaces — without these entries the grader shows
+# "User isolate not found in /etc/subuid".
+if ! id isolate &>/dev/null; then
+  sudo useradd --system isolate
+fi
+grep -q "^isolate:" /etc/subuid || echo "isolate:100000:65536" | sudo tee -a /etc/subuid
+grep -q "^isolate:" /etc/subgid || echo "isolate:100000:65536" | sudo tee -a /etc/subgid
+
 echo "  Disabling swap (required by isolate)..."
 sudo swapoff -a
-sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+# Comment out swap line in /etc/fstab (handles both /swap.img and partition entries)
+sudo sed -i '/\sswap\s/ s/^\(.*\)$/#\1/' /etc/fstab
+# Also remove the swap file itself if it exists
+[ -f /swap.img ] && sudo rm -f /swap.img
 
 # ---------------------------------------------------------------
 # 5. Isolate systemd services + kernel settings
 # ---------------------------------------------------------------
 echo "[5/13] Configuring isolate kernel settings..."
 
-ISOLATE_SRC="/tmp/isolate/systemd/isolate.service"
-if [ -f "$ISOLATE_SRC" ]; then
-  sudo ln -sf "$ISOLATE_SRC" /etc/systemd/system/isolate.service
+# Symlink isolate's own service from its permanent source location.
+# Using a symlink (not a copy) so it stays in sync if isolate is updated.
+# Must point to the permanent clone dir — /tmp is cleared on reboot.
+ISOLATE_SVC="$ISOLATE_SRC_DIR/systemd/isolate.service"
+if [ -f "$ISOLATE_SVC" ]; then
+  sudo ln -sf "$ISOLATE_SVC" /etc/systemd/system/isolate.service
+  echo "  isolate.service symlinked from $ISOLATE_SVC"
+else
+  echo "  WARNING: $ISOLATE_SVC not found — isolate.service will not be installed."
 fi
 
 sudo tee /etc/systemd/system/set-ioi-isolate.service > /dev/null <<'SVCEOF'
