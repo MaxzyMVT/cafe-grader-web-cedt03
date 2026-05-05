@@ -412,7 +412,9 @@ sudo tee /etc/systemd/system/cafe_grader_startup.service > /dev/null <<EOF
 [Unit]
 Description=Start Cafe-Grader grader workers after reboot
 After=network.target mysql.service solid_queue.service
-Wants=mysql.service[Service]
+Wants=mysql.service
+
+[Service]
 Type=oneshot
 User=$LINUX_USER
 WorkingDirectory=$APP_DIR
