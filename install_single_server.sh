@@ -331,6 +331,13 @@ EOF
 
 sudo a2ensite cafe_grader
 
+# Grant Apache (www-data) traversal permission on the home directory.
+# Ubuntu sets home dirs to chmod 750 by default — www-data cannot traverse
+# into them, which causes a 403 Forbidden even when vhost config is correct.
+# chmod o+x adds the execute (traversal) bit for others only; it does NOT
+# expose the contents of the home directory to other system users.
+chmod o+x "$HOME"
+
 # Validate config before restarting — surfaces errors with clear diagnostics
 # instead of crashing Apache silently.
 echo "  Validating Apache configuration..."
