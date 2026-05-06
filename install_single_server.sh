@@ -108,15 +108,37 @@ cd "$ISOLATE_SRC_DIR"
 make isolate
 sudo make install
 
-# Create the isolate system user required by ioi/isolate (errors if missing).
-# Also register it in /etc/subuid and /etc/subgid so isolate can set up
-# user namespaces — without these entries the grader shows
-# "User isolate not found in /etc/subuid".
+# Create the isolate system user required by ioi/isolate (v2.5+).
+# isolate's default.cf sets  subid_user = isolate  which means it reads
+# /etc/subuid and /etc/subgid to find the UID/GID block for sandboxes.
+# Without the user + subuid/subgid entries every isolate --init call dies with
+# "User isolate not found in /etc/subuid", which makes workers crash silently
+# and appear forever idle with no heartbeat.
+#
+# Range choice: Ubuntu 22.04 pre-assigns 100000:65536 to the default "ubuntu"
+# user (and often to the install user too).  Using the same range causes a
+# silent UID collision inside user namespaces.  We use 200000:65536 which is
+# safely above all default Ubuntu allocations.
 if ! id isolate &>/dev/null; then
-  sudo useradd --system isolate
+  sudo useradd --system --no-create-home --shell /usr/sbin/nologin isolate
+  echo "  Created system user 'isolate'."
+else
+  echo "  System user 'isolate' already exists."
 fi
-grep -q "^isolate:" /etc/subuid || echo "isolate:100000:65536" | sudo tee -a /etc/subuid
-grep -q "^isolate:" /etc/subgid || echo "isolate:100000:65536" | sudo tee -a /etc/subgid
+
+# Add subuid/subgid entries only if not already present
+if ! grep -q "^isolate:" /etc/subuid; then
+  echo "isolate:200000:65536" | sudo tee -a /etc/subuid
+  echo "  Added /etc/subuid entry: isolate:200000:65536"
+else
+  echo "  /etc/subuid entry for 'isolate' already exists."
+fi
+if ! grep -q "^isolate:" /etc/subgid; then
+  echo "isolate:200000:65536" | sudo tee -a /etc/subgid
+  echo "  Added /etc/subgid entry: isolate:200000:65536"
+else
+  echo "  /etc/subgid entry for 'isolate' already exists."
+fi
 
 echo "  Disabling swap (required by isolate)..."
 sudo swapoff -a
