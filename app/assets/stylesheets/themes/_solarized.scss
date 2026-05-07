@@ -23,12 +23,24 @@
   // Redefine Bootstrap colors
   --bs-primary: #268bd2;
   --bs-primary-rgb: 38, 139, 210;
+  --bs-primary-bg-subtle: #eee8d5;
+  --bs-primary-text-emphasis: #073642;
+  
   --bs-success: #859900;
   --bs-success-rgb: 133, 153, 0;
+  --bs-success-bg-subtle: #e2eebc;
+  --bs-success-text-emphasis: #3d4900;
+  
   --bs-danger: #dc322f;
   --bs-danger-rgb: 220, 50, 47;
+  --bs-danger-bg-subtle: #f8d7da;
+  --bs-danger-text-emphasis: #721c24;
+  
   --bs-warning: #b58900;
   --bs-warning-rgb: 181, 137, 0;
+  --bs-warning-bg-subtle: #fcf4d4;
+  --bs-warning-text-emphasis: #5d4600;
+  
   --bs-info: #2aa198;
   --bs-info-rgb: 42, 161, 152;
   --bs-light: #eee8d5;
@@ -88,6 +100,16 @@
   .bg-white { background-color: #fdf6e3 !important; }
   .bg-light { background-color: #eee8d5 !important; }
   .text-dark { color: #073642 !important; }
+  
+  // Specific fix for subtle badges
+  .bg-success-subtle { background-color: var(--bs-success-bg-subtle) !important; }
+  .text-success { color: var(--bs-success-text-emphasis) !important; }
+  .bg-danger-subtle { background-color: var(--bs-danger-bg-subtle) !important; }
+  .text-danger { color: var(--bs-danger-text-emphasis) !important; }
+  .bg-warning-subtle { background-color: var(--bs-warning-bg-subtle) !important; }
+  .text-warning { color: var(--bs-warning-text-emphasis) !important; }
+  .bg-primary-subtle { background-color: var(--bs-primary-bg-subtle) !important; }
+  .text-primary { color: var(--bs-primary-text-emphasis) !important; }
 
   // Global Dropdown Override
   .dropdown-menu {
@@ -125,6 +147,9 @@
   .btn-warning { background-color: #b58900 !important; border-color: #b58900 !important; color: #fff !important; }
   .btn-light { background-color: #eee8d5 !important; border-color: #ddd6c1 !important; color: #586e75 !important; }
   .btn-secondary { color: #fff !important; }
+  
+  .btn-outline-success { color: var(--bs-success-text-emphasis) !important; border-color: var(--bs-success) !important; &:hover { background-color: var(--bs-success) !important; color: #fff !important; } }
+  .btn-outline-danger { color: var(--bs-danger-text-emphasis) !important; border-color: var(--bs-danger) !important; &:hover { background-color: var(--bs-danger) !important; color: #fff !important; } }
 
   // Cards
   .card {
