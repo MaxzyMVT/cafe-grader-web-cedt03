@@ -5,7 +5,7 @@
       .col
         .badge.rounded-pill.text-success.bg-success-subtle.me-2 Hint
         #{hint.title}
-      .col-auto.text-end.d-flex.justify-content-end.align-items-center.gap-1.flex-nowrap
+      .col-auto.text-end.d-flex.justify-content-end.align-items-center.gap-2.flex-nowrap
         -# view the hint
         - if hint.is_acquired?
           = link_to 'View', problem_hint_path(problem,hint), data: {turbo_stream: true}, class: 'btn btn-sm btn-outline-success', style: 'min-width: 60px;'
