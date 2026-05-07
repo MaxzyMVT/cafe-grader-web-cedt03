@@ -7,14 +7,18 @@
   // Bootstrap & Core Overrides
   --bs-body-bg: #1a1a2e;
   --bs-body-color: #e0e0e0;
+  --bs-emphasis-color: #f0f0f0;
+  --bs-secondary-color: #8e99a4;
+  --bs-secondary-color-rgb: 142, 153, 164;
+  --bs-tertiary-color: #6c757d;
+  --bs-tertiary-color-rgb: 108, 117, 125;
+  --bs-link-color: #6ea8fe;
+  --bs-link-hover-color: #9ec5fe;
   --bs-border-color: #2d2d44;
   --bs-card-bg: rgba(22, 33, 62, 0.8);
   --bs-card-border-color: #2d2d44;
   --bs-secondary-bg: #1a1a2e;
   --bs-tertiary-bg: #1f1f3a;
-  --bs-emphasis-color: #f0f0f0;
-  --bs-link-color: #6ea8fe;
-  --bs-link-hover-color: #9ec5fe;
 
   // Redefine Bootstrap colors for full component support
   --bs-primary: #4a9eff;
@@ -77,11 +81,13 @@
   background-color: #1a1a2e !important;
   color: #e0e0e0;
 
-  // Hardcoded color fixes
+  // Utilities
+  .text-muted { color: #8e99a4 !important; }
+  .text-secondary { color: #8e99a4 !important; }
+  .text-body { color: #e0e0e0 !important; }
   .bg-white { background-color: #16213e !important; }
   .bg-light { background-color: #1a1a2e !important; }
   .text-dark { color: #f0f0f0 !important; }
-  .text-secondary { color: #8e99a4 !important; }
 
   // Global Dropdown Override
   .dropdown-menu {

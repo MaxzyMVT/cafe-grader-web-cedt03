@@ -8,14 +8,18 @@
   // Bootstrap & Core Overrides
   --bs-body-bg: #0c0c1d;
   --bs-body-color: #e8e8f0;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: #9a8ec0;
+  --bs-secondary-color-rgb: 154, 142, 192;
+  --bs-tertiary-color: #8a7eb0;
+  --bs-tertiary-color-rgb: 138, 126, 176;
+  --bs-link-color: #b8a9e8;
+  --bs-link-hover-color: #d0c4f0;
   --bs-border-color: rgba(255, 255, 255, 0.1);
   --bs-card-bg: rgba(255, 255, 255, 0.05);
   --bs-card-border-color: rgba(255, 255, 255, 0.1);
   --bs-secondary-bg: #1a1035;
   --bs-tertiary-bg: #0d1b2a;
-  --bs-emphasis-color: #ffffff;
-  --bs-link-color: #b8a9e8;
-  --bs-link-hover-color: #d0c4f0;
 
   // Redefine Bootstrap colors for full component support
   --bs-primary: #8b5cf6;
@@ -78,11 +82,13 @@
   background-attachment: fixed !important;
   color: #e8e8f0;
 
-  // Hardcoded fixes
+  // Utilities
+  .text-muted { color: #9a8ec0 !important; }
+  .text-secondary { color: #9a8ec0 !important; }
+  .text-body { color: #e8e8f0 !important; }
   .bg-white { background: rgba(255, 255, 255, 0.08) !important; backdrop-filter: blur(8px); }
   .bg-light { background: rgba(255, 255, 255, 0.05) !important; }
   .text-dark { color: #ffffff !important; }
-  .text-secondary { color: #9a8ec0 !important; }
 
   // Global Dropdown Override
   .dropdown-menu {
