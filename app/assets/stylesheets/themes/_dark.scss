@@ -219,6 +219,8 @@
     .select2-selection__rendered { color: #e0e0e0 !important; }
     .select2-dropdown { background-color: #16213e !important; border-color: #2d2d44 !important; }
     .select2-results__option { color: #e0e0e0 !important; }
-    .select2-results__option--highlighted { background-color: #1f2b47 !important; }
+    .select2-results__option--highlighted { background-color: #1f2b47 !important; color: #ffffff !important; }
+    .select2-results__option--selected { background-color: #243352 !important; color: #ffffff !important; }
+    .select2-results__option[aria-selected=true] { background-color: #243352 !important; color: #ffffff !important; }
   }
 }
