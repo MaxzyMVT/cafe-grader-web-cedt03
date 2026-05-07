@@ -98,7 +98,7 @@
 
   .navbar {
     background-color: #073642 !important;
-    .navbar-brand, .nav-link, .mi { color: #93a1a1 !important; }
+    .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #93a1a1 !important; }
     .nav-link:hover { color: #fdf6e3 !important; }
   }
 
@@ -150,6 +150,7 @@
     &.bg-success { background-color: #859900 !important; color: #fff !important; }
     &.bg-light { background-color: #eee8d5 !important; color: #586e75 !important; }
     &.bg-warning { color: #fff !important; }
+    .mi { color: inherit !important; }
   }
 
   // Progress

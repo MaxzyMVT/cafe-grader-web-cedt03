@@ -98,7 +98,7 @@
 
   .navbar {
     background-color: #0f3460 !important;
-    .navbar-brand, .nav-link, .mi { color: #fff !important; }
+    .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
 
   // Headings
@@ -160,6 +160,7 @@
     &.bg-info { color: #fff !important; }
     &.bg-light { background-color: #2d2d44 !important; color: #f0f0f0 !important; }
     &.bg-body-tertiary { background-color: #2d2d44 !important; color: #8e99a4 !important; }
+    .mi { color: inherit !important; }
   }
 
   // Modals

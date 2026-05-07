@@ -98,7 +98,7 @@
 
   .navbar {
     background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%) !important;
-    .navbar-brand, .nav-link, .mi { color: #fff !important; }
+    .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
 
   // Headings
@@ -148,6 +148,7 @@
     &.bg-success { background-color: #059669 !important; color: #fff !important; }
     &.bg-light { background-color: #e0f2fe !important; color: #0369a1 !important; }
     &.bg-warning { color: #fff !important; }
+    .mi { color: inherit !important; }
   }
 
   // Progress

@@ -102,7 +102,7 @@
     background: linear-gradient(135deg, #1a0533 0%, #2d1b69 50%, #1a3a5c 100%) !important;
     backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    .navbar-brand, .nav-link, .mi { color: #fff !important; }
+    .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
 
   // Headings
@@ -169,6 +169,7 @@
     &.bg-danger { background: #ef4444 !important; color: #fff !important; }
     &.bg-warning { color: #000 !important; background-color: #f59e0b !important; }
     &.bg-body-tertiary { background: rgba(255, 255, 255, 0.1) !important; color: #d0c4f0 !important; }
+    .mi { color: inherit !important; }
   }
 
   // Progress
