@@ -43,6 +43,9 @@
   
   --bs-info: #3498db;
   --bs-info-rgb: 52, 152, 219;
+  --bs-info-bg-subtle: rgba(52, 152, 219, 0.15);
+  --bs-info-text-emphasis: #81ecec;
+
   --bs-light: #2d2d44;
   --bs-light-rgb: 45, 45, 68;
   --bs-dark: #0f1a2e;
@@ -108,6 +111,8 @@
   .text-danger { color: var(--bs-danger) !important; }
   .bg-warning-subtle { background-color: var(--bs-warning-bg-subtle) !important; color: var(--bs-warning-text-emphasis) !important; }
   .text-warning { color: var(--bs-warning) !important; }
+  .bg-info-subtle { background-color: var(--bs-info-bg-subtle) !important; color: var(--bs-info-text-emphasis) !important; }
+  .text-info { color: var(--bs-info) !important; }
   .bg-primary-subtle { 
     background-color: var(--bs-primary-bg-subtle) !important; 
     color: var(--bs-primary-text-emphasis) !important;
@@ -187,11 +192,11 @@
   }
 
   // Alerts
-  .alert-primary { background-color: rgba(74, 158, 255, 0.1) !important; border-color: #4a9eff !important; color: #9ec5fe !important; }
-  .alert-success { background-color: rgba(46, 204, 113, 0.1) !important; border-color: #2ecc71 !important; color: #a2f2c1 !important; }
-  .alert-danger { background-color: rgba(231, 76, 60, 0.1) !important; border-color: #e74c3c !important; color: #fab1a0 !important; }
-  .alert-warning { background-color: rgba(241, 196, 15, 0.1) !important; border-color: #f1c40f !important; color: #ffeaa7 !important; }
-  .alert-info { background-color: rgba(52, 152, 219, 0.1) !important; border-color: #3498db !important; color: #81ecec !important; }
+  .alert-primary { background-color: var(--bs-primary-bg-subtle) !important; border-color: var(--bs-primary) !important; color: var(--bs-primary-text-emphasis) !important; }
+  .alert-success { background-color: var(--bs-success-bg-subtle) !important; border-color: var(--bs-success) !important; color: var(--bs-success-text-emphasis) !important; }
+  .alert-danger { background-color: var(--bs-danger-bg-subtle) !important; border-color: var(--bs-danger) !important; color: var(--bs-danger-text-emphasis) !important; }
+  .alert-warning { background-color: var(--bs-warning-bg-subtle) !important; border-color: var(--bs-warning) !important; color: var(--bs-warning-text-emphasis) !important; }
+  .alert-info { background-color: var(--bs-info-bg-subtle) !important; border-color: var(--bs-info) !important; color: var(--bs-info-text-emphasis) !important; }
 
   // Badges
   .badge {
