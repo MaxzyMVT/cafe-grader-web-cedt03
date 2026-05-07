@@ -3,9 +3,47 @@
   .col-md-6
     = simple_form_for @current_user, url: update_self_users_path do |f|
       = f.association :default_language, collection: Language.all, include_blank: '-- No default language --'.html_safe
+      - if GraderConfiguration['system.theme_selector_enabled']
+        = f.input :theme, collection: User::THEMES.map { |t| [t.capitalize, t] }, include_blank: false, label: 'UI Theme', hint: 'Choose your preferred visual theme for the grader interface.'
       = f.input :password
       = f.input :password_confirmation
       = f.button :submit, class: 'btn btn-primary'
 
-
-
+- if GraderConfiguration['system.theme_selector_enabled']
+  .row.mt-4
+    .col-md-12
+      %h4.fw-bold.text-secondary.mb-3 Theme Preview
+      .d-flex.flex-wrap.gap-3
+        - User::THEMES.each do |theme_name|
+          - is_active = (@current_user.theme || 'default') == theme_name
+          .card.shadow-sm{style: 'width: 180px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;', class: (is_active ? 'border-primary border-2' : ''), onclick: "document.getElementById('user_theme').value = '#{theme_name}'; document.querySelector('form').requestSubmit();"}
+            .card-body.text-center.py-3
+              - case theme_name
+              - when 'default'
+                %div.rounded.mb-2{style: 'height: 40px; background: linear-gradient(135deg, #0074d9, #5566bb);'}
+                %small.fw-bold Default
+                %br
+                %small.text-muted Classic blue
+              - when 'dark'
+                %div.rounded.mb-2{style: 'height: 40px; background: linear-gradient(135deg, #1a1a2e, #0f3460);'}
+                %small.fw-bold Dark
+                %br
+                %small.text-muted Easy on the eyes
+              - when 'premium'
+                %div.rounded.mb-2{style: 'height: 40px; background: linear-gradient(135deg, #1a0533, #2d1b69, #1a3a5c);'}
+                %small.fw-bold Premium
+                %br
+                %small.text-muted Glassmorphism
+              - when 'ocean'
+                %div.rounded.mb-2{style: 'height: 40px; background: linear-gradient(135deg, #0e7490, #0891b2);'}
+                %small.fw-bold Ocean
+                %br
+                %small.text-muted Cool teal tones
+              - when 'solarized'
+                %div.rounded.mb-2{style: 'height: 40px; background: linear-gradient(135deg, #073642, #268bd2);'}
+                %small.fw-bold Solarized
+                %br
+                %small.text-muted Warm & readable
+            - if is_active
+              .card-footer.bg-primary-subtle.text-center.py-1
+                %small.fw-bold.text-primary Active
