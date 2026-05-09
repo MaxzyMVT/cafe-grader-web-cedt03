@@ -10,7 +10,7 @@
   - @numbering+=1
   -# problem name, pdf, attachments, etc.
   - limit_reached = problem.submission_limit_reached?(@current_user)
-  %td
+  %td{style: 'min-width: 200px; max-width: 450px; overflow-wrap: anywhere;'}
     = render partial: 'problems/problem_name', locals: {problem: problem}
 
   -# score column
@@ -18,7 +18,7 @@
   - full_score = problem.full_score || 100
   - raw_sum_mode = problem.live_dataset&.st_raw_sum?
   - cc = score >= full_score ? 'bg-success' : 'bg-warning text-dark'
-  %td{style: "width: 12em; vertical-align: middle", 'data-order': score || 0}
+  %td{style: "width: 10rem; min-width: 10rem; vertical-align: middle", 'data-order': score || 0}
     - if raw_sum_mode
       %span.fw-semibold
         = number_with_precision score, precision: 2, strip_insignificant_zeros: true
@@ -53,11 +53,11 @@
       %div
         %small= "Full score reduced by #{number_with_precision(sum_cost, precision: 2, strip_insignificant_zeros: true)}" if sum_cost > 0
   -# last submission column
-  %td
+  %td{style: 'min-width: 15rem; width: 15rem;'}
     = render partial: 'submission_short',
       locals: {submission: @prob_submissions[problem.id][:submission], problem_name: problem.name, problem_id: problem.id, sub_count: @prob_submissions[problem.id][:count], show_button: false, show_id: true }
   -# Action column
-  %td
+  %td{style: 'width: 5rem;'}
     - if limit_reached
       %span.badge.badge-limit-danger.d-inline-flex.align-items-center.gap-1
         %span.mi{style: 'font-size: 0.9rem;'} block
