@@ -257,4 +257,11 @@
     .select2-results__option--selected { background-color: #243352 !important; color: #ffffff !important; }
     .select2-results__option[aria-selected=true] { background-color: #243352 !important; color: #ffffff !important; }
   }
+
+  // Close Button
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.7;
+    &:hover { opacity: 1; }
+  }
 }

@@ -245,4 +245,11 @@
     .select2-results__option--selected { background-color: #eee8d5 !important; color: #268bd2 !important; }
     .select2-results__option[aria-selected=true] { background-color: #eee8d5 !important; color: #268bd2 !important; }
   }
+
+  // Close Button
+  .btn-close {
+    filter: brightness(0.6);
+    opacity: 0.6;
+    &:hover { opacity: 0.9; }
+  }
 }
