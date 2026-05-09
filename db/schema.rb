@@ -221,14 +221,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
     t.boolean "hidden", default: false
   end
 
-  create_table "groups_problems", charset: "latin1", force: :cascade do |t|
+  create_table "groups_problems", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.integer "problem_id", null: false
     t.integer "group_id", null: false
     t.boolean "enabled", default: true
     t.index ["group_id", "problem_id"], name: "index_groups_problems_on_group_id_and_problem_id"
   end
 
-  create_table "groups_users", charset: "latin1", force: :cascade do |t|
+  create_table "groups_users", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.integer "group_id", null: false
     t.integer "user_id", null: false
     t.integer "role", default: 0
@@ -324,7 +324,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
     t.index ["live_dataset_id"], name: "index_problems_on_live_dataset_id"
   end
 
-  create_table "problems_tags", id: :integer, charset: "latin1", force: :cascade do |t|
+  create_table "problems_tags", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.integer "problem_id"
     t.integer "tag_id"
     t.index ["problem_id", "tag_id"], name: "index_problems_tags_on_problem_id_and_tag_id", unique: true
@@ -503,7 +503,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
 
   create_table "user_contest_stats", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
     t.integer "user_id"
-    t.datetime "started_at", precision: nil
+    t.datetime "started_at"
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.boolean "forced_logout"
