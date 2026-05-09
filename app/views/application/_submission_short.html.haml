@@ -27,7 +27,6 @@
     .row
       .col-12.d-flex.align-items-center
         %span.me-1.mi.mr-2.text-secondary hourglass
-        submitted
         %span= time_ago_in_words(submission.submitted_at) + ' ago'
         %span.text-secondary (#{format_short_time(submission.submitted_at)})
     .row
