@@ -8,6 +8,13 @@ CONFIGURATIONS =
    },
 
    {
+     key: 'system.scoreboard_public_accessible',
+     value_type: 'boolean',
+     default_value: 'false',
+     description: 'Enable public scoreboard'
+   },
+
+   {
      key: 'ui.front.title',
      value_type: 'string',
      default_value: 'Grader'
