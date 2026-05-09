@@ -7,18 +7,14 @@
   autohide: true,
   errors: local_assigns.fetch(:errors,[]) }
 - toast_params.merge!( local_assigns.fetch(:toast, {}))
-- toast_header_class = case toast_params[:type].to_sym
-  - when :notice then 'bg-info-subtle'
-  - when :alert, :danger then 'bg-danger-subtle'
-  - when :warning then 'bg-warning-subtle'
-  - when :success then 'bg-success-subtle'
-  - else ''
-.toast.mb-1{"aria-atomic": true, "aria-live": :assertive, role: :alert}
+- toast_type = toast_params[:type].to_sym == :notice ? :info : toast_params[:type].to_sym
+- toast_header_class = "bg-#{toast_type}-subtle text-#{toast_type}-emphasis"
+.toast.mb-1{"aria-atomic": true, "aria-live": :assertive, role: :alert, style: "background-color: var(--bs-body-bg); border-color: var(--bs-border-color);"}
   .toast-header.py-1{class: toast_header_class}
     %strong.me-auto= toast_params[:title]
     %small= toast_params[:subtitle]
     %button.btn-close{"aria-label" => "Close", "data-bs-dismiss" => "toast", :type => "button"}
-  .toast-body.py-1{ class: (toast_header_class if toast_params[:type].to_sym != :notice)}
+  .toast-body.py-1{ class: (toast_header_class if toast_params[:type].to_sym != :notice), style: "color: var(--bs-body-color);"}
     = toast_params[:body].html_safe
     - if toast_params[:errors].any?
       %ul
