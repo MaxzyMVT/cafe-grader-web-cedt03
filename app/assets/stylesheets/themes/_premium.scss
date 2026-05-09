@@ -226,8 +226,39 @@
   .bg-secondary-subtle { background-color: rgba(255, 255, 255, 0.08) !important; }
 
   // Select2 Fixes
+  .select2-container {
+    width: 100% !important;
+  }
   .select2-container--bootstrap-5 {
-    .select2-selection { background: #1a1035 !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; color: #e8e8f0 !important; }
+    .select2-selection { 
+      background-color: #1a1035 !important; 
+      border: 1px solid rgba(255, 255, 255, 0.12) !important; 
+      color: #e8e8f0 !important;
+      min-height: 38px !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    .select2-selection--multiple {
+      padding: 2px 5px !important;
+      .select2-selection__choice {
+        background-color: #4c1d95 !important;
+        border: 1px solid #8b5cf6 !important;
+        color: #ffffff !important;
+        border-radius: 4px !important;
+        padding: 0 8px !important;
+        margin: 2px !important;
+        .select2-selection__choice__remove {
+          color: #ffffff !important;
+          margin-right: 5px !important;
+          &:hover { color: #ff7b7b !important; }
+        }
+      }
+      .select2-search__field {
+        background: transparent !important;
+        color: #e8e8f0 !important;
+        margin-top: 0 !important;
+      }
+    }
     .select2-selection__rendered { color: #e8e8f0 !important; }
     .select2-dropdown { 
       background: #1a1035 !important; 
