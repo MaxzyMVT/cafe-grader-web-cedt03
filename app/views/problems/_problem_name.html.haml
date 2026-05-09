@@ -1,8 +1,8 @@
 -# problem name
-%div.d-flex.align-items-center
-  %strong
+%div.d-flex.align-items-center.flex-wrap
+  %strong.me-1
     = "#{problem.full_name}".gsub("_","_&ZeroWidthSpace;").html_safe
-  %span.d-inline-flex.align-items-center{style: 'color: var(--bs-orange)'}= render_star(problem.difficulty)
+  %span.d-inline-flex.align-items-center.flex-wrap{style: 'color: var(--bs-orange)'}= render_star(problem.difficulty)
 .text-muted.font-monospace
   = "#{problem.name}".gsub("_","_&ZeroWidthSpace;").html_safe
 - if problem.submission_limit? && @current_user
