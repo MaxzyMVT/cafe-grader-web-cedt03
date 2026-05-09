@@ -267,6 +267,7 @@
       z-index: 9999 !important; 
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
     }
+    .select2-results__option { color: #e8e8f0 !important; }
     .select2-results__option--highlighted { background: #8b5cf6 !important; color: #ffffff !important; }
     .select2-results__option--selected { background: #4c1d95 !important; color: #ffffff !important; }
     .select2-results__option[aria-selected=true] { background: #4c1d95 !important; color: #ffffff !important; }
