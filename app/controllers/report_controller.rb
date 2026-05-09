@@ -258,7 +258,7 @@ class ReportController < ApplicationController
     end
 
     # Exclude admins
-    admin_ids = User.where(admin: true).pluck(:id)
+    admin_ids = User.joins(:roles).where(roles: { name: 'admin' }).pluck(:id)
     subs_scope = subs_scope.where.not(user_id: admin_ids)
 
     # 1. Most Effort (Most submissions)
