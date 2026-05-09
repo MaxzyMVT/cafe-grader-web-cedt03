@@ -211,7 +211,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
     t.string "key"
     t.boolean "enabled", default: false
     t.integer "status", default: 0
-    t.index ["host", "pid"], name: "index_grader_processes_on_ip_and_pid"
+    t.index ["host", "pid"], name: "index_grader_processes_on_host_and_pid"
   end
 
   create_table "groups", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -427,11 +427,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
     t.integer "status", limit: 1, default: 0
     t.string "cookie"
     t.string "content_type"
+    t.datetime "viva_archived_at"
     t.index ["graded_at"], name: "index_submissions_on_graded_at"
     t.index ["problem_id"], name: "index_submissions_on_problem_id"
     t.index ["submitted_at"], name: "index_submissions_on_submitted_at"
     t.index ["tag"], name: "index_submissions_on_tag"
     t.index ["user_id", "problem_id", "number"], name: "index_submissions_on_user_id_and_problem_id_and_number", unique: true
+    t.index ["viva_archived_at"], name: "index_submissions_on_viva_archived_at"
   end
 
   create_table "tags", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
