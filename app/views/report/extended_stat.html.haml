@@ -153,7 +153,7 @@
                       %td
                         - if sub.points.nil?
                           %span.badge.bg-secondary Processing
-                        - elsif sub.points >= 100
+                        - elsif sub.points >= (sub.problem&.full_score || 100)
                           %span.badge.bg-success= sub.points.to_i
                         - else
                           %span.badge.bg-warning.text-dark= sub.points.to_i
