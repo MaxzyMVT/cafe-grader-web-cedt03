@@ -363,18 +363,44 @@ class ReportController < ApplicationController
 
     # 8. Score Growth
     if @since_time && @until_time
-      # Score at since_time
-      score_since = Submission.joins("INNER JOIN problems ON problems.id = submissions.problem_id").where("submitted_at <= ?", @since_time).where.not(user_id: admin_ids).group('user_id, problem_id').select('user_id, MAX(points) as max_pts')
-      sum_since = User.joins("LEFT JOIN (#{score_since.to_sql}) ss ON users.id = ss.user_id").group('users.id').sum('COALESCE(ss.max_pts, 0)')
+      # Helper to get final scores (with deductions) at a given time
+      def get_total_scores_at(time, admin_ids)
+        # 1. Max points per user/problem
+        max_pts = Submission.where("submitted_at <= ?", time)
+          .group(:user_id, :problem_id)
+          .select('user_id, problem_id, MAX(points) as max_pts')
 
-      # Score at until_time
-      score_until = Submission.joins("INNER JOIN problems ON problems.id = submissions.problem_id").where("submitted_at <= ?", @until_time).where.not(user_id: admin_ids).group('user_id, problem_id').select('user_id, MAX(points) as max_pts')
-      sum_until = User.joins("LEFT JOIN (#{score_until.to_sql}) su ON users.id = su.user_id").group('users.id').sum('COALESCE(su.max_pts, 0)')
+        # 2. LLM costs per user/problem
+        llm_costs = Comment.joins("INNER JOIN submissions ON comments.commentable_id = submissions.id AND comments.commentable_type = 'Submission'")
+          .where("submissions.submitted_at <= ?", time)
+          .where(kind: 'llm_assist')
+          .group('submissions.user_id, submissions.problem_id')
+          .select('submissions.user_id, submissions.problem_id, SUM(comments.cost) as llm_cost')
+
+        # 3. Hint costs per user/problem
+        hint_costs = Comment.joins(:comment_reveals)
+          .where("comment_reveals.created_at <= ?", time)
+          .where(commentable_type: 'Problem')
+          .group('comment_reveals.user_id, comments.commentable_id')
+          .select('comment_reveals.user_id, comments.commentable_id as problem_id, SUM(comments.cost) as hint_cost')
+
+        User.where.not(id: admin_ids)
+          .joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
+          .joins("INNER JOIN problems ON problems.id = mp.problem_id")
+          .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
+          .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
+          .group('users.id')
+          .select('users.id, SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
+          .each_with_object({}) { |u, h| h[u.id] = u.total_score.to_f }
+      end
+
+      since_scores = get_total_scores_at(@since_time, admin_ids)
+      until_scores = get_total_scores_at(@until_time, admin_ids)
 
       @score_growth = {}
-      sum_until.each do |user_id, score|
-        growth = score - (sum_since[user_id] || 0)
-        @score_growth[user_id] = growth if growth > 0
+      until_scores.each do |user_id, score|
+        growth = score - (since_scores[user_id] || 0)
+        @score_growth[user_id] = growth if growth > 0.01 # filter out tiny growth from floats
       end
       @score_growth = @score_growth.sort_by { |_, v| -v }.take(10).to_h
       @score_growth_users = User.where(id: @score_growth.keys).index_by(&:id)
