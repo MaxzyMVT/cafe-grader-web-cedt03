@@ -52,12 +52,17 @@ class Problem < ApplicationRecord
     message: 'contains invalid characters. Only letters, numbers, <code>( )</code>, <code>[ ]</code>, <code>-</code> and <code>_</code> are allowed.'.html_safe
 
   validates_presence_of :full_name
+  validates_presence_of :full_score
 
   validates :max_submissions, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
-
   # -- callback --
+  after_initialize :set_default_full_score, if: :new_record?
   after_save :generate_and_attach_pdf_statement_later, if: :should_generate_pdf?
+
+  def set_default_full_score
+    self.full_score ||= 100
+  end
 
   # -- scope --
   scope :available, -> { where(available: true) }
