@@ -366,17 +366,20 @@ fi
 # Build the Apache module using the absolute rbenv ruby.
 "$RBENV_RUBY" "$PASSENGER_INSTALL" --auto --languages ruby
 
-# Derive PASSENGER_ROOT using the rbenv-managed passenger-config binary.
-# Never use bare `passenger-config` — on RVM machines it returns the wrong root.
-RBENV_PASSENGER_CONFIG="$RBENV_BIN_DIR/passenger-config"
-if [ ! -x "$RBENV_PASSENGER_CONFIG" ]; then
-  RBENV_PASSENGER_CONFIG=$("$RBENV_GEM" contents passenger 2>/dev/null \
-    | grep "/bin/passenger-config$" | head -1)
-fi
-PASSENGER_ROOT=$("$RBENV_PASSENGER_CONFIG" --root)
+# Derive PASSENGER_ROOT directly from the rbenv gem directory.
+# Never use passenger-config or bare PATH commands — on machines with RVM
+# installed those resolve to the RVM passenger, not the rbenv one.
+RBENV_GEM_HOME="$("$RBENV_RUBY" -e 'puts Gem.dir')"
+PASSENGER_ROOT=$(find "$RBENV_GEM_HOME/gems" -maxdepth 1 -name "passenger-*" -type d 2>/dev/null \
+  | sort -V | tail -1)
 PASSENGER_RUBY="$RBENV_RUBY"
 PASSENGER_MODULE=$(find "$PASSENGER_ROOT" -name mod_passenger.so 2>/dev/null | head -1)
 
+if [ -z "$PASSENGER_ROOT" ]; then
+  echo "  ERROR: Could not find passenger gem under rbenv gem home."
+  echo "  RBENV_GEM_HOME=$RBENV_GEM_HOME"
+  exit 1
+fi
 if [ -z "$PASSENGER_MODULE" ]; then
   echo "  ERROR: mod_passenger.so not found after build."
   echo "  PASSENGER_ROOT=$PASSENGER_ROOT"
@@ -404,7 +407,10 @@ sudo a2enmod passenger
 grep -q "^ServerName" /etc/apache2/apache2.conf || \
   echo "ServerName 127.0.0.1" | sudo tee -a /etc/apache2/apache2.conf
 
-SERVER_IP=$(detect_server_ip)
+# Detect the primary LAN/VM IP — works on VirtualBox, bare metal, and cloud.
+# Falls back to 127.0.0.1 if no non-loopback address is found.
+SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+SERVER_IP="${SERVER_IP:-127.0.0.1}"
 
 sudo a2dissite 000-default 2>/dev/null || true
 sudo tee /etc/apache2/sites-available/cafe_grader.conf > /dev/null <<EOF
@@ -446,8 +452,11 @@ fi
 sudo systemctl restart apache2
 echo "  Apache + Passenger configured."
 
-# Open port 80 in ufw if active; remind cloud users about security groups.
-ufw_allow_if_active 80
+# Open port 80 in ufw if active (safe no-op if ufw is inactive or port already open).
+if sudo ufw status 2>/dev/null | grep -q "^Status: active"; then
+  sudo ufw allow 80/tcp
+  echo "  ufw: allowed TCP port 80."
+fi
 
 # 12. Solid Queue systemd service
 # ---------------------------------------------------------------
