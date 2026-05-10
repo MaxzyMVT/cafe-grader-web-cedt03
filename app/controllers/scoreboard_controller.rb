@@ -17,23 +17,27 @@ class ScoreboardController < ApplicationController
     # Mode toggle: individual vs groups
     @mode = params[:mode] == 'group' ? 'group' : 'individual'
     
-    # Calculate scores
-    # Re-using the logic from max_score_query but for ALL users/problems efficiently
-    # For a real scoreboard, we just need the max score of each user for each problem.
-    max_records = Submission.where(user: @users, problem: @problems).group('user_id,problem_id').select('MAX(submissions.points) as max_score, user_id, problem_id')
+    # Calculate scores using the robust max_score_report scope
+    # This scope handles deductions (hints, LLM) correctly.
+    report_records = Submission.where(user: @users, problem: @problems).max_score_report(@problems, nil, nil)
     
     @scores = Hash.new { |h,k| h[k] = {} }
-    max_records.each do |record|
-      @scores[record.user_id][record.problem_id] = record.max_score
+    @deductions = Hash.new { |h,k| h[k] = {} }
+    
+    report_records.each do |record|
+      @scores[record.user_id][record.problem_id] = record.final_score.to_f
+      @deductions[record.user_id][record.problem_id] = (record.llm_cost || 0) + (record.hint_cost || 0)
     end
 
     if @mode == 'individual'
       @leaderboard = @users.map do |u|
         total = 0
+        deducted = 0
         @problems.each do |p|
           total += @scores[u.id][p.id] || 0
+          deducted += @deductions[u.id][p.id] || 0
         end
-        { user: u, total_score: total }
+        { user: u, total_score: total, deducted_score: deducted }
       end
       # Sort by total_score desc, then by name
       @leaderboard.sort_by! { |entry| [-entry[:total_score], entry[:user].full_name.to_s.downcase] }
@@ -59,17 +63,21 @@ class ScoreboardController < ApplicationController
       @leaderboard = @groups.map do |g|
         group_users = g.users.where(enabled: true)
         group_total = 0
+        group_deducted = 0
         group_members = group_users.map do |u|
           user_total = 0
+          user_deducted = 0
           @problems.each do |p|
             user_total += @scores[u.id][p.id] || 0
+            user_deducted += @deductions[u.id][p.id] || 0
           end
           group_total += user_total
-          { user: u, total_score: user_total }
+          group_deducted += user_deducted
+          { user: u, total_score: user_total, deducted_score: user_deducted }
         end
         group_members.sort_by! { |m| [-m[:total_score], m[:user].full_name.to_s.downcase] }
         
-        { group: g, total_score: group_total, members: group_members }
+        { group: g, total_score: group_total, deducted_score: group_deducted, members: group_members }
       end
       @leaderboard.sort_by! { |entry| [-entry[:total_score], entry[:group].name.to_s.downcase] }
       
