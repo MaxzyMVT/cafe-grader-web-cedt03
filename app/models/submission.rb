@@ -57,7 +57,7 @@ class Submission < ApplicationRecord
   scope :max_score_report, ->(problems, start, stop) {
     max_records = all
       .group('submissions.user_id,submissions.problem_id')
-      .select('MAX(submissions.points) as max_score, submissions.user_id, submissions.problem_id')
+      .select('MAX(submissions.points) as max_score, submissions.user_id, submissions.problem_id, MAX(submissions.id) as max_sub_id')
 
     llm_assist_count = Comment.llm_assists_for_submissions(all)
       .select('SUM(comments.cost) as llm_cost')
@@ -76,9 +76,7 @@ class Submission < ApplicationRecord
     # this is what we returned
     all.joins(:user)
       .joins("JOIN (#{max_records.to_sql}) MAX_RECORD ON " +
-                   'submissions.points = MAX_RECORD.max_score AND ' +
-                   'submissions.user_id = MAX_RECORD.user_id AND ' +
-                   'submissions.problem_id = MAX_RECORD.problem_id ')
+                   'submissions.id = MAX_RECORD.max_sub_id ')
       .joins("LEFT JOIN (#{llm_assist_count.to_sql}) LLM_ASSIST ON " +
         "submissions.id = LLM_ASSIST.submission_id"
        )
