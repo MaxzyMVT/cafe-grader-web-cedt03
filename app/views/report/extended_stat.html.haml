@@ -73,12 +73,12 @@
             Most Efficient Coder (Least Code)
           .card-body.p-0
             %ul.list-group.list-group-flush
-              - @least_chars.each_with_index do |(user_id, chars), i|
+              - @least_chars.each_with_index do |(user_id, data), i|
                 %li.list-group-item.d-flex.align-items-center.gap-2
                   %span.badge.bg-light.text-dark{style: 'min-width: 2rem;'}= i + 1
                   .flex-grow-1.text-truncate
                     = User.find_by(id: user_id)&.full_name || "User ##{user_id}"
-                  %span.text-muted.small.flex-shrink-0= "#{chars} chars"
+                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{data[:value]} chars"
 
       .col-md-6.col-lg-4
         .card.card-shadow.h-100
@@ -87,12 +87,12 @@
             Fastest Code (Least Runtime)
           .card-body.p-0
             %ul.list-group.list-group-flush
-              - @fastest_runtime.each_with_index do |(user_id, time), i|
+              - @fastest_runtime.each_with_index do |(user_id, data), i|
                 %li.list-group-item.d-flex.align-items-center.gap-2
                   %span.badge.bg-light.text-dark{style: 'min-width: 2rem;'}= i + 1
                   .flex-grow-1.text-truncate
                     = User.find_by(id: user_id)&.full_name || "User ##{user_id}"
-                  %span.text-muted.small.flex-shrink-0= "#{time.round(3)}s"
+                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{data[:value].round(3)}s"
 
       .col-md-6.col-lg-4
         .card.card-shadow.h-100
@@ -101,12 +101,12 @@
             Least Memory Used
           .card-body.p-0
             %ul.list-group.list-group-flush
-              - @least_memory.each_with_index do |(user_id, mem), i|
+              - @least_memory.each_with_index do |(user_id, data), i|
                 %li.list-group-item.d-flex.align-items-center.gap-2
                   %span.badge.bg-light.text-dark{style: 'min-width: 2rem;'}= i + 1
                   .flex-grow-1.text-truncate
                     = User.find_by(id: user_id)&.full_name || "User ##{user_id}"
-                  %span.text-muted.small.flex-shrink-0= "#{mem} KB"
+                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{data[:value]} KB"
 
     .row.mt-4
       .col-md-6
