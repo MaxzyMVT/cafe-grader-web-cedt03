@@ -119,7 +119,7 @@
     avail_button.disabled = avail_button.dataset.readonly == 'true'
 
     row = document.getElementById(`prob-${problem_id}`)
-    if (available) { row.classList.add('table-success')} else { row.classList.remove('table-success')}
+    if (available) { row.classList.add('row-available')} else { row.classList.remove('row-available')}
 
     let view_testcase_button = document.getElementById(`prob-${problem_id}-view-testcase-switch`)
     view_testcase_button.checked = view_testcase
