@@ -4,9 +4,9 @@
 # Run as a normal user with sudo privileges, NOT as root.
 #
 # Usage: bash install_single_server.sh
- 
+
 set -e
- 
+
 # ---------------------------------------------------------------
 # Configuration — edit before running if needed
 # ---------------------------------------------------------------
@@ -17,23 +17,23 @@ DB_QUEUE="grader_queue"
 DB_USER="grader_user"
 DB_PASS="grader_pass"
 REPO_URL="https://github.com/MaxzyMVT/cafe-grader-web.git"
- 
+
 # Auto-detect worker count: CPU cores - 2, minimum 1
 CPU_CORES=$(nproc)
 WORKER_COUNT=$(( CPU_CORES > 2 ? CPU_CORES - 2 : 1 ))
 LINUX_USER="$USER"
 APP_DIR="$CAFE_DIR/web"
- 
+
 echo "============================================================"
 echo " Cafe-Grader Single Server Installation (Ubuntu 22.04+)"
 echo " CPU cores: $CPU_CORES  |  Grader workers: $WORKER_COUNT"
 echo "============================================================"
- 
+
 # ---------------------------------------------------------------
 # 1. System packages
 # ---------------------------------------------------------------
 echo "[1/13] Installing system dependencies..."
- 
+
 # Remove any stale cafe_grader Apache vhost left over from a previous install.
 # If the app directory was deleted between runs, the old vhost still points to the
 # missing DocumentRoot. When apt upgrade reconfigures the apache2 package it runs
@@ -49,7 +49,7 @@ if [ -f /etc/apache2/sites-enabled/cafe_grader.conf ] || \
   sudo systemctl reload apache2 2>/dev/null || true
   echo "  Stale vhost removed."
 fi
- 
+
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y \
   apache2 apache2-dev \
@@ -59,13 +59,13 @@ sudo apt install -y \
   postgresql postgresql-server-dev-all \
   openssl unzip curl \
   libcurl4-openssl-dev   # provides curl-config, required by Passenger
- 
+
 # Language compilers / runtimes
 sudo apt install -y \
   ghc g++ openjdk-21-jdk fpc \
   php-cli php-readline \
   golang-go cargo python3-venv
- 
+
 # ---------------------------------------------------------------
 # 2. Ruby via rbenv
 # ---------------------------------------------------------------
@@ -74,29 +74,29 @@ sudo apt install -y \
   curl libssl-dev libreadline-dev zlib1g-dev \
   autoconf bison build-essential libyaml-dev \
   libncurses5-dev libffi-dev libgdbm-dev
- 
+
 if [ ! -d "$HOME/.rbenv" ]; then
   curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
 fi
- 
+
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
- 
+
 grep -qxF 'export PATH="$HOME/.rbenv/bin:$PATH"' ~/.bashrc || \
   echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
 grep -qxF 'eval "$(rbenv init -)"' ~/.bashrc || \
   echo 'eval "$(rbenv init -)"' >> ~/.bashrc
- 
+
 rbenv install -s "$RUBY_VERSION"
 rbenv global "$RUBY_VERSION"
- 
+
 # Remove stale system-level gem stubs that conflict with rbenv-managed Ruby.
 if [ -d "$HOME/.gem/ruby" ]; then
   rm -rf "$HOME/.gem/ruby"
 fi
- 
+
 gem install bundler --no-document
- 
+
 # ---------------------------------------------------------------
 # 3. MySQL
 # ---------------------------------------------------------------
@@ -109,12 +109,12 @@ sudo mysql -u root -e "CREATE USER '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PAS
 sudo mysql -u root -e "GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';"
 sudo mysql -u root -e "GRANT ALL PRIVILEGES ON \`$DB_QUEUE\`.* TO '$DB_USER'@'localhost';"
 sudo mysql -u root -e "FLUSH PRIVILEGES;"
- 
+
 # ---------------------------------------------------------------
 # 4. ioi/isolate
 # ---------------------------------------------------------------
 echo "[4/13] Building and installing ioi/isolate..."
- 
+
 # Clone into a permanent location (NOT /tmp — it is wiped on reboot,
 # which breaks the isolate.service symlink and /run/isolate/cgroup).
 ISOLATE_SRC_DIR="$HOME/isolate"
@@ -124,7 +124,7 @@ fi
 cd "$ISOLATE_SRC_DIR"
 make isolate
 sudo make install
- 
+
 # Create the isolate system user required by ioi/isolate (v2.5+).
 # isolate's default.cf sets  subid_user = isolate  which means it reads
 # /etc/subuid and /etc/subgid to find the UID/GID block for sandboxes.
@@ -142,7 +142,7 @@ if ! id isolate &>/dev/null; then
 else
   echo "  System user 'isolate' already exists."
 fi
- 
+
 # Add subuid/subgid entries only if not already present
 if ! grep -q "^isolate:" /etc/subuid; then
   echo "isolate:200000:65536" | sudo tee -a /etc/subuid
@@ -156,19 +156,19 @@ if ! grep -q "^isolate:" /etc/subgid; then
 else
   echo "  /etc/subgid entry for 'isolate' already exists."
 fi
- 
+
 echo "  Disabling swap (required by isolate)..."
 sudo swapoff -a
 # Comment out swap line in /etc/fstab (handles both /swap.img and partition entries)
 sudo sed -i '/\sswap\s/ s/^\(.*\)$/#\1/' /etc/fstab
 # Also remove the swap file itself if it exists
 [ -f /swap.img ] && sudo rm -f /swap.img
- 
+
 # ---------------------------------------------------------------
 # 5. Isolate systemd services + kernel settings
 # ---------------------------------------------------------------
 echo "[5/13] Configuring isolate kernel settings..."
- 
+
 # Symlink isolate's own service from its permanent source location.
 # Using a symlink (not a copy) so it stays in sync if isolate is updated.
 # Must point to the permanent clone dir — /tmp is cleared on reboot.
@@ -179,12 +179,12 @@ if [ -f "$ISOLATE_SVC" ]; then
 else
   echo "  WARNING: $ISOLATE_SVC not found — isolate.service will not be installed."
 fi
- 
+
 sudo tee /etc/systemd/system/set-ioi-isolate.service > /dev/null <<'SVCEOF'
 [Unit]
 Description=Set Transparent Hugepage and Core Pattern Settings for IOI isolate
 After=multi-user.target
- 
+
 [Service]
 Type=oneshot
 ExecStart=/bin/sh -c "echo never > /sys/kernel/mm/transparent_hugepage/enabled; \
@@ -192,20 +192,20 @@ ExecStart=/bin/sh -c "echo never > /sys/kernel/mm/transparent_hugepage/enabled; 
                       echo 0 > /sys/kernel/mm/transparent_hugepage/khugepaged/defrag; \
                       echo core > /proc/sys/kernel/core_pattern;"
 RemainAfterExit=yes
- 
+
 [Install]
 WantedBy=multi-user.target
 SVCEOF
- 
+
 if ! grep -q "kernel.randomize_va_space" /etc/sysctl.d/99-sysctl.conf 2>/dev/null; then
   echo "# IOI isolate" | sudo tee -a /etc/sysctl.d/99-sysctl.conf
   echo "kernel.randomize_va_space=0" | sudo tee -a /etc/sysctl.d/99-sysctl.conf
 fi
- 
+
 sudo systemctl daemon-reload
 sudo systemctl enable set-ioi-isolate.service
 [ -f /etc/systemd/system/isolate.service ] && sudo systemctl enable isolate.service
- 
+
 # ---------------------------------------------------------------
 # 6. GRUB: enable cgroup memory support (required for isolate)
 # ---------------------------------------------------------------
@@ -223,7 +223,7 @@ if [ -f /etc/default/grub ]; then
 else
   echo "  WARNING: /etc/default/grub not found — add cgroup_enable=memory manually."
 fi
- 
+
 # ---------------------------------------------------------------
 # 7. Cafe-Grader app: clone + configure
 # ---------------------------------------------------------------
@@ -234,23 +234,23 @@ if [ ! -d "web" ]; then
   git clone "$REPO_URL" web
 fi
 cd web
- 
+
 # Copy sample configs
 [ ! -f config/application.rb ] && cp config/application.rb.SAMPLE config/application.rb
 [ ! -f config/llm.yml ]        && cp config/llm.yml.SAMPLE        config/llm.yml
- 
+
 # Always regenerate and patch database.yml.
 cp config/database.yml.SAMPLE config/database.yml
 sed -i "s/username:.*/username: $DB_USER/" config/database.yml
 sed -i "s/password:.*/password: $DB_PASS/" config/database.yml
 sed -i "s/host:.*/host: localhost/"        config/database.yml
 echo "  database.yml patched with DB credentials."
- 
+
 # Always regenerate and patch worker.yml
 cp config/worker.yml.SAMPLE config/worker.yml
 sed -i "s|web:.*|web: http://localhost|" config/worker.yml
 echo "  worker.yml patched (web: http://localhost)."
- 
+
 # Silence Dart Sass @import deprecation warnings from Bootstrap.
 cat > config/initializers/dartsass_silence_deprecations.rb <<'RUBYEOF'
 Rails.application.config.dartsass.build_options \
@@ -260,7 +260,7 @@ Rails.application.config.dartsass.build_options \
   << "--silence-deprecation=mixed-decls"
 RUBYEOF
 echo "  Dart Sass deprecation warnings silenced."
- 
+
 bundle install
 
 # ---------------------------------------------------------------
@@ -325,47 +325,69 @@ RAILS_ENV=production bundle exec rails dartsass:build
 RAILS_ENV=production bundle exec rails assets:precompile
 echo "  Database and assets ready."
 
+
 # ---------------------------------------------------------------
 # 11. Phusion Passenger + Apache vhost
 # ---------------------------------------------------------------
 echo "[11/13] Installing Phusion Passenger and configuring Apache..."
 
-# Resolve the exact rbenv-managed ruby/gem binaries so every install
-# lands in the same gem home that Passenger's pre-flight check inspects.
+# ---- Purge stale Passenger Apache config from any previous install ----
+# If a prior run (or a system-level RVM Passenger) left passenger.load pointing
+# to a different path, the installer's pre-flight check sees a mismatch and
+# aborts with "Incorrect Passenger module path detected".
+# We delete both files now so this run writes them fresh with correct paths.
+sudo a2dismod passenger 2>/dev/null || true
+sudo rm -f /etc/apache2/mods-available/passenger.load
+sudo rm -f /etc/apache2/mods-available/passenger.conf
+sudo rm -f /etc/apache2/mods-enabled/passenger.load
+sudo rm -f /etc/apache2/mods-enabled/passenger.conf
+echo "  Cleared any stale Passenger Apache module files."
+
+# ---- Use rbenv-absolute paths for every Passenger command ----
+# On machines with RVM installed, bare commands like `passenger-config`,
+# `passenger-install-apache2-module`, and `gem` resolve to RVM's versions.
+# We use `rbenv which` to get the exact binary and never rely on PATH.
 RBENV_RUBY="$(rbenv which ruby)"
 RBENV_GEM="$(rbenv which gem)"
+RBENV_BIN_DIR="$(dirname "$RBENV_RUBY")"
 
+# Install passenger and rack into the rbenv gem home.
 "$RBENV_GEM" install passenger --no-document
-# Install rack via the SAME ruby binary Passenger will use for its check.
-# Using plain `gem install` or `sudo gem install` targets a different gem
-# home and the pre-flight check still reports rack as missing.
 "$RBENV_GEM" install rack --no-document
 
-# Build Apache module
-# Run the installer as the current user (no sudo) so it inherits the rbenv
-# environment and finds rack in the correct gem home.
+# Locate the installer script inside the rbenv-managed passenger gem.
 PASSENGER_INSTALL=$("$RBENV_GEM" contents passenger 2>/dev/null \
   | grep "passenger-install-apache2-module$" | head -1)
-if [ -n "$PASSENGER_INSTALL" ]; then
-  "$RBENV_RUBY" "$PASSENGER_INSTALL" --auto --languages ruby
-else
-  passenger-install-apache2-module --auto --languages ruby
+if [ -z "$PASSENGER_INSTALL" ]; then
+  echo "  ERROR: passenger-install-apache2-module not found in gem contents."
+  exit 1
 fi
 
-PASSENGER_ROOT=$(passenger-config --root)
-# Use rbenv's resolved ruby path — `which ruby` returns the shim and Apache
-# needs the real absolute binary path to start workers correctly.
+# Build the Apache module using the absolute rbenv ruby.
+"$RBENV_RUBY" "$PASSENGER_INSTALL" --auto --languages ruby
+
+# Derive PASSENGER_ROOT using the rbenv-managed passenger-config binary.
+# Never use bare `passenger-config` — on RVM machines it returns the wrong root.
+RBENV_PASSENGER_CONFIG="$RBENV_BIN_DIR/passenger-config"
+if [ ! -x "$RBENV_PASSENGER_CONFIG" ]; then
+  RBENV_PASSENGER_CONFIG=$("$RBENV_GEM" contents passenger 2>/dev/null \
+    | grep "/bin/passenger-config$" | head -1)
+fi
+PASSENGER_ROOT=$("$RBENV_PASSENGER_CONFIG" --root)
 PASSENGER_RUBY="$RBENV_RUBY"
 PASSENGER_MODULE=$(find "$PASSENGER_ROOT" -name mod_passenger.so 2>/dev/null | head -1)
 
 if [ -z "$PASSENGER_MODULE" ]; then
-  echo "  ERROR: mod_passenger.so not found. Passenger build may have failed."
-  echo "  Check output above for compilation errors."
+  echo "  ERROR: mod_passenger.so not found after build."
+  echo "  PASSENGER_ROOT=$PASSENGER_ROOT"
   exit 1
 fi
 
-# The passenger installer already ran a2enmod, but the .load/.conf files it
-# writes may not match our rbenv ruby path. Overwrite them with correct values.
+echo "  PASSENGER_ROOT=$PASSENGER_ROOT"
+echo "  PASSENGER_RUBY=$PASSENGER_RUBY"
+echo "  PASSENGER_MODULE=$PASSENGER_MODULE"
+
+# Write passenger.load and passenger.conf with correct rbenv paths.
 sudo tee /etc/apache2/mods-available/passenger.load > /dev/null <<EOF
 LoadModule passenger_module $PASSENGER_MODULE
 EOF
@@ -376,13 +398,18 @@ sudo tee /etc/apache2/mods-available/passenger.conf > /dev/null <<EOF
 </IfModule>
 EOF
 
-# Ensure the module is enabled (idempotent — safe to run even if already enabled).
 sudo a2enmod passenger
+
+# Suppress Apache FQDN warning on cloud instances with no reverse DNS.
+grep -q "^ServerName" /etc/apache2/apache2.conf || \
+  echo "ServerName 127.0.0.1" | sudo tee -a /etc/apache2/apache2.conf
+
+SERVER_IP=$(detect_server_ip)
 
 sudo a2dissite 000-default 2>/dev/null || true
 sudo tee /etc/apache2/sites-available/cafe_grader.conf > /dev/null <<EOF
 <VirtualHost *:80>
-  ServerName localhost
+  ServerName $SERVER_IP
   DocumentRoot $APP_DIR/public
 
   <Directory $APP_DIR/public>
@@ -403,18 +430,12 @@ EOF
 sudo a2ensite cafe_grader
 
 # Grant Apache (www-data) traversal permission on the home directory.
-# Ubuntu sets home dirs to chmod 750 by default — www-data cannot traverse
-# into them, which causes a 403 Forbidden even when vhost config is correct.
-# chmod o+x adds the execute (traversal) bit for others only; it does NOT
-# expose the contents of the home directory to other system users.
 chmod o+x "$HOME"
 
-# Validate config before restarting — surfaces errors with clear diagnostics
-# instead of crashing Apache silently.
 echo "  Validating Apache configuration..."
 if ! sudo apache2ctl configtest 2>&1; then
   echo ""
-  echo "  ERROR: Apache config test failed. Dumping passenger module paths:"
+  echo "  ERROR: Apache config test failed. Paths written:"
   echo "    PASSENGER_MODULE=$PASSENGER_MODULE"
   echo "    PASSENGER_ROOT=$PASSENGER_ROOT"
   echo "    PASSENGER_RUBY=$PASSENGER_RUBY"
@@ -425,7 +446,9 @@ fi
 sudo systemctl restart apache2
 echo "  Apache + Passenger configured."
 
-# ---------------------------------------------------------------
+# Open port 80 in ufw if active; remind cloud users about security groups.
+ufw_allow_if_active 80
+
 # 12. Solid Queue systemd service
 # ---------------------------------------------------------------
 echo "[12/13] Installing Solid Queue systemd service..."
