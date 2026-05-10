@@ -48,7 +48,7 @@
           %th.text-center.all
       %tbody
         - for problem in @problems
-          %tr{:class => "#{(problem.available) ? "table-success" : ""}", :id => "prob-#{problem.id}", :name => "prob-#{problem.id}"}
+          %tr{:class => "#{(problem.available) ? "row-available" : ""}", :id => "prob-#{problem.id}", :name => "prob-#{problem.id}"}
             - @problem=problem
             %td.font-monospace= problem.name
             %td
