@@ -18,26 +18,25 @@ class ScoreboardController < ApplicationController
     @mode = params[:mode] == 'group' ? 'group' : 'individual'
     
     # Calculate scores using the robust max_score_report scope
-    # This scope handles deductions (hints, LLM) correctly.
+    # We now fetch raw max_score for problem cells and total deductions separately
     report_records = Submission.where(user: @users, problem: @problems).max_score_report(@problems, nil, nil)
     
     @scores = Hash.new { |h,k| h[k] = {} }
-    @deductions = Hash.new { |h,k| h[k] = {} }
-    
     report_records.each do |record|
-      @scores[record.user_id][record.problem_id] = record.final_score.to_f
-      @deductions[record.user_id][record.problem_id] = (record.llm_cost || 0) + (record.hint_cost || 0)
+      @scores[record.user_id][record.problem_id] = record.max_score.to_f
     end
+    
+    # Total deductions per user (all reveals)
+    @user_deductions = CommentReveal.where(user: @users).joins(:comment).group(:user_id).sum('comments.cost')
 
     if @mode == 'individual'
       @leaderboard = @users.map do |u|
-        total = 0
-        deducted = 0
+        raw_sum = 0
         @problems.each do |p|
-          total += @scores[u.id][p.id] || 0
-          deducted += @deductions[u.id][p.id] || 0
+          raw_sum += @scores[u.id][p.id] || 0
         end
-        { user: u, total_score: total, deducted_score: deducted }
+        deducted = @user_deductions[u.id] || 0
+        { user: u, total_score: [0.0, raw_sum - deducted].max, deducted_score: deducted }
       end
       # Sort by total_score desc, then by name
       @leaderboard.sort_by! { |entry| [-entry[:total_score], entry[:user].full_name.to_s.downcase] }
@@ -65,15 +64,15 @@ class ScoreboardController < ApplicationController
         group_total = 0
         group_deducted = 0
         group_members = group_users.map do |u|
-          user_total = 0
-          user_deducted = 0
+          user_raw_total = 0
           @problems.each do |p|
-            user_total += @scores[u.id][p.id] || 0
-            user_deducted += @deductions[u.id][p.id] || 0
+            user_raw_total += @scores[u.id][p.id] || 0
           end
-          group_total += user_total
+          user_deducted = @user_deductions[u.id] || 0
+          user_final = [0.0, user_raw_total - user_deducted].max
+          group_total += user_final
           group_deducted += user_deducted
-          { user: u, total_score: user_total, deducted_score: user_deducted }
+          { user: u, total_score: user_final, deducted_score: user_deducted }
         end
         group_members.sort_by! { |m| [-m[:total_score], m[:user].full_name.to_s.downcase] }
         

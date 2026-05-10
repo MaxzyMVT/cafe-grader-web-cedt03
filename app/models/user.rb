@@ -79,7 +79,7 @@ class User < ApplicationRecord
   def current_score
     problems = problems_for_action(:submit, respect_admin: false)
     
-    # calculate range of time (in contest mode)
+    # Calculate range of time (in contest mode)
     time_range = active_contests_range if GraderConfiguration.contest_mode?
     start_time = time_range ? time_range.begin : nil
     stop_time = time_range ? time_range.end : nil
@@ -89,11 +89,13 @@ class User < ApplicationRecord
 
     records = records.max_score_report(problems, start_time, stop_time)
     
-    # records is an ActiveRecord::Relation with final_score
-    # we can just sum the final_score
-    problem_scores = records.to_a.sum { |r| r.final_score.to_d }
-    global_deductions = comment_reveals.sum(:points_deducted) || 0
-    [0.0, (problem_scores - global_deductions).to_f].max
+    # Sum of raw max points per problem
+    raw_problem_scores = records.to_a.sum { |r| r.max_score.to_d }
+    
+    # Total deductions from all comment reveals (hints, LLM assists, etc.)
+    total_deductions = comment_reveals.joins(:comment).sum('comments.cost') || 0
+    
+    [0.0, (raw_problem_scores - total_deductions).to_f].max
   end
 
   # ---- problem for the users for specific action ------
