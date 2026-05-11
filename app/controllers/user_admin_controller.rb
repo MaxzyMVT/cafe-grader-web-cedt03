@@ -136,8 +136,14 @@ class UserAdminController < ApplicationController
   end
 
   def destroy
-    User.find(params[:id]).destroy
-    redirect_to action: 'index'
+    @user = User.find(params[:id])
+    login = @user.login
+    @user.destroy
+    @toast = {title: 'User deleted', body: "User '#{login}' has been removed."}
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to action: 'index', notice: "User '#{login}' deleted." }
+    end
   end
 
   # GET — renders the import form / result page. The form posts to
