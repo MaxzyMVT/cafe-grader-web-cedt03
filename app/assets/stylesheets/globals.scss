@@ -110,21 +110,26 @@ $color-gray-light: #eeeeee;
 
 // Problem management row highlight
 .row-available {
-  background-color: rgba(40, 167, 69, 0.08) !important;
-  transition: background-color 0.3s ease;
-  
-  &:hover {
+  &, & > td {
     background-color: rgba(40, 167, 69, 0.12) !important;
+    transition: background-color 0.3s ease;
+  }
+  
+  &:hover, &:hover > td {
+    background-color: rgba(40, 167, 69, 0.18) !important;
   }
 }
 
 [data-theme="dark"] .row-available {
-  background-color: rgba(40, 167, 69, 0.15) !important;
-  
-  &:hover {
+  &, & > td {
     background-color: rgba(40, 167, 69, 0.2) !important;
   }
+  
+  &:hover, &:hover > td {
+    background-color: rgba(40, 167, 69, 0.25) !important;
+  }
 }
+
 
 
 // Enhance form switches for better theme support
