@@ -4,44 +4,17 @@
       %span.mi info
       = t 'help.grading_legend.title'
     
-    .row.g-4
-      .col-md-6
-        %table.table.table-sm.table-borderless.mb-0
-          %tbody
-            %tr
-              %td.p-2.text-center{style: 'width: 3rem;'}
-                %span.badge.bg-success.rounded-pill.px-3 P
-              %td.p-2.align-middle
-                %span.fw-semibold= t 'help.grading_legend.p'
-            %tr
-              %td.p-2.text-center
-                %span.badge.bg-danger.rounded-pill.px-3 -
-              %td.p-2.align-middle
-                %span.fw-semibold= t 'help.grading_legend.wrong'
-            %tr
-              %td.p-2.text-center
-                %span.badge.bg-secondary.rounded-pill.px-3 S
-              %td.p-2.align-middle
-                %span.fw-semibold= t 'help.grading_legend.s'
-      
-      .col-md-6
-        %table.table.table-sm.table-borderless.mb-0
-          %tbody
-            %tr
-              %td.p-2.text-center{style: 'width: 3rem;'}
-                %span.badge.bg-warning.text-dark.rounded-pill.px-3 T
-              %td.p-2.align-middle
-                %span.fw-semibold= t 'help.grading_legend.t'
-            %tr
-              %td.p-2.text-center
-                %span.badge.bg-warning.text-dark.rounded-pill.px-3 M
-              %td.p-2.align-middle
-                %span.fw-semibold= t 'help.grading_legend.m'
-            %tr
-              %td.p-2.text-center
-                %span.badge.bg-danger.rounded-pill.px-3 X
-              %td.p-2.align-middle
-                %span.fw-semibold= t 'help.grading_legend.x'
+    .space-y-3
+      - [ { symbol: 'P', color: 'success', text: t('help.grading_legend.p') },
+          { symbol: '-', color: 'danger', text: t('help.grading_legend.wrong') },
+          { symbol: 'S', color: 'secondary', text: t('help.grading_legend.s') },
+          { symbol: 'T', color: 'warning', text: t('help.grading_legend.t'), text_dark: true },
+          { symbol: 'M', color: 'warning', text: t('help.grading_legend.m'), text_dark: true },
+          { symbol: 'X', color: 'danger', text: t('help.grading_legend.x') } ].each do |item|
+        .d-flex.align-items-start.gap-3.py-2
+          %span.badge.rounded-pill.px-3{class: "bg-#{item[:color]} #{'text-dark' if item[:text_dark]}", style: 'width: 2.8rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;'}
+            = item[:symbol]
+          %span.fw-semibold.text-dark{style: 'line-height: 1.4;'}= item[:text]
     
     .mt-4.pt-3.border-top
       %p.text-muted.small.mb-0.d-flex.align-items-center.gap-2
