@@ -3,5 +3,6 @@ class HelpController < ApplicationController
 
   def index
     @user = User.find(session[:user_id])
+    @languages = Language.where.not(name: ['archive', 'viva']).order(:pretty_name)
   end
 end
