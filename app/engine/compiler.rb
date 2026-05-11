@@ -60,8 +60,15 @@ class Compiler
   def compile(submission, dataset)
     @sub = submission
     @working_dataset = dataset
-    # validate the pre-condition
-    validate
+    # bypass isolate for text and archive
+    if @sub.language&.name == 'text' || @sub.language&.name == 'archive'
+      prepare_submission_directory(@sub)
+      @exec_file = @compile_path + @sub.problem.exec_filename(@sub.language)
+      File.write(@exec_file, @sub.source)
+      upload_compiled_files
+      @sub.update(status: :compilation_success, compiler_message: '')
+      return EngineResponse::Result.success(result_description: 'Compiled successfully')
+    end
 
     # init isolate
     need_cg = isolate_need_cg_by_lang(@sub.language.name)

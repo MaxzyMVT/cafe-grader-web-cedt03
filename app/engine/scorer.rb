@@ -128,7 +128,7 @@ class Scorer
     last_group = max_group[:group]+2 # some group number that is not in the data and not sentinel
     group_result = ''
     current_group_count = 0
-    current_group_max_points = 0.to_d
+    group_achieved_max = 0.to_d
 
     # build the string
     evs.each do |ev|
@@ -149,7 +149,9 @@ class Scorer
         # reset group tally
         group_result = ''
         current_group_count = 0
-        current_group_max_points = 0.to_d
+        # Calculate the actual max points this group achieved
+        group_evs = evs.select { |e| e[:group] == group }
+        group_achieved_max = (group_evs.map { |e| (e[:score] || 0).to_d * (e[:weight] || 0).to_d }.max || 0).to_d
       end
 
       # stop if sentinel
@@ -159,10 +161,16 @@ class Scorer
       
       # Logic for 'S' (Skipped) in GROUP MAX
       if @working_dataset.st_group_max?
-        if current_group_max_points >= group_max_weight[group] && ev[:result] != 'correct'
+        # A testcase is unnecessary if its weight is <= some other testcase's achieved points in the same group
+        # OR if it was actually skipped by the grader (waiting)
+        if ev[:result] == 'waiting'
+          result_code = 'S'
+        elsif (ev[:weight] || 0).to_d <= group_achieved_max && ev[:result] != 'correct'
+          # If this testcase didn't contribute to the max points of the group, and it's not the one that IS the max
+          # (Note: if multiple testcases have the same weight and are both correct, we show P for both or just one?
+          #  Usually we show P for anything that is correct. But if it's NOT correct and its weight is <= max, it's S)
           result_code = 'S'
         end
-        current_group_max_points = [current_group_max_points, (ev[:score] || 0).to_d * (ev[:weight] || 0).to_d].max
       end
 
       group_result += result_code

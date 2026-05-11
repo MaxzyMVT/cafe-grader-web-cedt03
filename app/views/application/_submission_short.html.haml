@@ -50,7 +50,7 @@
           %span{class: ('text-success' if submission.points >= (submission.problem&.full_score || 100))}
             = submission.points
           %span.grader-comment.text-break
-            = " [#{submission.grader_comment}]"
+            = " #{submission.grader_comment}"
           = link_to mdi('ballot'), evaluations_submission_path(submission), data: {turbo: true, turbo_method: :post}
   - if local_assigns[:show_button]
     -# show links

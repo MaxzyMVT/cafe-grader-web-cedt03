@@ -25,6 +25,7 @@ class Evaluator
       begin
         prepare_submission_directory(@sub)
         prepare_dataset_directory(@working_dataset)
+        prepare_worker_dataset(@working_dataset, :all)
         prepare_testcase_directory(@sub, @testcase)
         File.write(@output_file, @sub.source)
         return evaluate("", {'time' => 0.0, 'max-rss' => 0, 'status' => '', 'message' => ''}, "")
