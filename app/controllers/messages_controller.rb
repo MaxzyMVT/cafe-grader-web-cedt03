@@ -5,7 +5,7 @@ class MessagesController < ApplicationController
   before_action :set_message, only: ['show', 'reply']
 
   before_action :admin_authorization, :only => ['console','show',
-                                                'reply','hide','list_all']
+                                                'reply','hide','list_all', 'clear_all']
 
   def index
     @messages = Message.find_all_sent_by_user(@current_user)
@@ -54,6 +54,12 @@ class MessagesController < ApplicationController
     message.replied = true
     message.save
     flash[:notice] = 'Message hidden (just marked replied)'
+    redirect_to :action => 'console'
+  end
+
+  def clear_all
+    Message.where(receiver_id: nil).delete_all
+    flash[:notice] = 'All system messages cleared'
     redirect_to :action => 'console'
   end
 

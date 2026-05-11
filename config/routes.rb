@@ -99,6 +99,7 @@ Rails.application.routes.draw do
     collection do
       get 'console'
       get 'list_all'
+      post 'clear_all'
     end
   end
 
