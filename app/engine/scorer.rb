@@ -30,30 +30,29 @@ class Scorer
     evs = sorted_evaluation.select(:group, :group_name, :score, :weight, :testcase_id).map { |r| r.attributes.symbolize_keys }
     return 0.to_d if evs.empty?
     max_group = evs.max_by { |x| x[:group] || 0 }
-    evs << {group: max_group[:group]+1} # this is sentinel, the after final group
+    evs << {group: max_group[:group]+1} # sentinel
 
     last_group = max_group[:group]+2
     sum_user_score, sum_total_weight = 0.to_d, 0.to_d
-    min_score = 0
-    max_weight = 0
-    evs.each.with_index do |ev, idx|
+    min_weighted_score = 0
+    min_grp_weight = 0
+    evs.each do |ev|
       group = ev[:group]
       score = ev[:score] || 0
       weight = ev[:weight] || 0
 
       # process group
       if last_group != group
-        # found new group, save old group result
-        # the nil group has min_score, max_weight as 0
-        sum_user_score += min_score * max_weight
-        sum_total_weight += max_weight
+        # save result of the previous group
+        sum_user_score += min_weighted_score
+        sum_total_weight += min_grp_weight
 
-        # reset group tally
-        min_score = score
-        max_weight = weight
+        # reset for the new group
+        min_weighted_score = score * weight
+        min_grp_weight = weight
       else
-        min_score = [min_score, score].min
-        max_weight = [max_weight, weight].min
+        min_weighted_score = [min_weighted_score, score * weight].min
+        min_grp_weight = [min_grp_weight, weight].min
       end
       last_group = group
     end
