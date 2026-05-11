@@ -29,6 +29,13 @@ CONFIGURATIONS =
    },
 
    {
+     key: 'system.message_enabled',
+     value_type: 'boolean',
+     default_value: 'true',
+     description: 'Whether users can send clarification requests (messages)'
+   },
+
+   {
      key: 'ui.front.title',
      value_type: 'string',
      default_value: 'Grader'

@@ -16,6 +16,8 @@ class GraderConfiguration < ApplicationRecord
   SINGLE_USER_KEY = 'system.single_user_mode'
   SYSTEM_USE_PROBLEM_GROUP = 'system.use_problem_group'
   SYSTEM_MINIMUM_LAST_LOGIN_TIME = 'system.min_last_login_time'
+  SYSTEM_MESSAGE_ENABLED = 'system.message_enabled'
+
 
   # class_attribute :config_cache
   cattr_accessor :task_grading_info_cache
@@ -127,6 +129,12 @@ class GraderConfiguration < ApplicationRecord
 
   def self.single_user_mode?
     return get(SINGLE_USER_KEY)
+  end
+
+  def self.message_enabled?
+    res = get(SYSTEM_MESSAGE_ENABLED)
+    return true if res.nil?
+    return res
   end
 
   def self.contest_time_limit

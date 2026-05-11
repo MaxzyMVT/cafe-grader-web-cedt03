@@ -13,17 +13,25 @@
               .col-auto
                 %span.badge.bg-light.text-secondary.border.px-3= ans
 
-    .card.card-shadow.border-0.mb-4
-      .card-body.p-4
-        %h5.fw-bold.mb-4.d-flex.align-items-center.gap-2
-          %span.mi.text-primary add_comment
-          New Clarification Request
-        
-        = form_for 'message', url: { action: 'create' } do |f|
-          .mb-3
-            = f.text_area :body, rows: 4, class: 'form-control', placeholder: 'Type your question here...'
-          .d-flex.justify-content-end
-            = f.submit "Post Request", class: 'btn btn-primary px-4 shadow-sm'
+    - if GraderConfiguration.message_enabled? || @current_user.admin?
+      .card.card-shadow.border-0.mb-4
+        .card-body.p-4
+          %h5.fw-bold.mb-4.d-flex.align-items-center.gap-2
+            %span.mi.text-primary add_comment
+            New Clarification Request
+          
+          = form_for 'message', url: { action: 'create' } do |f|
+            .mb-3
+              = f.text_area :body, rows: 4, class: 'form-control', placeholder: 'Type your question here...'
+            .d-flex.justify-content-end
+              = f.submit "Post Request", class: 'btn btn-primary px-4 shadow-sm'
+    - else
+      .card.border-0.bg-danger-subtle.text-danger.mb-4.shadow-sm
+        .card-body.p-4.d-flex.align-items-center.gap-3
+          %span.mi.md-36 block
+          %div
+            %h6.fw-bold.mb-1 Clarification requests are disabled
+            %p.small.mb-0 The staff has disabled new clarification requests for this session.
 
     .messages-feed
       = render partial: 'message', collection: @messages, locals: { reply: false }

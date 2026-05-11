@@ -23,6 +23,9 @@ class MessagesController < ApplicationController
   end
 
   def create
+    if !GraderConfiguration.message_enabled? && !@current_user.admin?
+      redirect_to action: 'index', alert: 'Clarification requests are currently disabled.' and return
+    end
     @message = Message.new(message_params)
     @message.sender = @current_user
     if @message.body == '' or !@message.save
