@@ -21,11 +21,11 @@ class Evaluator
     @testcase = testcase
     @working_dataset = @testcase.dataset
 
-    if @sub.problem.output_only || @sub.language.name == 'text' || @sub.language.name == 'archive'
+    if @sub.problem.output_only || @sub.language&.name == 'text' || @sub.language&.name == 'archive'
       prepare_submission_directory(@sub)
       prepare_testcase_directory(@sub, @testcase)
       File.write(@output_file, @sub.source)
-      return evaluate("", {'time' => 0, 'max-rss' => 0, 'status' => ''}.with_indifferent_access, "")
+      return evaluate("", {'time' => 0.0, 'max-rss' => 0, 'status' => ''}, "")
     end
 
     # init isolate
