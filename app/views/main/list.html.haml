@@ -23,14 +23,14 @@
 :javascript
   function filter_tag() {
     let selected_tag = $('#filter-tag :selected').val()
-    table.column(5).search(selected_tag).draw()
+    table.column(6).search(selected_tag).draw()
   }
 
   window.addEventListener("load", function() {
     table = $("#main_table").DataTable({
       columnDefs: [
-        { targets: [3,4], sortable: false }, // latest result & action
-        { targets: [5], visible: false }, // hidden tags column
+        { targets: [4,5], sortable: false }, // latest result & action
+        { targets: [6], visible: false }, // hidden tags column
       ],
       paging: false,
       responsive: true,

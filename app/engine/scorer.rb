@@ -113,15 +113,22 @@ class Scorer
     result = ''
 
     # gen group info
-    evs = sorted_evaluation.select(:group, :group_name, :result, :score, :testcase_id).map { |r| r.attributes.symbolize_keys }
+    evs = sorted_evaluation.select(:group, :group_name, :result, :score, :weight, :testcase_id).map { |r| r.attributes.symbolize_keys }
     return '' if evs.empty?
     max_group = evs.max_by { |x| x[:group] || 0 }
     evs << {group: max_group[:group]+1, result: ''} # this is sentinel
 
+    # pre-calculate max weight for each group
+    group_max_weight = Hash.new(0)
+    evs.each do |ev|
+      next if ev[:group] == max_group[:group]+1
+      group_max_weight[ev[:group]] = [group_max_weight[ev[:group]], ev[:weight] || 0].max
+    end
+
     last_group = max_group[:group]+2 # some group number that is not in the data and not sentinel
     group_result = ''
     current_group_count = 0
-    group_is_full = false
+    current_group_max_points = 0.to_d
 
     # build the string
     evs.each do |ev|
@@ -130,7 +137,7 @@ class Scorer
       # process end of group
       if last_group != group
         # found new group, save old group result
-        if last_group != nil
+        if last_group != max_group[:group]+2
           if current_group_count <= 1
             result += group_result
           else
@@ -142,7 +149,7 @@ class Scorer
         # reset group tally
         group_result = ''
         current_group_count = 0
-        group_is_full = false
+        current_group_max_points = 0.to_d
       end
 
       # stop if sentinel
@@ -152,11 +159,10 @@ class Scorer
       
       # Logic for 'S' (Skipped) in GROUP MAX
       if @working_dataset.st_group_max?
-        if group_is_full && ev[:result] != 'correct'
+        if current_group_max_points >= group_max_weight[group] && ev[:result] != 'correct'
           result_code = 'S'
-        elsif ev[:result] == 'correct'
-          group_is_full = true
         end
+        current_group_max_points = [current_group_max_points, (ev[:score] || 0).to_d * (ev[:weight] || 0).to_d].max
       end
 
       group_result += result_code

@@ -15,11 +15,13 @@
     %table#main_table.table.table-hover.align-middle{width: '100%'}
       %thead
         %tr
-          %th No.
+          %th.d-none.d-sm-table-cell No.
           %th.all Name
+          %th.d-none.d-md-table-cell Full Score
           %th Best Score
-          %th.all Latest Results
+          %th.d-none.d-lg-table-cell Latest Results
           %th.all
+          %th
       %tbody{data: {controller: 'problem-name'}}
         - @numbering = 1
         / problem count = #{problems.count}

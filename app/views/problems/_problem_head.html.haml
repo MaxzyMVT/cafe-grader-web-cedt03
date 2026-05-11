@@ -3,5 +3,7 @@
     %span= prefix
   %span.font-monospace.text-secondary [#{problem.name}]
   %span #{problem.full_name}
+  %span.badge.bg-info.text-dark.ms-2
+    Full Score: #{number_with_precision(problem.full_score, precision: 2, strip_insignificant_zeros: true)}
   - if local_assigns[:suffix]
     %span= suffix

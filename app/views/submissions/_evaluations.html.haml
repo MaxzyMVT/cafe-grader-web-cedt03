@@ -19,16 +19,22 @@
     .col.text-end
       %strong Weight
 -# body row
+- dataset = testcases.first&.dataset
 - groups = testcases.pluck(:group_name)
-- raw_sum_mode = testcases.first&.dataset&.st_raw_sum?
-- group_count, group_min, group_weight = 0,0,0
+- group_ids = testcases.pluck(:group)
+- score_type = dataset&.score_type
+- raw_sum_mode = dataset&.st_raw_sum?
+- group_count, group_score, group_weight = 0,0,0
 - testcases.each.with_index do |tc,idx|
   - ev = evaluations_by_tcid[tc.id]
-  - group_change = idx == 0 || groups[idx] != groups[idx-1]
-  - next_change = idx == groups.count-1 || groups[idx] != groups[idx+1]
-  - next_group_has_multiple = idx < groups.count-1 && groups[idx] == groups[idx+1]
+  - group_change = idx == 0 || group_ids[idx] != group_ids[idx-1]
+  - next_change = idx == group_ids.count-1 || group_ids[idx] != group_ids[idx+1]
+  - next_group_has_multiple = idx < group_ids.count-1 && group_ids[idx] == group_ids[idx+1]
   - if group_change
-    - group_min = raw_sum_mode ? Float::INFINITY : 100
+    - if score_type == 'group_max'
+      - group_score = -1
+    - else
+      - group_score = raw_sum_mode ? Float::INFINITY : 100
     - group_weight = tc.weight
     - group_count = 0
 
@@ -44,7 +50,11 @@
 
   -# process this ev
   - group_count += 1
-  - group_min = [group_min,ev&.score || 0].min
+  - current_score = ev&.score || 0
+  - if score_type == 'group_max'
+    - group_score = [group_score, current_score].max
+  - else
+    - group_score = [group_score, current_score].min
 
   .row.mb-1
     .col.text-end
@@ -81,10 +91,12 @@
       .row.mt-1
         .col.text-center
           %strong
-            Group "#{groups[idx-1]}" Minimum Score:
+            - gname = groups[idx].blank? ? "Group #{group_ids[idx]}" : "Group \"#{groups[idx]}\""
+            - stext = score_type == 'group_max' ? "Maximum Score" : "Minimum Score"
+            #{gname} #{stext}:
             - if raw_sum_mode
-              = number_with_precision (group_min || 0), precision: 2, strip_insignificant_zeros: true
+              = number_with_precision (group_score || 0), precision: 2, strip_insignificant_zeros: true
             - else
-              = number_to_percentage (group_min || 0) *100, precision: 0
+              = number_to_percentage (group_score || 0) *100, precision: 0
     :plain
       </div>
