@@ -33,9 +33,10 @@
   - if group_change
     - if score_type == 'group_max'
       - group_score = -1
+      - group_weight = -1
     - else
       - group_score = raw_sum_mode ? Float::INFINITY : 100
-    - group_weight = tc.weight
+      - group_weight = tc.weight
     - group_count = 0
 
 
@@ -52,7 +53,7 @@
   - group_count += 1
   - current_score = ev&.score || 0
   - if score_type == 'group_max'
-    - group_score = [group_score, current_score].max
+    - group_score = [group_score, current_score * tc.weight].max
   - else
     - group_score = [group_score, current_score].min
 
@@ -94,9 +95,9 @@
             - gname = groups[idx].blank? ? "Group #{group_ids[idx]}" : "Group \"#{groups[idx]}\""
             - stext = score_type == 'group_max' ? "Maximum Score" : "Minimum Score"
             #{gname} #{stext}:
-            - if raw_sum_mode
+            - if raw_sum_mode || score_type == 'group_max'
               = number_with_precision (group_score || 0), precision: 2, strip_insignificant_zeros: true
             - else
-              = number_to_percentage (group_score || 0) *100, precision: 0
+              = number_with_precision (group_score || 0) * group_weight, precision: 2, strip_insignificant_zeros: true
     :plain
       </div>
