@@ -110,74 +110,46 @@ class Scorer
 
   # build a combined short string that represent evaluation results of the entire dataset
   def build_grading_text
-    result = ''
-
-    # gen group info
+    score_type = @working_dataset.score_type
     evs = sorted_evaluation.select(:group, :group_name, :result, :score, :weight, :testcase_id).map { |r| r.attributes.symbolize_keys }
     return '' if evs.empty?
-    max_group = evs.max_by { |x| x[:group] || 0 }
-    evs << {group: max_group[:group]+1, result: ''} # this is sentinel
 
-    # pre-calculate max weight for each group
-    group_max_weight = Hash.new(0)
-    evs.each do |ev|
-      next if ev[:group] == max_group[:group]+1
-      group_max_weight[ev[:group]] = [group_max_weight[ev[:group]], ev[:weight] || 0].max
+    if score_type == 'sum'
+      # Just list all result codes in a single pair of brackets
+      text = evs.map { |ev| Evaluation.result_enum_to_code(ev[:result]) }.join
+      return '[' + text + ']'
     end
 
-    last_group = max_group[:group]+2 # some group number that is not in the data and not sentinel
-    group_result = ''
-    current_group_count = 0
-    group_achieved_max = 0.to_d
+    # Grouped logic (group_min, group_max)
+    # For group_max, we need to pre-calculate the max points achieved in each group to identify skipped cases
+    group_max_map = {}
+    if score_type == 'group_max'
+      evs.group_by { |ev| ev[:group] }.each do |group, group_evs|
+        group_max_map[group] = (group_evs.map { |e| (e[:score] || 0).to_d * (e[:weight] || 0).to_d }.max || 0).to_d
+      end
+    end
 
-    # build the string
-    evs.each do |ev|
-      group = ev[:group]
-
-      # process end of group
-      if last_group != group
-        # found new group, save old group result
-        if last_group != max_group[:group]+2
-          if current_group_count <= 1
-            result += group_result
-          else
-            # multiple testcase in group
-            result += '[' +  group_result + ']'
+    result = ''
+    evs.group_by { |ev| ev[:group] }.each do |group, group_evs|
+      group_result = ''
+      group_evs.each do |ev|
+        code = Evaluation.result_enum_to_code(ev[:result])
+        if score_type == 'group_max'
+          # A testcase is unnecessary if we already achieved a better or equal score in the group
+          # OR if it was actually skipped/not evaluated (waiting)
+          if ev[:result] == 'waiting'
+            code = 'S'
+          elsif (ev[:weight] || 0).to_d <= group_max_map[group] && ev[:result] != 'correct'
+            code = 'S'
           end
         end
-
-        # reset group tally
-        group_result = ''
-        current_group_count = 0
-        # Calculate the actual max points this group achieved
-        group_evs = evs.select { |e| e[:group] == group }
-        group_achieved_max = (group_evs.map { |e| (e[:score] || 0).to_d * (e[:weight] || 0).to_d }.max || 0).to_d
+        group_result += code
       end
-
-      # stop if sentinel
-      break if group == max_group[:group]+1
-
-      result_code = Evaluation.result_enum_to_code(ev[:result])
-      
-      # Logic for 'S' (Skipped) in GROUP MAX
-      if @working_dataset.st_group_max?
-        # A testcase is unnecessary if its weight is <= some other testcase's achieved points in the same group
-        # OR if it was actually skipped by the grader (waiting)
-        if ev[:result] == 'waiting'
-          result_code = 'S'
-        elsif (ev[:weight] || 0).to_d <= group_achieved_max && ev[:result] != 'correct'
-          # If this testcase didn't contribute to the max points of the group, and it's not the one that IS the max
-          # (Note: if multiple testcases have the same weight and are both correct, we show P for both or just one?
-          #  Usually we show P for anything that is correct. But if it's NOT correct and its weight is <= max, it's S)
-          result_code = 'S'
-        end
-      end
-
-      group_result += result_code
-      current_group_count += 1
-      last_group = group
+      result += '[' + group_result + ']'
     end
-    return result
+
+    # Wrap the grouped results in outer brackets
+    return '[' + result + ']'
   end
 
   # main run function

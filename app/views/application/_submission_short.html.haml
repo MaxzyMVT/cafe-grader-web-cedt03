@@ -49,9 +49,9 @@
           %span.me-1.mi.mr-2.text-secondary speed
           %span{class: ('text-success' if submission.points >= (submission.problem&.full_score || 100))}
             = submission.points
-          %span.grader-comment.text-break
-            = " #{submission.grader_comment}"
-          = link_to mdi('ballot'), evaluations_submission_path(submission), data: {turbo: true, turbo_method: :post}
+          %span.grader-comment.text-break.ms-2
+            = submission.grader_comment
+          = link_to mdi('ballot'), evaluations_submission_path(submission), class: 'ms-2', class: 'ms-2', data: {turbo: true, turbo_method: :post}
   - if local_assigns[:show_button]
     -# show links
     - if submission.graded_at
