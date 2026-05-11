@@ -152,6 +152,8 @@ Cheers!
     ask_questions_at_messages: "If you have any problems, you can ask at [<a href=\"%{url}\">%{message_link_name}</a>]."
     grading_legend:
       title: Grading Legend
+      how_to_submit: How to Submit
+      how_to_submit_desc: Select your problem and language from the submission box, then upload your source code or use the live editor.
       symbol: Symbol
       meaning: Meaning
       p: Correct Answer

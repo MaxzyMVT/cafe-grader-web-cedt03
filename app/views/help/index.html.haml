@@ -14,26 +14,15 @@
             .card-body.p-4
               %h5.fw-bold.mb-4.d-flex.align-items-center.gap-2
                 %span.mi.text-primary tips_and_updates
-                How to Submit
+                = t 'help.grading_legend.how_to_submit'
               
               .space-y-4
                 %section.mb-4
-                  %h6.fw-bold 1. Header Information
                   %p.text-muted
-                    You 
-                    %span.text-dark.fw-semibold must 
-                    specify the language in your source code header. For example:
-                  .bg-surface-alt.p-3.rounded-3.mb-3
-                    %pre.mb-0.small
-                      %code
-                        :preserve
-                          /*
-                          LANG: C++
-                          TASK: taskname
-                          */
+                    = t 'help.grading_legend.how_to_submit_desc'
                 
                 %section.mb-4
-                  %h6.fw-bold 2. Supported Languages
+                  %h6.fw-bold Supported Languages
                   .d-flex.flex-wrap.gap-2
                     - ['C', 'C++', 'Python', 'Java', 'Rust', 'Go'].each do |lang|
                       %span.badge.bg-primary-subtle.text-primary.border.border-primary-subtle= lang
