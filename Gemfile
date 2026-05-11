@@ -39,6 +39,8 @@ gem "faraday"
 # JWT for API authentication
 gem "jwt"
 
+# Use Argon2 for password hashing
+gem "argon2", "~> 2.3"
 
 #------------- asset pipeline -----------------
 # use import map

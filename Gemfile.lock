@@ -75,6 +75,9 @@ GEM
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
     ansi (1.6.0)
+    argon2 (2.3.3)
+      ffi (~> 1.15)
+      ffi-compiler (~> 1.0)
     ast (2.4.3)
     base64 (0.3.0)
     benchmark (0.4.1)
@@ -124,6 +127,9 @@ GEM
     ffi (1.17.4-arm64-darwin)
     ffi (1.17.4-x86_64-linux-gnu)
     ffi (1.17.4-x86_64-linux-musl)
+    ffi-compiler (1.4.2)
+      ffi (>= 1.15.5)
+      rake
     foreman (0.90.0)
       thor (~> 1.4)
     fugit (1.11.1)
@@ -466,6 +472,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  argon2 (~> 2.3)
   bootsnap
   brakeman
   capybara

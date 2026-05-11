@@ -3,6 +3,7 @@ require 'net/pop'
 require 'net/https'
 require 'net/http'
 require 'json'
+require 'argon2'
 
 class User < ApplicationRecord
   THEMES = %w[default dark premium ocean solarized].freeze
@@ -266,10 +267,21 @@ class User < ApplicationRecord
   end
 
   def authenticated?(password)
-    if self.activated
-      hashed_password == User.encrypt(password, self.salt)
+    return false unless self.activated
+    return false if hashed_password.blank?
+
+    if hashed_password.start_with?('$argon2')
+      Argon2::Password.verify_password(password, hashed_password)
     else
-      false
+      # legacy SHA1
+      if hashed_password == User.encrypt(password, self.salt)
+        # lazy migration to Argon2
+        self.password = password
+        encrypt_new_password
+        self.save(validate: false)
+        return true
+      end
+      return false
     end
   end
 
@@ -647,8 +659,7 @@ class User < ApplicationRecord
   protected
     def encrypt_new_password
       return if password.blank?
-      self.salt = (10+rand(90)).to_s
-      self.hashed_password = User.encrypt(self.password, self.salt)
+      self.hashed_password = Argon2::Password.create(self.password)
     end
 
     def assign_default_site
