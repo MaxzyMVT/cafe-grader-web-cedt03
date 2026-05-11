@@ -110,9 +110,22 @@ $color-gray-light: #eeeeee;
 
 // Problem management row highlight
 .row-available {
-  background-color: var(--color-success-bg) !important;
+  background-color: rgba(40, 167, 69, 0.08) !important;
   transition: background-color 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(40, 167, 69, 0.12) !important;
+  }
 }
+
+[data-theme="dark"] .row-available {
+  background-color: rgba(40, 167, 69, 0.15) !important;
+  
+  &:hover {
+    background-color: rgba(40, 167, 69, 0.2) !important;
+  }
+}
+
 
 // Enhance form switches for better theme support
 .form-check-input {
