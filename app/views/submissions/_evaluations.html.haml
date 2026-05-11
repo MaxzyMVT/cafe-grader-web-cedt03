@@ -33,6 +33,11 @@
   - total_weight = testcases.sum(:weight)
 - total_weight = 1.0 if total_weight == 0
 - full_score = testcases.first&.problem&.full_score || 100
+- group_achieved_max = Hash.new(0.to_d)
+- if score_type == 'group_max'
+  - testcases.each do |tc|
+    - ev = evaluations_by_tcid[tc.id]
+    - group_achieved_max[tc.group] = [group_achieved_max[tc.group], (ev&.score || 0).to_d * tc.weight.to_d].max
 - testcases.each.with_index do |tc,idx|
   - ev = evaluations_by_tcid[tc.id]
   - group_change = idx == 0 || group_ids[idx] != group_ids[idx-1]
@@ -81,7 +86,8 @@
       - else
         = "-"
     .col-4
-      = render partial: 'evaluation_result', locals: {ev: ev} if ev
+      - is_skipped = score_type == 'group_max' && (ev.nil? || ev.waiting? || (ev.result != 'correct' && (tc.weight || 0).to_d <= group_achieved_max[tc.group]))
+      = render partial: 'evaluation_result', locals: {ev: ev, is_skipped: is_skipped} if ev || is_skipped
     .col.text-end
       - if ev
         - if raw_sum_mode
