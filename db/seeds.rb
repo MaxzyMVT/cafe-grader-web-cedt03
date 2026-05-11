@@ -29,6 +29,27 @@ CONFIGURATIONS =
    },
 
    {
+     key: 'system.message_enabled',
+     value_type: 'boolean',
+     default_value: 'true',
+     description: 'Whether users can send clarification requests (messages)'
+   },
+
+   {
+     key: 'point_hint.enable_all_hints',
+     value_type: 'boolean',
+     default_value: 'false',
+     description: "If true, users can view all hints even if they haven't unlocked them with points."
+   },
+
+   {
+     key: 'system.disable_penalty',
+     value_type: 'boolean',
+     default_value: 'false',
+     description: 'If true, the scoreboard will show scores without any deductions (penalties).'
+   },
+
+   {
      key: 'ui.front.title',
      value_type: 'string',
      default_value: 'Grader'

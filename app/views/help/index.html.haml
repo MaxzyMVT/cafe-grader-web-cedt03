@@ -1,0 +1,51 @@
+.container.py-5
+  .row.justify-content-center
+    .col-lg-10
+      .d-flex.align-items-center.gap-3.mb-5
+        .bg-primary.text-white.rounded-3.p-3.shadow-sm
+          %span.mi.md-36 help
+        %div
+          %h2.fw-bold.mb-0 User Guide & Help
+          %p.text-secondary.mb-0 Understanding the Cafe-Grader grading system
+
+      .row.g-4
+        .col-md-7
+          .card.border-0.shadow-sm.h-100
+            .card-body.p-4
+              %h5.fw-bold.mb-4.d-flex.align-items-center.gap-2
+                %span.mi.text-primary tips_and_updates
+                = t 'help.grading_legend.how_to_submit'
+              
+              .space-y-4
+                %section.mb-4
+                  %p.text-muted
+                    = t 'help.grading_legend.how_to_submit_desc'
+                
+                %section.mb-4
+                  %h6.fw-bold Supported Languages
+                  .d-flex.flex-wrap.gap-2
+                    - @languages.each do |lang|
+                      %span.badge.bg-primary-subtle.text-primary.border.border-primary-subtle= lang.pretty_name
+                
+                %section.mb-4
+                  %h6.fw-bold CTF & Output-only Problems
+                  %p.text-muted.small
+                    For CTF or output-only tasks, you should submit your flag or answer as 
+                    %strong Text. 
+                    You can type it directly into the live editor or upload a 
+                    %code .txt
+                    file.
+
+
+        .col-md-5
+          = render 'main/grading_legend'
+
+      .card.border-0.shadow-sm.mt-4
+        .card-body.p-4
+          %h5.fw-bold.mb-4.d-flex.align-items-center.gap-2
+            %span.mi.text-primary contact_support
+            Need More Help?
+          %p.mb-0
+            If you have any questions or encounter issues, please use the 
+            = link_to 'Messages', messages_path, class: 'fw-bold text-decoration-none'
+            system to contact the staff.

@@ -1,37 +1,75 @@
-%h1
-  Test cases
-%h4= @problem.long_name
-
-/navbar
-.row
-  .col-lg-6
-    %h5 Testcase num
-    %ul.nav.nav-pills{role: :tablist}
-      - @dataset.testcases.each.with_index do |tc,id|
-        %li.nav-item{role: :presentation, class: ('active' if id == 0)}
-          %a.nav-link{href:"#", role: 'tab', data: {bs: {toggle: 'tab', target: "#tc#{tc.id}"}}, class: ('active' if id == 0)}= tc.num
-  .col-lg-6
+.container-fluid.py-4
+  .d-flex.align-items-center.justify-content-between.mb-4
+    .d-flex.align-items-center.gap-3
+      = link_to problems_path, class: 'btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-2 rounded-circle shadow-sm', 'data-bs-toggle' => 'tooltip', title: 'Back to Problems' do
+        %span.mi.md-18 arrow_back
+      %div
+        %h2.fw-bold.mb-0 Test Cases
+        %p.text-muted.mb-0= @problem.long_name
+    
     - if @managers.count > 0
-      %h5 Additional file for grader
-      %ul
-        - @managers.each do |mg|
-          %li= link_to mg.filename, download_manager_testcases_path(@problem,mg)
+      .dropdown
+        %button.btn.btn-outline-secondary.dropdown-toggle.d-flex.align-items-center.gap-2{type: :button, 'data-bs-toggle' => 'dropdown'}
+          %span.mi description
+          Grader Files
+          %span.badge.bg-secondary= @managers.count
+        %ul.dropdown-menu.dropdown-menu-end
+          - @managers.each do |mg|
+            %li
+              = link_to download_manager_testcases_path(@problem,mg), class: 'dropdown-item d-flex align-items-center gap-2' do
+                %span.mi.md-18 attach_file
+                = mg.filename
 
-/actual data
-.tab-content
-  - @dataset.testcases.each.with_index do |tc,id|
-    .tab-pane{id: "tc#{tc.id}",class: ('active' if id == 0)}
-      .row.my-2
-        .col-lg-6
-          %h3
-            Input
-            = link_to "Download",download_input_testcase_path(tc),class: 'btn btn-info btn-sm'
-        .col-lg-6
-          %h3
-            Output
-            = link_to "Download",download_sol_testcase_path(tc),class: 'btn btn-info btn-sm'
-      .row.my-2
-        .col-lg-6
-          %textarea.font-monospace{ rows: 25,readonly: true,style: "width:100%;resize=none;overflow-y: scroll;"}= (tc.inp_file.download.force_encoding('UTF-8') if tc.inp_file.attached?)
-        .col-lg-6
-          %textarea.font-monospace{ rows: 25,readonly: true,style: "width:100%;resize=none;overflow-y: scroll;"}= (tc.ans_file.download.force_encoding('UTF-8') if tc.ans_file.attached?)
+  .card.card-shadow.border-0.mb-4
+    .card-body.p-3.bg-surface-alt
+      - grouped_cases = @dataset.testcases.group_by(&:group).sort
+      .d-flex.flex-column.gap-3{role: :tablist}
+        - if grouped_cases.size > 1
+          - grouped_cases.each do |group_id, cases|
+            .d-flex.align-items-center.gap-2
+              .badge.bg-secondary-subtle.text-secondary.border.border-secondary-subtle.px-2.py-1.small.fw-bold{style: "min-width: 80px;"}
+                - first_case = cases.first
+                = first_case.group_name.present? ? first_case.group_name.upcase : "GROUP #{group_id.presence || 'N/A'}"
+              .d-flex.flex-wrap.gap-1
+                - cases.each do |tc|
+                  %button.btn-case-selector{type: :button, role: 'tab', data: {bs: {toggle: 'tab', target: "#tc#{tc.id}"}}, 'aria-controls' => "tc#{tc.id}", 'aria-selected' => (@dataset.testcases.first == tc), class: (@dataset.testcases.first == tc ? 'active' : '')}
+                    = tc.num
+        - else
+          .d-flex.flex-wrap.gap-1
+            - @dataset.testcases.each do |tc|
+              %button.btn-case-selector{type: :button, role: 'tab', data: {bs: {toggle: 'tab', target: "#tc#{tc.id}"}}, 'aria-controls' => "tc#{tc.id}", 'aria-selected' => (@dataset.testcases.first == tc), class: (@dataset.testcases.first == tc ? 'active' : '')}
+                = tc.num
+
+
+
+
+  .tab-content
+    - @dataset.testcases.each.with_index do |tc,id|
+      .tab-pane.fade{id: "tc#{tc.id}", class: ('show active' if id == 0)}
+        .row.g-4
+          .col-md-6
+            .card.card-shadow.border-0
+              .card-header.bg-surface-alt.p-3.border-0
+                .d-flex.justify-content-between.align-items-center
+                  %h6.fw-bold.mb-0.d-flex.align-items-center.gap-2
+                    %span.mi.text-primary input
+                    Input
+                  = link_to download_input_testcase_path(tc), class: 'btn btn-sm btn-outline-primary d-flex align-items-center gap-1' do
+                    %span.mi.md-14 download
+                    Download
+              .card-body.p-0
+                %textarea.form-control.font-monospace.border-0.rounded-0.bg-surface.text-primary{rows: 25, readonly: true, style: "resize: none; font-size: 0.85rem;"}= (tc.inp_file.download.force_encoding('UTF-8') if tc.inp_file.attached?)
+          
+          .col-md-6
+            .card.card-shadow.border-0
+              .card-header.bg-surface-alt.p-3.border-0
+                .d-flex.justify-content-between.align-items-center
+                  %h6.fw-bold.mb-0.d-flex.align-items-center.gap-2
+                    %span.mi.text-primary output
+                    Output
+                  = link_to download_sol_testcase_path(tc), class: 'btn btn-sm btn-outline-primary d-flex align-items-center gap-1' do
+                    %span.mi.md-14 download
+                    Download
+              .card-body.p-0
+                %textarea.form-control.font-monospace.border-0.rounded-0.bg-surface.text-primary{rows: 25, readonly: true, style: "resize: none; font-size: 0.85rem;"}= (tc.ans_file.download.force_encoding('UTF-8') if tc.ans_file.attached?)
+

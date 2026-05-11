@@ -1,11 +1,18 @@
-%h1 Console: all messages
+.d-flex.justify-content-between.align-items-center.mb-4
+  %h2.fw-bold.mb-0 Console: All Messages
+  = link_to console_messages_path, class: 'btn btn-outline-secondary d-flex align-items-center gap-2 shadow-sm' do
+    %span.mi.md-18 inbox
+    Active Messages
 
-= link_to '[active messages]', :action => 'list_all'
-
-%table
-  %tr
-    %th From
-    %th When
-    %th Message
-    %th
-  = render :partial => "short_message", :collection => @messages
+.card.card-shadow.border-0
+  .card-body.p-0
+    .table-responsive
+      %table.table.table-hover.align-middle.mb-0
+        %thead.bg-surface-alt
+          %tr
+            %th.ps-4 From
+            %th When
+            %th Message
+            %th.text-end.pe-4 Actions
+        %tbody
+          = render partial: "short_message", collection: @messages

@@ -45,6 +45,7 @@ Rails.application.routes.draw do
 
   get "sources/direct_edit"
   get "scoreboard", to: "scoreboard#index"
+  get "help", to: "help#index"
 
   root to: 'main#login'
 
@@ -98,6 +99,7 @@ Rails.application.routes.draw do
     collection do
       get 'console'
       get 'list_all'
+      post 'clear_all'
     end
   end
 

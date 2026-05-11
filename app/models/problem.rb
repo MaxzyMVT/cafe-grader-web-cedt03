@@ -332,7 +332,11 @@ class Problem < ApplicationRecord
   def comments_with_reveal_status(user, kind: nil)
     query = comments
     query = query.where(kind: kind) if kind.present?
-    query.select('comments.*', "EXISTS(SELECT 1 FROM comment_reveals WHERE user_id = #{user.id} AND comment_id = comments.id AND is_success = 1) AS is_acquired")
+    if GraderConfiguration.enable_all_hints?
+      query.select('comments.*', "1 AS is_acquired")
+    else
+      query.select('comments.*', "EXISTS(SELECT 1 FROM comment_reveals WHERE user_id = #{user.id} AND comment_id = comments.id AND is_success = 1) AS is_acquired")
+    end
   end
 
   # this method is used both in acquiring and viewing
@@ -340,6 +344,8 @@ class Problem < ApplicationRecord
     case comment.kind
     when 'hint'
       # user want to reveal a hint
+      return true if GraderConfiguration.enable_all_hints?
+
 
       # check if the problem allow hint
       return false unless self.allow_hint?

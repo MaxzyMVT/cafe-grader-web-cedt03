@@ -93,7 +93,21 @@ class User < ApplicationRecord
     raw_problem_scores = records.to_a.sum { |r| r.max_score.to_d }
     
     # Total deductions from all comment reveals (hints, LLM assists, etc.)
-    total_deductions = comment_reveals.joins(:comment).sum('comments.cost') || 0
+    # Only count deductions for problems that are currently available to the user
+    # 1. Deductions from Problem hints
+    problem_hint_deductions = comment_reveals.joins("INNER JOIN comments ON comments.id = comment_reveals.comment_id AND comments.commentable_type = 'Problem'")
+                                             .joins("INNER JOIN problems ON problems.id = comments.commentable_id")
+                                             .where(problems: { available: true })
+                                             .sum('comments.cost') || 0
+
+    # 2. Deductions from Submission LLM assistance
+    submission_deductions = comment_reveals.joins("INNER JOIN comments ON comments.id = comment_reveals.comment_id AND comments.commentable_type = 'Submission'")
+                                           .joins("INNER JOIN submissions ON submissions.id = comments.commentable_id")
+                                           .joins("INNER JOIN problems ON problems.id = submissions.problem_id")
+                                           .where(problems: { available: true })
+                                           .sum('comments.cost') || 0
+
+    total_deductions = problem_hint_deductions + submission_deductions
     
     [0.0, (raw_problem_scores - total_deductions).to_f].max
   end

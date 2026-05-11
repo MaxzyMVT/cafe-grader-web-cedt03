@@ -1,20 +1,41 @@
-%h3 Message
+.row.justify-content-center
+  .col-lg-10
+    .d-flex.align-items-center.gap-2.mb-4
+      = link_to console_messages_path, class: 'btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-2 rounded-circle shadow-sm', 'data-bs-toggle' => 'tooltip', title: 'Back to Console' do
+        %span.mi.md-18 arrow_back
+      %h2.fw-bold.mb-0 Message Detail
 
-.message
-  .stat
-    = "#{@message.sender.full_name} at #{@message.created_at}"
-  .body= simple_format(@message.body)
+    .card.card-shadow.border-0.mb-4
+      .card-body.p-4
+        .d-flex.justify-content-between.align-items-center.mb-3
+          .d-flex.align-items-center.gap-2
+            %span.mi.text-secondary account_circle
+            %span.fw-bold= @message.sender.full_name
+          %span.text-muted.small= time_ago_in_words(@message.created_at) + " ago"
+        
+        .message-body.p-3.bg-surface-alt.rounded-3.border
+          = simple_format(@message.body)
 
-%h3 Your reply:
-= form_for 'message', url: reply_message_path(@message) do |f|
-  = f.text_area :body, :rows => 5, :cols => 100
-  -#= f.hidden_field :receiver_id, {:value => @message.sender_id }
-  -#= f.hidden_field :replying_message_id, {:value => @message.id }
-  = submit_tag "Post"
+    .card.card-shadow.border-0.mb-4
+      .card-body.p-4
+        %h5.fw-bold.mb-4.d-flex.align-items-center.gap-2
+          %span.mi.text-primary reply
+          Your Reply
+        
+        = form_for 'message', url: reply_message_path(@message) do |f|
+          .mb-3
+            = f.text_area :body, rows: 6, class: 'form-control', placeholder: 'Type your reply here...'
+          .d-flex.justify-content-between.align-items-center
+            .text-muted.small
+              %span.mi.md-18.align-middle info_outline
+              Student will see this reply on their clarification page.
+            = f.submit "Post Reply", class: 'btn btn-primary px-4 shadow-sm'
 
-%p
-  If you do not want to reply, but want to hide this message from
-  console, you can   
-  = link_to "[hide]", :action => 'hide', :id => @message.id
-  this message.  (This message will be marked as replied.)
-
+    .card.border-0.bg-light.p-4.rounded-4
+      .d-flex.align-items-center.justify-content-between
+        .d-flex.align-items-center.gap-3
+          %span.mi.text-secondary visibility_off
+          %div
+            %p.fw-bold.mb-0 Want to skip this?
+            %p.small.text-muted.mb-0 If you don't want to reply, you can hide this message from the console.
+        = link_to "Mark as Handled", hide_message_path(@message), class: 'btn btn-outline-secondary btn-sm px-3 shadow-sm'
