@@ -65,7 +65,7 @@ class Submission < ApplicationRecord
       .select('comments.commentable_id as submission_id')
 
     # should I includes all hint? or just hint reveal during the given time?
-    hint_reveal = Comment.hint_reveal_for_problems(problems, start..stop)
+    hint_reveal = Comment.hint_reveal_for_problems(problems.where(enabled: true), start..stop)
       .where(comment_reveals: {is_success: true})
       .select('comment_reveals.user_id as user_id')
       .select('comments.commentable_id as problem_id')
@@ -88,7 +88,7 @@ class Submission < ApplicationRecord
       .select('submissions.user_id,users.login,users.full_name,users.remark')
       .select('problems.name')
       .select('max_score')
-      .select('LEAST(max_score,GREATEST(0.0, IFNULL(problems.full_score, 100.0)-IFNULL(LLM_ASSIST.llm_cost,0.0)-IFNULL(HINT_REVEAL.hint_cost,0.0))) as final_score')
+      .select(GraderConfiguration.disable_penalty? ? 'max_score as final_score' : 'LEAST(max_score,GREATEST(0.0, IFNULL(problems.full_score, 100.0)-IFNULL(LLM_ASSIST.llm_cost,0.0)-IFNULL(HINT_REVEAL.hint_cost,0.0))) as final_score')
       .select('submitted_at')
       .select('submissions.id as sub_id')
       .select('submissions.problem_id,submissions.user_id')
