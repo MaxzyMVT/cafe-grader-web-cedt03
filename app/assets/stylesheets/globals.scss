@@ -212,3 +212,10 @@ $color-gray-light: #eeeeee;
     }
   }
 }
+
+// Ensure problem chooser dropdown has a consistent width
+.problem-chooser {
+  .select2-container {
+    min-width: 300px !important;
+  }
+}
