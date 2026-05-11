@@ -205,7 +205,6 @@
   // Badges
   .badge {
     &.bg-primary { color: #fff !important; }
-    &.bg-success { color: #fff !important; }
     &.bg-danger { color: #fff !important; }
     &.bg-warning { color: #1a1a2e !important; background-color: #f1c40f !important; }
     &.bg-info { color: #fff !important; }
@@ -219,7 +218,7 @@
   .modal-header, .modal-footer { border-color: #2d2d44 !important; }
 
   // Progress
-  .progress { background-color: #2d2d44 !important; .progress-bar { color: #fff !important; } }
+  .progress { background-color: #2d2d44 !important; }
   .bg-secondary-subtle { background-color: #2d2d44 !important; }
 
   // Select2 Fixes

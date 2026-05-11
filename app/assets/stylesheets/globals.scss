@@ -192,3 +192,23 @@ $color-gray-light: #eeeeee;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 }
+
+// Progress bar text contrast fix
+.progress-bar, .badge {
+  font-weight: 600;
+  
+  // Default contrast
+  &.bg-warning, &.bg-info, &.bg-light, &.bg-yellow {
+    color: #212529 !important;
+  }
+  &.bg-success, &.bg-danger, &.bg-primary, &.bg-dark, &.bg-secondary {
+    color: #fff !important;
+  }
+
+  // Theme-specific contrast overrides
+  [data-theme="dark"] &, [data-theme="premium"] & {
+    &.bg-success, &.bg-warning, &.bg-yellow {
+      color: #1a1a2e !important; // Dark contrast for vibrant theme greens/yellows
+    }
+  }
+}
