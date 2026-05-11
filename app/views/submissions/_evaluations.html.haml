@@ -25,7 +25,12 @@
 - score_type = dataset&.score_type
 - raw_sum_mode = dataset&.st_raw_sum?
 - group_count, group_score, group_weight, group_points = 0,0,0,0
-- total_weight = testcases.sum(:weight)
+- if score_type == 'group_max'
+  - total_weight = testcases.group_by(&:group).values.sum { |g| g.map(&:weight).max }
+- elsif score_type == 'group_min'
+  - total_weight = testcases.group_by(&:group).values.sum { |g| g.map(&:weight).min }
+- else
+  - total_weight = testcases.sum(:weight)
 - total_weight = 1.0 if total_weight == 0
 - full_score = testcases.first&.problem&.full_score || 100
 - testcases.each.with_index do |tc,idx|
@@ -36,9 +41,10 @@
   - if group_change
     - if score_type == 'group_max'
       - group_points = -1
+      - group_weight = testcases.select { |t| t.group == tc.group }.map(&:weight).max
     - else
       - group_score = raw_sum_mode ? Float::INFINITY : 100
-      - group_weight = tc.weight
+      - group_weight = testcases.select { |t| t.group == tc.group }.map(&:weight).min
     - group_count = 0
 
 
@@ -95,24 +101,16 @@
     - if group_count > 1
       -# display group summary
       .row.mt-1
-        .col-7.text-end
+        .col.text-center
           %strong
             - gname = groups[idx].blank? ? "Group #{group_ids[idx]}" : "Group \"#{groups[idx]}\""
-            - stext = score_type == 'group_max' ? "Max" : "Min"
-            #{gname} #{stext}:
-        .col.text-end
-          %strong
-            - if raw_sum_mode || score_type == 'group_max'
-              = "-"
-            - else
-              = number_to_percentage (group_score || 0) * 100, precision: 0
-        .col.text-end
-          %strong
+            - stext = score_type == 'group_max' ? "Max Score" : "Min Score"
             - if raw_sum_mode
-              = number_with_precision (group_points || 0), precision: 2, strip_insignificant_zeros: true
+              - pts = number_with_precision (group_points || 0), precision: 2, strip_insignificant_zeros: true
             - elsif score_type == 'group_max'
-              = number_with_precision (group_points || 0) * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
+              - pts = number_with_precision (group_points || 0) * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
             - else
-              = number_with_precision (group_score || 0) * group_weight * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
+              - pts = number_with_precision (group_score || 0) * group_weight * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
+            #{gname} #{stext}: #{pts}
     :plain
       </div>

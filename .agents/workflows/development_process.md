@@ -15,3 +15,5 @@ Use these rules whenever making changes to the codebase or interacting with git.
    - For small, one-off requests, continuing on the current branch is acceptable unless specified otherwise.
 3. **No Automatic Pushing/Merging**:
    - Do NOT push to remote, merge branches, or create Pull Requests unless explicitly instructed by the USER.
+4. **Amend Related Changes**:
+   - If a new change is closely related to the previous commit (e.g., fixing a minor oversight or bug in that commit), use `git commit --amend` instead of creating a new commit to keep the history clean.
