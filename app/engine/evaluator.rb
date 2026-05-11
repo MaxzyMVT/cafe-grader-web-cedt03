@@ -22,10 +22,16 @@ class Evaluator
     @working_dataset = @testcase.dataset
 
     if @sub.problem.output_only || @sub.language&.name == 'text' || @sub.language&.name == 'archive'
-      prepare_submission_directory(@sub)
-      prepare_testcase_directory(@sub, @testcase)
-      File.write(@output_file, @sub.source)
-      return evaluate("", {'time' => 0.0, 'max-rss' => 0, 'status' => ''}, "")
+      begin
+        prepare_submission_directory(@sub)
+        prepare_dataset_directory(@working_dataset)
+        prepare_testcase_directory(@sub, @testcase)
+        File.write(@output_file, @sub.source)
+        return evaluate("", {'time' => 0.0, 'max-rss' => 0, 'status' => '', 'message' => ''}, "")
+      rescue => e
+        judge_log "ERROR: Output-only evaluation failed: #{e.message}\n#{e.backtrace.join("\n")}", Logger::ERROR
+        raise e
+      end
     end
 
     # init isolate
