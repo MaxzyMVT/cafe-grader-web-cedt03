@@ -63,6 +63,40 @@ class Scorer
     return score
   end
 
+  def group_max
+    # evs = evaluations sorted by group
+    evs = sorted_evaluation.select(:group, :group_name, :score, :weight, :testcase_id).map { |r| r.attributes.symbolize_keys }
+    return 0.to_d if evs.empty?
+    max_group = evs.max_by { |x| x[:group] || 0 }
+    evs << {group: max_group[:group]+1} # sentinel
+
+    last_group = max_group[:group]+2
+    sum_user_score, sum_total_weight = 0.to_d, 0.to_d
+    max_score = 0
+    grp_weight = 0
+    evs.each do |ev|
+      group = ev[:group]
+      score = ev[:score] || 0
+      weight = ev[:weight] || 0
+
+      if last_group != group
+        sum_user_score += max_score * grp_weight
+        sum_total_weight += grp_weight
+
+        max_score = score
+        grp_weight = weight
+      else
+        max_score = [max_score, score].max
+        grp_weight = [grp_weight, weight].max
+      end
+      last_group = group
+    end
+
+    raise GraderError.new("All testcase weights are zero for Sub ##{@sub.id}", submission_id: @sub.id) if sum_total_weight.zero?
+    score = sum_user_score / sum_total_weight * (@sub.problem.full_score || 100.to_d)
+    return score
+  end
+
   def raw_sum
     sum_user_score = 0.to_d
     @sub.evaluations.each do |ev|
@@ -137,6 +171,8 @@ class Scorer
       point = sum_of_all_testcases
     when 'group_min'
       point = group_min
+    when 'group_max'
+      point = group_max
     when 'raw_sum'
       point = raw_sum
     else
