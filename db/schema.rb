@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
+ActiveRecord::Schema[8.0].define(version: 2026_05_13_121447) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -287,7 +287,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
     t.datetime "updated_at", precision: nil, null: false
   end
 
-  create_table "problem_stats", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "problem_stats", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "problem_id", null: false
     t.integer "sub_count", default: 0, null: false
     t.integer "solved_count", default: 0, null: false
@@ -321,6 +321,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
     t.boolean "allow_hint", default: true
     t.boolean "view_submission", default: true
     t.integer "max_submissions"
+    t.integer "bonus_first_blood"
     t.index ["live_dataset_id"], name: "index_problems_on_live_dataset_id"
   end
 
@@ -352,32 +353,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_09_162358) do
     t.integer "role_id"
     t.integer "user_id"
     t.index ["user_id"], name: "index_roles_users_on_user_id"
-  end
-
-  create_table "score_submissions", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
-    t.bigint "dataset_id", null: false
-    t.bigint "submission_id", null: false
-    t.decimal "point", precision: 8, scale: 4
-    t.integer "status", limit: 1, default: 0, null: false
-    t.float "max_runtime"
-    t.integer "peak_memory"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["dataset_id"], name: "index_score_submissions_on_dataset_id"
-    t.index ["submission_id"], name: "index_score_submissions_on_submission_id"
-  end
-
-  create_table "score_users", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
-    t.bigint "dataset_id", null: false
-    t.bigint "user_id", null: false
-    t.decimal "point", precision: 8, scale: 4
-    t.integer "status", limit: 1, default: 0, null: false
-    t.float "max_runtime"
-    t.integer "peak_memory"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["dataset_id"], name: "index_score_users_on_dataset_id"
-    t.index ["user_id"], name: "index_score_users_on_user_id"
   end
 
   create_table "sessions", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

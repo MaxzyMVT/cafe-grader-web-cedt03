@@ -77,6 +77,18 @@ class User < ApplicationRecord
   before_save :assign_default_site
   before_save :assign_default_contest
 
+  def bonus_score
+    # Currently only includes "First Blood" bonus
+    # We find all problems where this user is the first blooder
+    total_bonus = 0
+    Problem.where.not(bonus_first_blood: [nil, 0]).find_each do |problem|
+      if problem.first_blood_user == self
+        total_bonus += problem.bonus_first_blood
+      end
+    end
+    total_bonus
+  end
+
   def current_score
     problems = problems_for_action(:submit, respect_admin: false)
     
@@ -110,7 +122,10 @@ class User < ApplicationRecord
 
     total_deductions = problem_hint_deductions + submission_deductions
     
-    [0.0, (raw_problem_scores - total_deductions).to_f].max
+    # Bonus points
+    bonus = bonus_score
+
+    [0.0, (raw_problem_scores - total_deductions + bonus).to_f].max
   end
 
   # ---- problem for the users for specific action ------

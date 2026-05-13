@@ -3,7 +3,7 @@ class Problem < ApplicationRecord
   audited only: %i[name full_name full_score available live_dataset_id
                    view_testcase view_submission allow_hint
                    permitted_lang submission_filename task_type compilation_type
-                   max_submissions]
+                   max_submissions bonus_first_blood]
 
   # -- fields --
   # how the submission should be compiled
@@ -62,6 +62,23 @@ class Problem < ApplicationRecord
 
   def set_default_full_score
     self.full_score ||= 100
+  end
+
+  def first_blood_user
+    # Criteria:
+    # 1. Non-admin user
+    # 2. Active user (User#enabled is true)
+    # 3. Successful submission (points == full_score)
+    # 4. Standard submission (tag == default)
+    # 5. Earliest submission (submitted_at ASC)
+    
+    admin_ids = User.joins(:roles).where(roles: { name: 'admin' }).pluck(:id)
+    submissions.tag_default.joins(:user)
+               .where(points: full_score)
+               .where(users: { enabled: true })
+               .where.not(user_id: admin_ids)
+               .order(:submitted_at)
+               .first&.user
   end
 
   # -- scope --

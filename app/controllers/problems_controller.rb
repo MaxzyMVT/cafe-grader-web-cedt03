@@ -430,7 +430,7 @@ class ProblemsController < ApplicationController
       params.require(:problem).permit(:name, :full_name, :change_date_added, :date_added, :available, :compilation_type, :full_score,
                                       :submission_filename, :difficulty, :attachment, :statement, :markdown, :view_testcase,
                                       :test_allowed, :output_only, :url, :description, :description, :view_submission,
-                                      :max_submissions, tag_ids: [], group_ids: [])
+                                      :max_submissions, :bonus_first_blood, tag_ids: [], group_ids: [])
     end
 
     def description_params
