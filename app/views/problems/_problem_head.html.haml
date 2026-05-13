@@ -1,9 +1,16 @@
-%h3
-  - if local_assigns[:prefix]
-    %span= prefix
-  %span.font-monospace.text-secondary [#{problem.name}]
-  %span #{problem.full_name}
-  %span.badge.bg-info.text-dark.ms-2
-    Full Score: #{number_with_precision(problem.full_score, precision: 2, strip_insignificant_zeros: true)}
-  - if local_assigns[:suffix]
-    %span= suffix
+%div
+  %h3.mb-1
+    - if local_assigns[:prefix]
+      %span= prefix
+    %span.font-monospace.text-secondary [#{problem.name}]
+    %span #{problem.full_name}
+    - if local_assigns[:suffix]
+      %span= suffix
+
+  .d-flex.gap-2.mb-3
+    .badge.bg-info.text-dark.d-inline-flex.align-items-center.justify-content-center{style: 'min-width: 140px; height: 24px;'}
+      Full Score: #{number_with_precision(problem.full_score, precision: 2, strip_insignificant_zeros: true)}
+    - if problem.bonus_first_blood.to_f > 0
+      .badge.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.justify-content-center{title: 'First Blood Bonus', style: 'min-width: 140px; height: 24px;'}
+        %span.mi.md-14.me-1 bloodtype
+        Bonus: #{problem.bonus_first_blood.to_i}
