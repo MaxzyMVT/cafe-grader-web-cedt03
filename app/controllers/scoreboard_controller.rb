@@ -26,8 +26,32 @@ class ScoreboardController < ApplicationController
       @scores[record.user_id][record.problem_id] = record.max_score.to_f
     end
     
-    # Total deductions per user (all reveals)
-    @user_deductions = CommentReveal.where(user: @users).joins(:comment).group(:user_id).sum('comments.cost')
+    # Total deductions per user (all reveals for available problems)
+    # 1. Problem hints
+    hint_deductions = CommentReveal.where(user: @users)
+                                   .joins("INNER JOIN comments ON comments.id = comment_reveals.comment_id AND comments.commentable_type = 'Problem'")
+                                   .where(comments: { commentable_id: @problems.map(&:id) })
+                                   .group(:user_id).sum('comments.cost')
+    
+    # 2. Submission assists
+    submission_deductions = CommentReveal.where(user: @users)
+                                          .joins("INNER JOIN comments ON comments.id = comment_reveals.comment_id AND comments.commentable_type = 'Submission'")
+                                          .joins("INNER JOIN submissions ON submissions.id = comments.commentable_id")
+                                          .where(submissions: { problem_id: @problems.map(&:id) })
+                                          .group(:user_id).sum('comments.cost')
+
+    @user_deductions = Hash.new(0)
+    hint_deductions.each { |uid, cost| @user_deductions[uid] += cost }
+    submission_deductions.each { |uid, cost| @user_deductions[uid] += cost }
+
+    # Calculate First Blood bonuses for all problems once
+    @first_blood_users = {}
+    @problems.each do |p|
+      if p.bonus_first_blood.to_f > 0
+        fb_user = p.first_blood_user
+        @first_blood_users[p.id] = fb_user.id if fb_user
+      end
+    end
 
     if @mode == 'individual'
       @leaderboard = @users.map do |u|
@@ -36,7 +60,16 @@ class ScoreboardController < ApplicationController
           raw_sum += @scores[u.id][p.id] || 0
         end
         deducted = @user_deductions[u.id] || 0
-        { user: u, total_score: [0.0, raw_sum - deducted].max, deducted_score: deducted }
+        
+        # Calculate bonus for this user
+        bonus = 0
+        @problems.each do |p|
+          if @first_blood_users[p.id] == u.id
+            bonus += p.bonus_first_blood
+          end
+        end
+
+        { user: u, total_score: [0.0, raw_sum - deducted + bonus].max, deducted_score: deducted, bonus_score: bonus }
       end
       # Sort by total_score desc, then by name
       @leaderboard.sort_by! { |entry| [-entry[:total_score], entry[:user].full_name.to_s.downcase] }
@@ -63,20 +96,31 @@ class ScoreboardController < ApplicationController
         group_users = g.users.where(enabled: true)
         group_total = 0
         group_deducted = 0
+        group_bonus = 0
         group_members = group_users.map do |u|
           user_raw_total = 0
           @problems.each do |p|
             user_raw_total += @scores[u.id][p.id] || 0
           end
           user_deducted = @user_deductions[u.id] || 0
-          user_final = [0.0, user_raw_total - user_deducted].max
+          
+          # Calculate bonus for this user
+          user_bonus = 0
+          @problems.each do |p|
+            if @first_blood_users[p.id] == u.id
+              user_bonus += p.bonus_first_blood
+            end
+          end
+
+          user_final = [0.0, user_raw_total - user_deducted + user_bonus].max
           group_total += user_final
           group_deducted += user_deducted
-          { user: u, total_score: user_final, deducted_score: user_deducted }
+          group_bonus += user_bonus
+          { user: u, total_score: user_final, deducted_score: user_deducted, bonus_score: user_bonus }
         end
         group_members.sort_by! { |m| [-m[:total_score], m[:user].full_name.to_s.downcase] }
         
-        { group: g, total_score: group_total, deducted_score: group_deducted, members: group_members }
+        { group: g, total_score: group_total, deducted_score: group_deducted, bonus_score: group_bonus, members: group_members }
       end
       @leaderboard.sort_by! { |entry| [-entry[:total_score], entry[:group].name.to_s.downcase] }
       
