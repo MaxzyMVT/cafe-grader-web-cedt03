@@ -15,11 +15,8 @@
     .row.g-3#problem-selection-container{data: { 'form--filter-problem-target': 'idSelect' }}
       .col-12
         .d-flex.gap-2.mb-2
-          %button.btn.btn-sm.btn-outline-primary{type: 'button', data: { action: 'click->form--filter-problem#selectAll' }} 
-            %i.mi.mi-done-all.me-1
-            Select All
           %button.btn.btn-sm.btn-outline-secondary{type: 'button', data: { action: 'click->form--filter-problem#clearAll' }} 
-            %i.mi.mi-clear.me-1
+            %i.mi.mi-backspace.me-1
             Clear All
         
         = select_tag 'probs[ids][]',

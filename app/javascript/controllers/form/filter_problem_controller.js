@@ -64,18 +64,6 @@ export default class extends Controller {
     };
   }
 
-  selectAll() {
-    // Switch to 'ids' option first
-    const radio = this.useOptionTargets.find(r => r.value === 'ids');
-    if (radio) {
-      radio.checked = true;
-      this.toggleSelects();
-    }
-
-    const allIds = $(this.idSelectInputTarget).find('option').map((i, e) => e.value).get();
-    $(this.idSelectInputTarget).val(allIds).trigger('change');
-  }
-
   clearAll() {
     // Switch to 'ids' option first
     const radio = this.useOptionTargets.find(r => r.value === 'ids');
@@ -84,6 +72,7 @@ export default class extends Controller {
       this.toggleSelects();
     }
 
-    $(this.idSelectInputTarget).val([]).trigger('change');
+    // Use val(null) for Select2 to properly clear
+    $(this.idSelectInputTarget).val(null).trigger('change');
   }
 }

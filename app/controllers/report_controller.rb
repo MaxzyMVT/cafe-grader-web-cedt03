@@ -425,15 +425,17 @@ class ReportController < ApplicationController
     # 8. Score Growth
     if @since_time && @until_time
       # Helper to get final scores (with deductions) at a given time
-      def get_total_scores_at(time, admin_ids, group_mode = false)
+      def get_total_scores_at(time, admin_ids, prob_ids, group_mode = false)
         # 1. Max points per user/problem
         max_pts = Submission.where("submitted_at <= ?", time)
+          .where(problem_id: prob_ids)
           .group(:user_id, :problem_id)
           .select('user_id, problem_id, MAX(points) as max_pts')
 
         # 2. LLM costs per user/problem
         llm_costs = Comment.joins("INNER JOIN submissions ON comments.commentable_id = submissions.id AND comments.commentable_type = 'Submission'")
           .where("submissions.submitted_at <= ?", time)
+          .where("submissions.problem_id": prob_ids)
           .where(kind: 'llm_assist')
           .group('submissions.user_id, submissions.problem_id')
           .select('submissions.user_id, submissions.problem_id, SUM(comments.cost) as llm_cost')
@@ -442,6 +444,7 @@ class ReportController < ApplicationController
         hint_costs = Comment.joins(:comment_reveals)
           .where("comment_reveals.created_at <= ?", time)
           .where(commentable_type: 'Problem')
+          .where(commentable_id: prob_ids)
           .group('comment_reveals.user_id, comments.commentable_id')
           .select('comment_reveals.user_id, comments.commentable_id as problem_id, SUM(comments.cost) as hint_cost')
 
@@ -466,8 +469,8 @@ class ReportController < ApplicationController
         end
       end
 
-      since_scores = get_total_scores_at(@since_time, admin_ids, params[:group_mode] == '1')
-      until_scores = get_total_scores_at(@until_time, admin_ids, params[:group_mode] == '1')
+      since_scores = get_total_scores_at(@since_time, admin_ids, selected_prob_ids, params[:group_mode] == '1')
+      until_scores = get_total_scores_at(@until_time, admin_ids, selected_prob_ids, params[:group_mode] == '1')
 
       @score_growth = {}
       until_scores.each do |id, score|
