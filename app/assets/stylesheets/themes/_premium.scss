@@ -169,13 +169,28 @@
   .card, .modal-content, .list-group, .alert {
     background: rgba(255, 255, 255, 0.05) !important;
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 16px !important;
     overflow: hidden !important;
     isolation: isolate;
+    -webkit-mask-image: -webkit-radial-gradient(white, black); // Force clipping of backdrop-filter
+    mask-image: radial-gradient(white, black);
     color: #e8e8f0 !important;
-    .card-header { background: rgba(255, 255, 255, 0.03) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; color: #d0c4f0 !important; }
-    .card-footer { background: rgba(255, 255, 255, 0.02) !important; border-top: 1px solid rgba(255, 255, 255, 0.08) !important; }
+    
+    .card-header, .modal-header { 
+      background: rgba(255, 255, 255, 0.03) !important; 
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; 
+      color: #d0c4f0 !important;
+      border-top-left-radius: 16px !important;
+      border-top-right-radius: 16px !important;
+    }
+    .card-footer, .modal-footer { 
+      background: rgba(255, 255, 255, 0.02) !important; 
+      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-bottom-left-radius: 16px !important;
+      border-bottom-right-radius: 16px !important;
+    }
   }
 
   // Forms

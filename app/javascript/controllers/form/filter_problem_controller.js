@@ -72,7 +72,9 @@ export default class extends Controller {
       this.toggleSelects();
     }
 
-    // Use val(null) for Select2 to properly clear
-    $(this.idSelectInputTarget).val(null).trigger('change');
+    // Clear all possible select targets to be thorough
+    if (this.hasIdSelectInputTarget) $(this.idSelectInputTarget).val(null).trigger('change').trigger('change.select2');
+    if (this.hasGroupSelectTarget) $(this.groupSelectTarget).val(null).trigger('change').trigger('change.select2');
+    if (this.hasTagSelectTarget) $(this.tagSelectTarget).val(null).trigger('change').trigger('change.select2');
   }
 }
