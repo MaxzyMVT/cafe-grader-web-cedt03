@@ -129,6 +129,8 @@
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
     overflow: hidden;
+    & > :first-child { border-top-left-radius: inherit; border-top-right-radius: inherit; }
+    & > :last-child { border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; }
     .dropdown-item {
       color: #d0c4f0 !important;
       &:hover, &:focus { background: rgba(139, 92, 246, 0.15) !important; color: #ffffff !important; }
@@ -178,18 +180,20 @@
     mask-image: radial-gradient(white, black);
     color: #e8e8f0 !important;
     
+    // Ensure all internal backgrounds are clipped by inheriting radius
+    & > [class*="card-"], & > [class*="modal-"], & > .table-responsive, & > .list-group-item, & > .dataTables_wrapper {
+      border-radius: inherit !important;
+      overflow: hidden !important;
+    }
+
     .card-header, .modal-header { 
       background: rgba(255, 255, 255, 0.03) !important; 
       border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; 
       color: #d0c4f0 !important;
-      border-top-left-radius: 16px !important;
-      border-top-right-radius: 16px !important;
     }
     .card-footer, .modal-footer { 
       background: rgba(255, 255, 255, 0.02) !important; 
       border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-      border-bottom-left-radius: 16px !important;
-      border-bottom-right-radius: 16px !important;
     }
   }
 
