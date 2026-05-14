@@ -171,6 +171,7 @@
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 16px !important;
+    overflow: hidden;
     color: #e8e8f0 !important;
     .card-header { background: rgba(255, 255, 255, 0.03) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; color: #d0c4f0 !important; }
     .card-footer { background: rgba(255, 255, 255, 0.02) !important; border-top: 1px solid rgba(255, 255, 255, 0.08) !important; }
