@@ -8,10 +8,9 @@ export default class extends Controller {
     this.filterChanged()
 
     // select2 use jQuery event system
-    // I have tried using this.groupSelectTarget.addEventListener or using data-action but it does not work
-    $(this.groupSelectTarget).on('change', () => { this.dispatchChange() });
-    $(this.idSelectTarget).on('change', () => { this.dispatchChange() });
-    $(this.tagSelectTarget).on('change', () => { this.dispatchChange() });
+    if (this.hasGroupSelectTarget) $(this.groupSelectTarget).on('change', () => { this.dispatchChange() });
+    if (this.hasIdSelectInputTarget) $(this.idSelectInputTarget).on('change', () => { this.dispatchChange() });
+    if (this.hasTagSelectTarget) $(this.tagSelectTarget).on('change', () => { this.dispatchChange() });
   }
 
   /**
@@ -27,9 +26,9 @@ export default class extends Controller {
    */
   toggleSelects() {
     const selectedValue = this.selectedOptionValue;
-    $(this.idSelectTarget).prop('disabled', selectedValue !== 'ids').trigger('change');
-    $(this.groupSelectTarget).prop('disabled', selectedValue !== 'groups').trigger('change');
-    $(this.tagSelectTarget).prop('disabled', selectedValue !== 'tags').trigger('change');
+    $(this.idSelectInputTarget).prop('disabled', selectedValue !== 'ids').trigger('change');
+    if (this.hasGroupSelectTarget) $(this.groupSelectTarget).prop('disabled', selectedValue !== 'groups').trigger('change');
+    if (this.hasTagSelectTarget) $(this.tagSelectTarget).prop('disabled', selectedValue !== 'tags').trigger('change');
   }
 
   /**
@@ -66,11 +65,25 @@ export default class extends Controller {
   }
 
   selectAll() {
+    // Switch to 'ids' option first
+    const radio = this.useOptionTargets.find(r => r.value === 'ids');
+    if (radio) {
+      radio.checked = true;
+      this.toggleSelects();
+    }
+
     const allIds = $(this.idSelectInputTarget).find('option').map((i, e) => e.value).get();
     $(this.idSelectInputTarget).val(allIds).trigger('change');
   }
 
   clearAll() {
+    // Switch to 'ids' option first
+    const radio = this.useOptionTargets.find(r => r.value === 'ids');
+    if (radio) {
+      radio.checked = true;
+      this.toggleSelects();
+    }
+
     $(this.idSelectInputTarget).val([]).trigger('change');
   }
 }

@@ -7,22 +7,21 @@
       .col-12
         .form-check.form-check-inline
           = radio_button_tag :'probs[use]', :all, params.dig(:probs, :use) != 'ids', class: 'form-check-input', id: 'probs_use_all', data: { action: 'change->form--filter-problem#filterChanged', 'form--filter-problem-target': 'useOption' }
-          = label_tag :probs_use_all, "All Problems", class: 'form-check-label'
+          = label_tag :probs_use_all, "All Problems", class: 'form-check-label fw-bold'
         .form-check.form-check-inline
           = radio_button_tag :'probs[use]', :ids, params.dig(:probs, :use) == 'ids', class: 'form-check-input', id: 'probs_use_ids', data: { action: 'change->form--filter-problem#filterChanged', 'form--filter-problem-target': 'useOption' }
-          = label_tag :probs_use_ids, "Select Problems", class: 'form-check-label'
+          = label_tag :probs_use_ids, "Specific Problems", class: 'form-check-label fw-bold'
     
     .row.g-3#problem-selection-container{data: { 'form--filter-problem-target': 'idSelect' }}
       .col-12
         .d-flex.gap-2.mb-2
-          %button.btn.btn-sm.btn-outline-secondary{type: 'button', data: { action: 'click->form--filter-problem#selectAll' }} Select All
-          %button.btn.btn-sm.btn-outline-secondary{type: 'button', data: { action: 'click->form--filter-problem#clearAll' }} Clear All
+          %button.btn.btn-sm.btn-outline-primary{type: 'button', data: { action: 'click->form--filter-problem#selectAll' }} 
+            %i.mi.mi-done-all.me-1
+            Select All
+          %button.btn.btn-sm.btn-outline-secondary{type: 'button', data: { action: 'click->form--filter-problem#clearAll' }} 
+            %i.mi.mi-clear.me-1
+            Clear All
         
         = select_tag 'probs[ids][]',
             options_for_select(@problems_all.collect {|p| ["[#{p.name}] #{p.full_name}", p.id]}, params.dig(:probs, :ids)),
             { class: 'select2 form-control', multiple: "true", data: { 'form--filter-problem-target': 'idSelectInput' } }
-
-    .mt-3
-      = hidden_field_tag :since_datetime, params[:since_datetime]
-      = hidden_field_tag :until_datetime, params[:until_datetime]
-      = hidden_field_tag :language_id, params[:language_id]

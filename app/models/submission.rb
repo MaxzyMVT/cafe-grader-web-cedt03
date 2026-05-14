@@ -342,7 +342,7 @@ class Submission < ApplicationRecord
   end
   
   def set_effective_code_length
-    self.effective_code_length = source&.length
+    self.effective_code_length = source.presence&.length || binary.presence&.length
   end
 
   public

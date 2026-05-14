@@ -239,8 +239,8 @@ class ReportController < ApplicationController
     @problems_all = @current_user.problems_for_action(:report).order(:date_added)
     
     # if we have problems from selected_problems before_action, use them
-    # if params[:probs] is missing, default to ALL reportable problems
-    if params[:probs].present?
+    # if params[:probs] is missing OR invalid, default to ALL reportable problems
+    if params[:probs].present? && @problems.any?
       selected_prob_ids = @problems.ids
     else
       selected_prob_ids = @problems_all.ids
@@ -267,6 +267,8 @@ class ReportController < ApplicationController
     if params[:language_id].present? && params[:language_id] != 'all'
       subs_scope = subs_scope.where(language_id: params[:language_id])
     end
+
+    admin_ids = Role.find_by(name: 'admin')&.users&.pluck(:id) || []
 
     # Exclude admins
     admin_ids = User.joins(:roles).where(roles: { name: 'admin' }).pluck(:id)
@@ -363,8 +365,9 @@ class ReportController < ApplicationController
       @least_chars = {}
     end
     
-    # 6. Fastest Runtime
-    min_time = passed_scope.where("max_runtime IS NOT NULL AND max_runtime < 999999")
+    # 6. Fastest Runtime (Exclude output-only problems)
+    min_time = passed_scope.joins(:problem).where(problems: {output_only: false})
+      .where("max_runtime IS NOT NULL AND max_runtime < 999999")
       .group('submissions.user_id, submissions.problem_id')
       .select('submissions.user_id, MIN(max_runtime) as min_time')
     
@@ -390,8 +393,9 @@ class ReportController < ApplicationController
       @fastest_runtime = {}
     end
 
-    # 7. Least Memory
-    min_mem = passed_scope.where("peak_memory IS NOT NULL AND peak_memory < 999999")
+    # 7. Least Memory (Exclude output-only problems)
+    min_mem = passed_scope.joins(:problem).where(problems: {output_only: false})
+      .where("peak_memory IS NOT NULL AND peak_memory < 999999")
       .group('submissions.user_id, submissions.problem_id')
       .select('submissions.user_id, MIN(peak_memory) as min_mem')
     
