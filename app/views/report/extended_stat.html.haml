@@ -5,9 +5,9 @@
         %small.text-secondary.text-uppercase.fw-bold.ls-1 Report
         %h2.fw-bold.text-dark.mb-0 Statistics
     
-    .card.card-shadow.mb-4
-      .card-body
-        = form_with url: extended_stat_report_path, method: :get, data: { turbo_frame: "statistics_content" }, class: "row g-3 align-items-end" do |f|
+    = form_with url: extended_stat_report_path, method: :get, data: { turbo_frame: "statistics_content" } do |f|
+      .card.card-shadow.mb-4
+        .card-body.row.g-3.align-items-end
           .col-md-3
             = f.label :since_datetime, "Since", class: "form-label"
             = f.text_field :since_datetime, value: @since_time&.strftime('%d/%b/%Y %H:%M'), class: "form-control tempus-dominus", placeholder: "DD/MMM/YYYY HH:MM", data: { 'td-template': 'datetime' }
@@ -19,6 +19,8 @@
             = f.collection_select :language_id, @languages, :id, :pretty_name, { include_blank: "All Languages", selected: params[:language_id] }, class: "form-select"
           .col-md-3
             = f.submit "Filter", class: "btn btn-primary w-100"
+
+      = render 'problem_select_extended'
 
     .row.g-4
       .col-md-6.col-lg-4
@@ -78,7 +80,7 @@
                   %span.badge.bg-light.text-dark{style: 'min-width: 2rem;'}= i + 1
                   .flex-grow-1.text-truncate
                     = User.find_by(id: user_id)&.full_name || "User ##{user_id}"
-                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{data[:value]} chars"
+                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{number_with_delimiter(data[:value])} bytes"
 
       .col-md-6.col-lg-4
         .card.card-shadow.h-100
@@ -106,7 +108,7 @@
                   %span.badge.bg-light.text-dark{style: 'min-width: 2rem;'}= i + 1
                   .flex-grow-1.text-truncate
                     = User.find_by(id: user_id)&.full_name || "User ##{user_id}"
-                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{data[:value]} KB"
+                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{number_with_delimiter(data[:value])} KB"
 
     .row.mt-4
       .col-md-6

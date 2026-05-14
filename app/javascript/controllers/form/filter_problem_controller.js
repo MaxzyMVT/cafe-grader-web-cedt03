@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = [ "useOption", "groupSelect", "idSelect", "tagSelect" ]
+  static targets = [ "useOption", "groupSelect", "idSelect", "tagSelect", "idSelectInput" ]
 
   connect() {
     // Dispatch the initial state so listeners can load with the default values
@@ -59,9 +59,18 @@ export default class extends Controller {
   get params() {
     return {
       'probs[use]': this.selectedOptionValue,
-      'probs[ids][]': $(this.idSelectTarget).val(),
+      'probs[ids][]': $(this.idSelectInputTarget).val(),
       'probs[group_ids][]': $(this.groupSelectTarget).val(),
       'probs[tag_ids][]': $(this.tagSelectTarget).val()
     };
+  }
+
+  selectAll() {
+    const allIds = $(this.idSelectInputTarget).find('option').map((i, e) => e.value).get();
+    $(this.idSelectInputTarget).val(allIds).trigger('change');
+  }
+
+  clearAll() {
+    $(this.idSelectInputTarget).val([]).trigger('change');
   }
 }

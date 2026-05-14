@@ -2,7 +2,7 @@ class ReportController < ApplicationController
   include ProblemAuthorization
 
   before_action :check_valid_login
-  before_action :selected_problems, only: [ :show_max_score, :max_score_table, :submission_query, :max_score_query, :ai_query ]
+  before_action :selected_problems, only: [ :show_max_score, :max_score_table, :submission_query, :max_score_query, :ai_query, :extended_stat ]
   before_action :selected_users, only: [ :show_max_score, :max_score_table, :submission_query, :max_score_query, :ai_query ]
 
   # for all action except hall of fame (which is viewable by any user if the feature is enabled)
@@ -236,6 +236,16 @@ class ReportController < ApplicationController
   def extended_stat
     # Allow admins and users with report access
     # Parameters for filtering
+    @problems_all = @current_user.problems_for_action(:report).order(:date_added)
+    
+    # if we have problems from selected_problems before_action, use them
+    # if params[:probs] is missing, default to ALL reportable problems
+    if params[:probs].present?
+      selected_prob_ids = @problems.ids
+    else
+      selected_prob_ids = @problems_all.ids
+    end
+
     @languages = Language.all
 
     begin
@@ -251,6 +261,7 @@ class ReportController < ApplicationController
 
     # Base submissions scope based on time
     subs_scope = Submission.joins("INNER JOIN problems ON problems.id = submissions.problem_id")
+    subs_scope = subs_scope.where(problem_id: selected_prob_ids)
     subs_scope = subs_scope.where("submitted_at >= ?", @since_time) if @since_time
     subs_scope = subs_scope.where("submitted_at <= ?", @until_time) if @until_time
     if params[:language_id].present? && params[:language_id] != 'all'
