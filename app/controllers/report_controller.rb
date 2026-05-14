@@ -337,9 +337,10 @@ class ReportController < ApplicationController
 
     # The following require getting the "best" passed submission per problem per user
     
-    # 5. Most Efficient Coder (Least accumulated code length)
-    # Exclude the "999999" placeholder and NULLs
-    min_len = passed_scope.where("effective_code_length IS NOT NULL AND effective_code_length < 999999")
+    # 5. Most Efficient Coder (Shortest Code)
+    # Exclude the "999999" placeholder, NULLs, and output-only problems
+    min_len = passed_scope.joins(:problem).where(problems: {output_only: false})
+      .where("effective_code_length IS NOT NULL AND effective_code_length < 999999")
       .group('submissions.user_id, submissions.problem_id')
       .select('submissions.user_id, MIN(effective_code_length) as min_len')
     
