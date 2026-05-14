@@ -1,7 +1,7 @@
 %h1 Account Setting
 .row
   .col-md-6
-    = simple_form_for @current_user, url: update_self_users_path do |f|
+    = simple_form_for @current_user, url: update_self_users_path, html: { id: 'user-settings-form' } do |f|
       = f.association :default_language, collection: Language.all, include_blank: '-- No default language --'.html_safe
       - if GraderConfiguration['system.theme_selector_enabled']
         = f.input :theme, collection: User::THEMES.map { |t| [t.capitalize, t] }, include_blank: false, label: 'UI Theme', hint: 'Choose your preferred visual theme for the grader interface.'
@@ -16,7 +16,7 @@
       .d-flex.flex-wrap.gap-3
         - User::THEMES.each do |theme_name|
           - is_active = (@current_user.theme || 'default') == theme_name
-          .card.theme-preview-card.shadow-sm{style: 'width: 180px; cursor: pointer; transition: all 0.2s ease-in-out; border-radius: 12px; overflow: hidden;', class: (is_active ? 'border-primary border-2 shadow' : ''), onclick: "document.getElementById('user_theme').value = '#{theme_name}'; document.querySelector('form').requestSubmit();"}
+          .card.theme-preview-card.shadow-sm{style: 'width: 180px; cursor: pointer; transition: all 0.2s ease-in-out; border-radius: 12px; overflow: hidden;', class: (is_active ? 'border-primary border-2 shadow' : ''), onclick: "document.getElementById('user_theme').value = '#{theme_name}'; document.body.dataset.theme = '#{theme_name}'; document.getElementById('user-settings-form').requestSubmit();"}
             .card-body.text-center.py-3
               - case theme_name
               - when 'default'

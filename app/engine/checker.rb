@@ -10,9 +10,9 @@ class Checker
   def check_command(evaluation_type, input_file, output_file, ans_file)
     case evaluation_type
     when 'default'
-      return "diff -q -b -B -Z #{output_file} #{ans_file}"
+      return "diff -q -b -B -Z --strip-trailing-cr #{output_file} #{ans_file}"
     when 'exact'
-      return "diff -q #{output_file} #{ans_file}"
+      return "diff -q --strip-trailing-cr #{output_file} #{ans_file}"
     when 'relative'
       prog = Rails.root.join 'lib', 'checker', (evaluation_type + ".rb")
       return "#{prog} #{input_file} #{output_file} #{ans_file}"
