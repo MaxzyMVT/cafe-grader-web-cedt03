@@ -62,6 +62,7 @@
         = form.input :bonus_first_blood, label: 'First Blood Bonus Point', tooltip: 'Additional points for the first active user to solve this problem'
         = form.input :compilation_type, collection: [['[Self Contained] The submissions can be compiled by itself','self_contained'],['[With managers] The submission will be compiled with the managers','with_managers'],['[Viva Exam] LLM-driven Socratic interview + rubric grading','viva_exam']], wrapper: :horizontal_select, tooltip: 'For Viva Exam, attach llm_prompt tags (interviewer persona + rubric) and viva_grounding tags (course materials). Test-case datasets do not apply.', include_blank: false
         = form.input :submission_filename
+        = form.input :output_only, wrapper: :horizontal_boolean, tooltip: 'If set, the grader will not compile or run the submission. It will only grade the submitted output file(s) against the test cases. Useful for "output-only" tasks.'
         = form.button :submit, class: 'btn btn-primary me-2'
       %div#description.my-3.tab-pane.fade{class: (' show active ' if @active_problem_tab == '#description')}
         -# Description

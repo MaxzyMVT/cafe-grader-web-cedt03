@@ -193,6 +193,35 @@
     --bs-table-striped-bg: rgba(26, 34, 64, 0.4);
     --bs-table-hover-bg: rgba(31, 43, 71, 0.5);
     thead th { background-color: #1a2744 !important; color: #c8d6e5 !important; border-color: #2d2d44 !important; }
+
+    .table-success, &.table-success, tr.table-success {
+      --bs-table-bg: rgba(46, 204, 113, 0.15) !important;
+      --bs-table-color: #2ecc71 !important;
+      --bs-table-border-color: rgba(46, 204, 113, 0.2) !important;
+      --bs-table-hover-bg: rgba(46, 204, 113, 0.25) !important;
+      --bs-table-hover-color: #2ecc71 !important;
+    }
+    .table-info, &.table-info, tr.table-info {
+      --bs-table-bg: rgba(52, 152, 219, 0.15) !important;
+      --bs-table-color: #3498db !important;
+      --bs-table-border-color: rgba(52, 152, 219, 0.2) !important;
+      --bs-table-hover-bg: rgba(52, 152, 219, 0.25) !important;
+      --bs-table-hover-color: #3498db !important;
+    }
+    .table-warning, &.table-warning, tr.table-warning {
+      --bs-table-bg: rgba(241, 196, 15, 0.15) !important;
+      --bs-table-color: #f1c40f !important;
+      --bs-table-border-color: rgba(241, 196, 15, 0.2) !important;
+      --bs-table-hover-bg: rgba(241, 196, 15, 0.25) !important;
+      --bs-table-hover-color: #f1c40f !important;
+    }
+    .table-secondary, &.table-secondary, tr.table-secondary {
+      --bs-table-bg: rgba(255, 255, 255, 0.08) !important;
+      --bs-table-color: #8e99a4 !important;
+      --bs-table-border-color: rgba(255, 255, 255, 0.12) !important;
+      --bs-table-hover-bg: rgba(255, 255, 255, 0.15) !important;
+      --bs-table-hover-color: #8e99a4 !important;
+    }
   }
 
   // Alerts

@@ -21,6 +21,7 @@ class Submission < ApplicationRecord
 
   before_validation :assign_language
   before_save :assign_latest_number_if_new_recond
+  before_save :set_effective_code_length
 
   validates_length_of :source, maximum: 1_000_000, allow_blank: true, message: 'code too long, the limit is 1,000,000 bytes'
   validate :must_have_valid_problem
@@ -114,7 +115,7 @@ class Submission < ApplicationRecord
 
 
   def set_grading_complete(point, grading_text, max_time, max_mem)
-    update(points: point, status: :done, graded_at: Time.zone.now, grader_comment: grading_text, max_runtime: max_time, peak_memory: max_mem)
+    update(points: point, status: :done, graded_at: Time.zone.now, grader_comment: grading_text, max_runtime: max_time, peak_memory: max_mem, effective_code_length: source&.length)
   end
 
   def set_grading_error(error_text)
@@ -338,6 +339,10 @@ class Submission < ApplicationRecord
       remaining = self.problem.submissions_remaining_for(self.user)
       errors.add(:base, "Submission limit reached: this problem allows a maximum of #{self.problem.max_submissions} submissions (#{remaining} remaining)")
     end
+  end
+  
+  def set_effective_code_length
+    self.effective_code_length = source.presence&.length || binary.presence&.length
   end
 
   public

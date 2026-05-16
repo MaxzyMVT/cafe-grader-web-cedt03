@@ -1,0 +1,33 @@
+.card.card-shadow.mb-4
+  .card-header.bg-light.fw-bold
+    %i.mi.mi-filter-list.me-2
+    Filter Problems
+  .card-body
+    .row.mb-3
+      .col-12
+        .form-check.form-check-inline
+          = radio_button_tag :'probs[use]', :all, params.dig(:probs, :use) != 'ids', class: 'form-check-input', id: 'probs_use_all', data: { action: "change->report-filter#modeChanged" }
+          = label_tag :probs_use_all, "All Problems", class: 'form-check-label fw-bold'
+        .form-check.form-check-inline
+          = radio_button_tag :'probs[use]', :ids, params.dig(:probs, :use) == 'ids', class: 'form-check-input', id: 'probs_use_ids', data: { action: "change->report-filter#modeChanged" }
+          = label_tag :probs_use_ids, "Specific Problems", class: 'form-check-label fw-bold'
+
+    -# Checklist — visibility handled by Stimulus
+    .problem-checklist-container{data: { 'report-filter-target': 'checklistContainer' }}
+      .d-flex.gap-2.mb-3.align-items-center
+        .input-group.input-group-sm.flex-grow-1
+          %span.input-group-text
+            %i.mi.mi-search.md-18
+          %input#problem_search.form-control{type: 'text', placeholder: 'Search problems...', onkeyup: "let q=this.value.toLowerCase(); document.querySelectorAll('.problem-check-item').forEach(i => { let n=i.dataset.name.toLowerCase(); i.classList.toggle('d-none', !n.includes(q)) })"}
+        %button.btn.btn-sm.btn-outline-secondary{type: 'button', data: { action: 'click->report-filter#clearAll' }}
+          %i.mi.mi-backspace.me-1
+          Clear All
+
+      .border.rounded.bg-white{style: 'max-height: 400px; overflow-y: auto;'}
+        - selected_ids = Array(params.dig(:probs, :ids)).map(&:to_s)
+        - @problems_all.each do |p|
+          .form-check.py-2.border-bottom.problem-check-item{data: { name: "[#{p.name}] #{p.full_name}" }, style: 'padding-left: 2.5rem;'}
+            = check_box_tag "probs[ids][]", p.id, selected_ids.include?(p.id.to_s), class: 'form-check-input', id: "prob_check_#{p.id}", data: { 'report-filter-target': 'checkbox' }
+            = label_tag "prob_check_#{p.id}", class: 'form-check-label w-100', style: 'cursor:pointer;' do
+              %span.fw-semibold.text-dark= p.name
+              %span.text-muted.ms-1= p.full_name
