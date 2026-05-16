@@ -7,6 +7,11 @@ export default class extends Controller {
 
   connect() {
     this.handleFrameHasLoaded()
+
+    // Destroy Select2 BEFORE Turbo caches the page.
+    // This prevents duplication when Turbo restores the cached page.
+    this._beforeCacheHandler = () => this._teardownSelect2()
+    document.addEventListener('turbo:before-cache', this._beforeCacheHandler)
   }
 
   handleFrameHasLoaded = () => {
@@ -42,6 +47,14 @@ export default class extends Controller {
     });
   }
 
+  _teardownSelect2() {
+    $(this.element).find(".select2").each((i, el) => {
+      if ($(el).data('select2')) {
+        $(el).select2('destroy');
+      }
+    });
+  }
+
   initializeTempusDominus() {
     const tdTriggerList = this.element.querySelectorAll('.tempus-dominus')
 
@@ -61,6 +74,9 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this._teardownSelect2();
+    if (this._beforeCacheHandler) {
+      document.removeEventListener('turbo:before-cache', this._beforeCacheHandler);
+    }
   }
 }
-

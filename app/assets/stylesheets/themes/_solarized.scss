@@ -188,6 +188,35 @@
     --bs-table-hover-bg: rgba(238, 232, 213, 0.7);
     --bs-table-border-color: #eee8d5;
     thead th { background-color: #eee8d5 !important; color: #657b83 !important; border-bottom: 2px solid #ddd6c1 !important; }
+
+    .table-success, &.table-success, tr.table-success {
+      --bs-table-bg: #e2eebc !important;
+      --bs-table-color: #3d4900 !important;
+      --bs-table-border-color: #d3e2a2 !important;
+      --bs-table-hover-bg: #d3e2a2 !important;
+      --bs-table-hover-color: #3d4900 !important;
+    }
+    .table-info, &.table-info, tr.table-info {
+      --bs-table-bg: #d1ecf1 !important;
+      --bs-table-color: #0c5460 !important;
+      --bs-table-border-color: #bee5eb !important;
+      --bs-table-hover-bg: #bee5eb !important;
+      --bs-table-hover-color: #0c5460 !important;
+    }
+    .table-warning, &.table-warning, tr.table-warning {
+      --bs-table-bg: #fcf4d4 !important;
+      --bs-table-color: #5d4600 !important;
+      --bs-table-border-color: #fbe69c !important;
+      --bs-table-hover-bg: #fbe69c !important;
+      --bs-table-hover-color: #5d4600 !important;
+    }
+    .table-secondary, &.table-secondary, tr.table-secondary {
+      --bs-table-bg: #eee8d5 !important;
+      --bs-table-color: #586e75 !important;
+      --bs-table-border-color: #ddd6c1 !important;
+      --bs-table-hover-bg: #ddd6c1 !important;
+      --bs-table-hover-color: #586e75 !important;
+    }
   }
 
   // Alerts

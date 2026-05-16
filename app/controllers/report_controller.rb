@@ -239,9 +239,14 @@ class ReportController < ApplicationController
     @problems_all = @current_user.problems_for_action(:report).order(:date_added)
     
     # if we have problems from selected_problems before_action, use them
-    # if params[:probs] is missing OR invalid, default to ALL reportable problems
-    if params[:probs].present? && @problems.any?
-      selected_prob_ids = @problems.ids
+    # If the user explicitly selected 'Specific Problems' (ids) mode but selected nothing,
+    # calculate with nothing. Otherwise, default to ALL reportable problems.
+    if params[:probs].present?
+      if params.dig(:probs, :use) == 'ids'
+        selected_prob_ids = @problems.ids
+      else
+        selected_prob_ids = @problems_all.ids
+      end
     else
       selected_prob_ids = @problems_all.ids
     end
@@ -345,7 +350,7 @@ class ReportController < ApplicationController
       .select('submissions.user_id, MIN(effective_code_length) as min_len')
     
     if params[:group_mode] == '1'
-      chars_stats = Group.joins(users: "INNER JOIN (#{min_len.to_sql}) ml ON users.id = ml.user_id")
+      chars_stats = Group.joins(:users).joins("INNER JOIN (#{min_len.to_sql}) ml ON users.id = ml.user_id")
         .group('groups.id')
         .select('groups.id', 'COUNT(ml.min_len) as solved_count', 'SUM(ml.min_len) as total_chars')
         .index_by(&:id)
@@ -373,7 +378,7 @@ class ReportController < ApplicationController
       .select('submissions.user_id, MIN(max_runtime) as min_time')
     
     if params[:group_mode] == '1'
-      time_stats = Group.joins(users: "INNER JOIN (#{min_time.to_sql}) mt ON users.id = mt.user_id")
+      time_stats = Group.joins(:users).joins("INNER JOIN (#{min_time.to_sql}) mt ON users.id = mt.user_id")
         .group('groups.id')
         .select('groups.id', 'COUNT(mt.min_time) as solved_count', 'SUM(mt.min_time) as total_time')
         .index_by(&:id)
@@ -401,7 +406,7 @@ class ReportController < ApplicationController
       .select('submissions.user_id, MIN(peak_memory) as min_mem')
     
     if params[:group_mode] == '1'
-      mem_stats = Group.joins(users: "INNER JOIN (#{min_mem.to_sql}) mm ON users.id = mm.user_id")
+      mem_stats = Group.joins(:users).joins("INNER JOIN (#{min_mem.to_sql}) mm ON users.id = mm.user_id")
         .group('groups.id')
         .select('groups.id', 'COUNT(mm.min_mem) as solved_count', 'SUM(mm.min_mem) as total_mem')
         .index_by(&:id)
@@ -424,51 +429,6 @@ class ReportController < ApplicationController
 
     # 8. Score Growth
     if @since_time && @until_time
-      # Helper to get final scores (with deductions) at a given time
-      def get_total_scores_at(time, admin_ids, prob_ids, group_mode = false)
-        # 1. Max points per user/problem
-        max_pts = Submission.where("submitted_at <= ?", time)
-          .where(problem_id: prob_ids)
-          .group(:user_id, :problem_id)
-          .select('user_id, problem_id, MAX(points) as max_pts')
-
-        # 2. LLM costs per user/problem
-        llm_costs = Comment.joins("INNER JOIN submissions ON comments.commentable_id = submissions.id AND comments.commentable_type = 'Submission'")
-          .where("submissions.submitted_at <= ?", time)
-          .where("submissions.problem_id": prob_ids)
-          .where(kind: 'llm_assist')
-          .group('submissions.user_id, submissions.problem_id')
-          .select('submissions.user_id, submissions.problem_id, SUM(comments.cost) as llm_cost')
-
-        # 3. Hint costs per user/problem
-        hint_costs = Comment.joins(:comment_reveals)
-          .where("comment_reveals.created_at <= ?", time)
-          .where(commentable_type: 'Problem')
-          .where(commentable_id: prob_ids)
-          .group('comment_reveals.user_id, comments.commentable_id')
-          .select('comment_reveals.user_id, comments.commentable_id as problem_id, SUM(comments.cost) as hint_cost')
-
-        if group_mode
-          Group.joins(users: "INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
-            .joins("INNER JOIN problems ON problems.id = mp.problem_id")
-            .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
-            .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
-            .where.not(users: {id: admin_ids})
-            .group('groups.id')
-            .select('groups.id', 'SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
-            .each_with_object({}) { |g, h| h[g.id] = g.total_score.to_f }
-        else
-          User.where.not(id: admin_ids)
-            .joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
-            .joins("INNER JOIN problems ON problems.id = mp.problem_id")
-            .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
-            .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
-            .group('users.id')
-            .select('users.id', 'SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
-            .each_with_object({}) { |u, h| h[u.id] = u.total_score.to_f }
-        end
-      end
-
       since_scores = get_total_scores_at(@since_time, admin_ids, selected_prob_ids, params[:group_mode] == '1')
       until_scores = get_total_scores_at(@until_time, admin_ids, selected_prob_ids, params[:group_mode] == '1')
 
@@ -477,6 +437,7 @@ class ReportController < ApplicationController
         growth = score - (since_scores[id] || 0)
         @score_growth[id] = growth if growth > 0.01 # filter out tiny growth from floats
       end
+
       @score_growth = @score_growth.sort_by { |_, v| -v }.take(10).to_h
       if params[:group_mode] == '1'
         @score_growth_groups = Group.where(id: @score_growth.keys).index_by(&:id)
@@ -849,5 +810,50 @@ ORDER BY submitted_at
 
     def set_problem
       @problem = Problem.find(params[:id])
+    end
+
+    # Helper to get final scores (with deductions) at a given time
+    def get_total_scores_at(time, admin_ids, prob_ids, group_mode = false)
+      # 1. Max points per user/problem
+      max_pts = Submission.where("submitted_at <= ?", time)
+        .where(problem_id: prob_ids)
+        .group(:user_id, :problem_id)
+        .select('user_id, problem_id, MAX(points) as max_pts')
+
+      # 2. LLM costs per user/problem
+      llm_costs = Comment.joins("INNER JOIN submissions ON comments.commentable_id = submissions.id AND comments.commentable_type = 'Submission'")
+        .where("submissions.submitted_at <= ?", time)
+        .where("submissions.problem_id": prob_ids)
+        .where(kind: 'llm_assist')
+        .group('submissions.user_id, submissions.problem_id')
+        .select('submissions.user_id, submissions.problem_id, SUM(comments.cost) as llm_cost')
+
+      # 3. Hint costs per user/problem
+      hint_costs = Comment.joins(:comment_reveals)
+        .where("comment_reveals.created_at <= ?", time)
+        .where(commentable_type: 'Problem')
+        .where(commentable_id: prob_ids)
+        .group('comment_reveals.user_id, comments.commentable_id')
+        .select('comment_reveals.user_id, comments.commentable_id as problem_id, SUM(comments.cost) as hint_cost')
+
+      if group_mode
+        Group.joins(:users).joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
+          .joins("INNER JOIN problems ON problems.id = mp.problem_id")
+          .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
+          .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
+          .where.not(users: {id: admin_ids})
+          .group('groups.id')
+          .select('groups.id', 'SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
+          .each_with_object({}) { |g, h| h[g.id] = g.total_score.to_f }
+      else
+        User.where.not(id: admin_ids)
+          .joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
+          .joins("INNER JOIN problems ON problems.id = mp.problem_id")
+          .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
+          .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
+          .group('users.id')
+          .select('users.id', 'SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
+          .each_with_object({}) { |u, h| h[u.id] = u.total_score.to_f }
+      end
     end
 end
