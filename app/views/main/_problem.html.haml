@@ -1,7 +1,7 @@
 %tr
   %td.text-end.d-none.d-sm-table-cell{'data-order': @numbering}
     %div= @numbering
-    - if @current_user&.admin?
+    - if @current_user&.admin? || @current_user&.problem_setter?
       .mt-1
         = link_to stat_problem_path(problem), class: 'text-secondary text-decoration-none', 'data-bs-toggle' => 'tooltip', title: 'View Statistics' do
           %span.mi{style: 'font-size: 1.2rem; vertical-align: middle;'} bar_chart

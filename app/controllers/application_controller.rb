@@ -145,7 +145,7 @@ class ApplicationController < ActionController::Base
   # redirect when user does not have specific roles in any group
   # allowed_roles should be :xxx
   def group_action_authorization(action)
-    return true if @current_user.admin?
+    return true if @current_user.admin? || @current_user.problem_setter?
     return true if @current_user.groups_for_action(action).any?
     unauthorized_redirect(msg: "You cannot #{action} on any group")
   end
