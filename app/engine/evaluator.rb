@@ -71,7 +71,7 @@ class Evaluator
                                   cg: need_cg)
 
     # check if isolate itself failed
-    unless status.success?
+    unless status.success? || ['TO', 'SG', 'RE'].include?(meta['status'])
       judge_log "ISOLATE failed to execute: #{err}", Logger::ERROR
       e = Evaluation.find_or_create_by(submission: @sub, testcase: @testcase)
       e.update(result: :grader_error, isolate_message: "Sandbox failed: #{err.truncate(100)}")
