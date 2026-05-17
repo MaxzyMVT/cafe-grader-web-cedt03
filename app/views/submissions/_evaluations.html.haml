@@ -25,16 +25,16 @@
 - score_type = dataset&.score_type
 - raw_sum_mode = dataset&.st_raw_sum?
 - group_count, group_score, group_weight, group_points = 0,0,0,0
-- if score_type == 'group_max'
+- if dataset&.st_group_max?
   - total_weight = testcases.group_by(&:group).values.sum { |g| g.map(&:weight).max }
-- elsif score_type == 'group_min'
+- elsif dataset&.st_group_min?
   - total_weight = testcases.group_by(&:group).values.sum { |g| g.map(&:weight).min }
 - else
   - total_weight = testcases.sum(:weight)
 - total_weight = 1.0 if total_weight == 0
-- full_score = testcases.first&.problem&.full_score || 100
+- full_score = dataset&.problem&.full_score || testcases.first&.problem&.full_score || 100
 - group_achieved_max = Hash.new(0.to_d)
-- if score_type == 'group_max'
+- if dataset&.st_group_max?
   - testcases.each do |tc|
     - ev = evaluations_by_tcid[tc.id]
     - group_achieved_max[tc.group] = [group_achieved_max[tc.group], (ev&.score || 0).to_d * tc.weight.to_d].max
@@ -44,7 +44,7 @@
   - next_change = idx == group_ids.count-1 || group_ids[idx] != group_ids[idx+1]
   - next_group_has_multiple = idx < group_ids.count-1 && group_ids[idx] == group_ids[idx+1]
   - if group_change
-    - if score_type == 'group_max'
+    - if dataset&.st_group_max?
       - group_points = -1
       - group_weight = testcases.select { |t| t.group == tc.group }.map(&:weight).max
     - else
@@ -65,7 +65,7 @@
   -# process this ev
   - group_count += 1
   - current_score = ev&.score || 0
-  - if score_type == 'group_max'
+  - if dataset&.st_group_max?
     - group_points = [group_points, current_score * tc.weight].max
   - else
     - group_score = [group_score, current_score].min
@@ -86,7 +86,7 @@
       - else
         = "-"
     .col-4
-      - is_skipped = score_type == 'group_max' && (ev.nil? || ev.waiting? || (ev.result != 'correct' && (tc.weight || 0).to_d <= group_achieved_max[tc.group]))
+      - is_skipped = dataset&.st_group_max? && (ev.nil? || ev.waiting? || (ev.result != 'correct' && (tc.weight || 0).to_d <= group_achieved_max[tc.group]))
       = render partial: 'evaluation_result', locals: {ev: ev, is_skipped: is_skipped} if ev || is_skipped
     .col.text-end
       - if ev
@@ -100,7 +100,8 @@
       - if raw_sum_mode
         = tc.weight
       - else
-        = number_with_precision tc.weight * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
+        - w = dataset&.st_group_min? ? group_weight : tc.weight
+        = number_with_precision w * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
 
   - if next_change
     -# end current bundle
@@ -110,10 +111,10 @@
         .col.text-center
           %strong
             - gname = groups[idx].blank? ? "Group #{group_ids[idx]}" : "Group \"#{groups[idx]}\""
-            - stext = score_type == 'group_max' ? "Max Score" : "Min Score"
+            - stext = dataset&.st_group_max? ? "Max Score" : "Min Score"
             - if raw_sum_mode
               - pts = number_with_precision (group_points || 0), precision: 2, strip_insignificant_zeros: true
-            - elsif score_type == 'group_max'
+            - elsif dataset&.st_group_max?
               - pts = number_with_precision (group_points || 0) * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
             - else
               - pts = number_with_precision (group_score || 0) * group_weight * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
