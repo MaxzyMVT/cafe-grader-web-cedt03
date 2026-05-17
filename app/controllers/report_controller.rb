@@ -10,6 +10,8 @@ class ReportController < ApplicationController
     group_action_authorization(:report)
   }
 
+  before_action :restrict_setter_reports, except: [:problem_hof, :problem_hof_view, :problem_hof_query, :extended_stat]
+
   # for hall of fame
   before_action :set_problem, only: [:problem_hof_view]
   before_action :hall_of_fame_authorization, only: [:problem_hof, :problem_hof_query, :problem_hof_view]
@@ -853,6 +855,12 @@ ORDER BY submitted_at
           .group('users.id')
           .select('users.id', 'SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
           .each_with_object({}) { |u, h| h[u.id] = u.total_score.to_f }
+      end
+    end
+
+    def restrict_setter_reports
+      if @current_user.problem_setter? && !@current_user.admin? && !@current_user.groups_for_action(:report).any?
+        unauthorized_redirect(msg: 'You are only authorized to view the statistics report.')
       end
     end
 end

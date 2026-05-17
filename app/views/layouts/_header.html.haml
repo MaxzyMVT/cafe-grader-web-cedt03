@@ -74,7 +74,7 @@
                 %li= link_to 'Languages', languages_path, class: 'dropdown-item'+active_class_when(controller: :languages) if @current_user.admin?
                 -#
           / report
-          - if @current_user && (@current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:report).any?)
+          - if @current_user && (@current_user.admin? || @current_user.groups_for_action(:report).any?)
             %li.nav-item.dropdown.mx-2
               %a.nav-link.dropdown-toggle.active-with-children{href: '#', data: {bs: {toggle:'dropdown'}},  aria: {haspopup:"true", expanded:"false"}, role: "button"}
                 Report
@@ -89,6 +89,13 @@
                 =link_to "#{@backlog} backlogs!",
                   grader_processes_path,
                   class: 'navbar-btn btn btn-default btn-warning', data: {toggle: 'tooltip'},title: 'Number of ungraded submission'
+              = form_with id: :view_sub_form, url: list_main_path, method: :get do |f|
+                .input-group.mx-2
+                  %input#view_sub_num.form-control{style: "width: 7rem", type: :text, placeholder: 'Submission #'}
+                  %button#view_sub.btn.btn-secondary{type: :button, onclick: "go_to_sub();"} View
+          - elsif @current_user && @current_user.problem_setter?
+            %li= link_to 'Report', extended_stat_report_path, class: 'nav-link mx-2'+active_class_when(controller: :report, action: :extended_stat)
+            .d-flex
               = form_with id: :view_sub_form, url: list_main_path, method: :get do |f|
                 .input-group.mx-2
                   %input#view_sub_num.form-control{style: "width: 7rem", type: :text, placeholder: 'Submission #'}
