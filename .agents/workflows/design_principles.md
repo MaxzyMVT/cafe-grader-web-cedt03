@@ -20,8 +20,9 @@ Use these principles whenever modifying the user interface or adding new styles.
 3. **Consistency**:
    - When building new components, match the look and feel of existing high-quality UI elements in the repository.
 4. **Asset Deployment & Hot Reload**:
-   - In production environments, assets are served precompiled. After any CSS, JS, or HAML UI/UX updates, always run asset precompilation and touch `tmp/restart.txt` to trigger a Passenger reload and force a full asset refresh:
+   - In production environments, assets are served precompiled. After any CSS, JS, or HAML UI/UX updates, always clobber old precompiled assets, run fresh asset precompilation, and touch `tmp/restart.txt` to trigger a Passenger reload and force a full asset refresh:
      ```bash
+     PATH="/home/grader_admin/.rbenv/shims:$PATH" bin/rails assets:clobber RAILS_ENV=production
      PATH="/home/grader_admin/.rbenv/shims:$PATH" bin/rails assets:precompile RAILS_ENV=production
      touch tmp/restart.txt
      ```
