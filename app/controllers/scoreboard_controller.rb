@@ -7,7 +7,8 @@ class ScoreboardController < ApplicationController
     @problems = Problem.available.order(:date_added)
 
     # Fetch users, but depending on group toggle, we might need groups
-    @users = User.where(enabled: true)
+    disabled_group_user_ids = User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
+    @users = User.where(enabled: true).where.not(id: disabled_group_user_ids)
     
     unless GraderConfiguration['system.scoreboard_include_admins']
       exclude_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
@@ -94,9 +95,11 @@ class ScoreboardController < ApplicationController
       end
     else
       # Group mode
-      @groups = Group.all
+      disabled_group_user_ids = User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
+      setter_admin_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+      @groups = Group.where(enabled: true)
       @leaderboard = @groups.map do |g|
-        group_users = g.users.where(enabled: true)
+        group_users = g.users.where(enabled: true).where.not(id: disabled_group_user_ids + setter_admin_ids)
         group_total = 0
         group_deducted = 0
         group_bonus = 0

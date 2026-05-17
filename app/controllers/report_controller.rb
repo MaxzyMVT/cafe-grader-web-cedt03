@@ -275,9 +275,11 @@ class ReportController < ApplicationController
       subs_scope = subs_scope.where(language_id: params[:language_id])
     end
 
-    # Exclude admins and problem setters
-    admin_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
-    subs_scope = subs_scope.where.not(user_id: admin_ids)
+    # Exclude admins, problem setters, and disabled users / users in disabled groups
+    exclude_user_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+    exclude_user_ids += User.where(enabled: false).pluck(:id)
+    exclude_user_ids += User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
+    subs_scope = subs_scope.where.not(user_id: exclude_user_ids.uniq)
 
     # Helper scope for passed submissions (score >= full_score)
     # Using COALESCE for full_score to handle cases where it's not set
@@ -859,7 +861,7 @@ ORDER BY submitted_at
     end
 
     def restrict_setter_reports
-      if @current_user.problem_setter? && !@current_user.admin? && !@current_user.groups_for_action(:report).any?
+      if @current_user.problem_setter? && !@current_user.admin?
         unauthorized_redirect(msg: 'You are only authorized to view the statistics report.')
       end
     end
