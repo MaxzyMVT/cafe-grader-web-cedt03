@@ -162,6 +162,7 @@ Cheers!
       t: Time Limit Exceeded
       m: Memory Limit Exceeded
       x: Program Crashed
+      grader_error: Grader Error
       group_info: "[ ... ] indicates a group of test cases"
 
   activerecord:

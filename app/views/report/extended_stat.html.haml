@@ -83,6 +83,15 @@
             - else
               .p-4.text-center.text-muted Please select 'Since' and 'Until' dates to view score growth.
 
+      .col-12
+        .alert.alert-info.d-flex.align-items-center.gap-2.mb-0.p-3.border-0.shadow-sm
+          %span.mi info
+          %span.small
+            %strong Note:
+            Most Efficient Coder (Shortest Code), Fastest Code (Least Runtime), and Least Memory Used are calculated only for problems that are
+            %strong not "output-only"
+            (require compilation).
+
       .col-md-6.col-lg-4
         .card.card-shadow.h-100
           .card-header.bg-warning.text-dark.fw-bold 
@@ -115,7 +124,7 @@
                       = link_to (Group.find_by(id: id)&.name || "Group ##{id}"), group_path(id), class: 'text-decoration-none', data: { turbo_frame: "_top" }
                     - else
                       = link_to (User.find_by(id: id)&.full_name || "User ##{id}"), stat_user_admin_path(id), class: 'text-decoration-none', data: { turbo_frame: "_top" }
-                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{data[:value].round(3)}s"
+                  %span.text-muted.small.flex-shrink-0= "(#{data[:solved]} solved) #{number_with_delimiter(data[:value].round(0))} ms"
 
       .col-md-6.col-lg-4
         .card.card-shadow.h-100

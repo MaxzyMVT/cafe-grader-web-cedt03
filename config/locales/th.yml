@@ -159,6 +159,7 @@ th:
       t: ใช้เวลาเกินกำหนด (Time Limit)
       m: ใช้หน่วยความจำเกินกำหนด (Memory Limit)
       x: โปรแกรมทำงานผิดพลาด (Crashed)
+      grader_error: เกิดข้อผิดพลาดของระบบตรวจ (Grader Error)
       group_info: "[ ... ] หมายถึงชุดทดสอบที่อยู่ในกลุ่มเดียวกัน"
 
   activerecord:
