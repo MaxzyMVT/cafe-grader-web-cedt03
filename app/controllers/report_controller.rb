@@ -318,16 +318,18 @@ class ReportController < ApplicationController
     blood_sub_ids = []
     problems_to_check = Problem.where(id: selected_prob_ids)
     problems_to_check.each do |p|
-      n = p.respond_to?(:first_n_bloods) ? (p.first_n_bloods || 1) : 1
-      user_first_subs = p.submissions.tag_default.joins(:user)
-                         .where("submissions.points >= ?", p.full_score || 100)
-                         .where.not(user_id: exclude_user_ids.uniq)
-                         .group(:user_id)
-                         .select('MIN(submissions.id) as first_sub_id, MIN(submissions.submitted_at) as first_time')
-                         .order('first_time ASC')
-                         .limit(n)
-                         .map(&:first_sub_id)
-      blood_sub_ids.concat(user_first_subs)
+      n = p.respond_to?(:first_n_bloods) ? p.first_n_bloods : 0
+      if n > 0
+        user_first_subs = p.submissions.tag_default.joins(:user)
+                           .where("submissions.points >= ?", p.full_score || 100)
+                           .where.not(user_id: exclude_user_ids.uniq)
+                           .group(:user_id)
+                           .select('MIN(submissions.id) as first_sub_id, MIN(submissions.submitted_at) as first_time')
+                           .order('first_time ASC')
+                           .limit(n)
+                           .map(&:first_sub_id)
+        blood_sub_ids.concat(user_first_subs)
+      end
     end
     
     fb_base = passed_scope.where(id: blood_sub_ids)

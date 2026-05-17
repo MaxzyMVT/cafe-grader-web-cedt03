@@ -12,11 +12,13 @@
   %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info'), 'data-bs-toggle' => 'tooltip', title: (limit_reached ? 'Submission limit reached' : "#{remaining} submission#{'s' unless remaining == 1} remaining")}
     %span.mi{style: 'font-size: 0.85rem;'} upload
     = "#{sub_count}/#{problem.max_submissions} subs"
-- if problem.bonus_first_blood.to_f > 0
-  - n = problem.respond_to?(:first_n_bloods) ? (problem.first_n_bloods || 1) : 1
-  %span.badge.rounded-pill.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.gap-1.ms-1{title: "First #{n} Bloods Bonus"}
-    %span.mi{style: 'font-size: 0.85rem;'} bloodtype
-    = "+#{problem.bonus_first_blood.to_i} (x#{n})"
+- if problem.bonus_first_blood.to_f != 0
+  - n = problem.respond_to?(:first_n_bloods) ? problem.first_n_bloods : 0
+  - if n > 0
+    %span.badge.rounded-pill.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.gap-1.ms-1{title: "First #{n} Bloods Bonus"}
+      %span.mi{style: 'font-size: 0.85rem;'} bloodtype
+      - formatted_bonus = problem.bonus_first_blood.to_i > 0 ? "+#{problem.bonus_first_blood.to_i}" : problem.bonus_first_blood.to_i.to_s
+      = "#{formatted_bonus} (x#{n})"
 
 -# link for download statement, attachment, testcases
 %div.d-inline-flex.align-items-center.align-middle.gap-1

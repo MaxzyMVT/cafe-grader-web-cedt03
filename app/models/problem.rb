@@ -55,7 +55,7 @@ class Problem < ApplicationRecord
   validates_presence_of :full_score
 
   validates :max_submissions, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
-  validates :first_n_bloods, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :first_n_bloods, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
   # -- callback --
   after_initialize :set_default_full_score, if: :new_record?
@@ -67,7 +67,7 @@ class Problem < ApplicationRecord
 
   def first_n_bloods
     val = self[:first_n_bloods]
-    (val.present? && val > 0) ? val : 1
+    val.present? ? val : 0
   end
 
   def first_blood_user
@@ -75,7 +75,9 @@ class Problem < ApplicationRecord
   end
 
   def first_n_blood_users(n = 1)
-    num = (n.present? && n > 0) ? n : 1
+    num = (n.present? && n >= 0) ? n : 1
+    return [] if num == 0
+    
     exclude_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
     disabled_group_user_ids = User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
     exclude_ids = (exclude_ids + disabled_group_user_ids + User.where(enabled: false).pluck(:id)).uniq

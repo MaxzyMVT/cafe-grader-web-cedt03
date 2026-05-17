@@ -51,8 +51,8 @@ class ScoreboardController < ApplicationController
     # Calculate First Blood bonuses for all problems once
     @first_blood_users = {} # problem_id => list of user IDs
     @problems.each do |p|
-      if p.bonus_first_blood.to_f > 0
-        n = p.respond_to?(:first_n_bloods) ? (p.first_n_bloods || 1) : 1
+      if p.bonus_first_blood.to_f != 0
+        n = p.respond_to?(:first_n_bloods) ? p.first_n_bloods : 0
         @first_blood_users[p.id] = p.first_n_blood_users(n).map(&:id)
       else
         @first_blood_users[p.id] = []

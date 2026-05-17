@@ -60,7 +60,7 @@
         = form.input :full_score, required: true, tooltip: 'Maximum points a contestant can get from this problem (default 100)'
         = form.input :difficulty, tooltip: 'Input integer value from 0 to 10'
         = form.input :bonus_first_blood, label: 'First Blood Bonus Point', tooltip: 'Additional points for the first active user to solve this problem'
-        = form.input :first_n_bloods, label: 'N-th Blood Winners Count', tooltip: 'Number of unique users who can receive the First Blood bonus points (default: 1)', input_html: { min: 1, step: 1 }
+        = form.input :first_n_bloods, label: 'N-th Blood Winners Count', tooltip: 'Number of unique users who can receive the First Blood bonus points (default: 0). Setting to 0 disables first blood bonus for this problem.', input_html: { min: 0, step: 1 }
         = form.input :compilation_type, collection: [['[Self Contained] The submissions can be compiled by itself','self_contained'],['[With managers] The submission will be compiled with the managers','with_managers'],['[Viva Exam] LLM-driven Socratic interview + rubric grading','viva_exam']], wrapper: :horizontal_select, tooltip: 'For Viva Exam, attach llm_prompt tags (interviewer persona + rubric) and viva_grounding tags (course materials). Test-case datasets do not apply.', include_blank: false
         = form.input :submission_filename
         = form.input :output_only, wrapper: :horizontal_boolean, tooltip: 'If set, the grader will not compile or run the submission. It will only grade the submitted output file(s) against the test cases. Useful for "output-only" tasks.'
