@@ -1,6 +1,6 @@
 class TagsController < ApplicationController
   before_action :stimulus_controller
-  before_action :admin_authorization
+  before_action :tag_authorization
   before_action :set_tag, only: [:edit, :update, :destroy, :toggle_public]
 
   # GET /tags
@@ -71,5 +71,11 @@ class TagsController < ApplicationController
     # Only allow a trusted parameter "white list" through.
     def tag_params
       params.require(:tag).permit(:name, :description, :public, :color, :kind, :params)
+    end
+
+    def tag_authorization
+      unless @current_user&.admin? || @current_user&.problem_setter?
+        unauthorized_redirect
+      end
     end
 end

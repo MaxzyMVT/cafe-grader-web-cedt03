@@ -480,7 +480,8 @@ class ReportController < ApplicationController
 
     @summary = {count: 0, solve: 0, attempt: 0}
     user = Hash.new(0)
-    Submission.where(problem_id: @problem.id).includes(:language).each do |sub|
+    exclude_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+    Submission.where(problem_id: @problem.id).where.not(user_id: exclude_ids).includes(:language).each do |sub|
       # histogram
 
       next unless sub.points
