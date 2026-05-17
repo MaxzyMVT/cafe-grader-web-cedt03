@@ -202,15 +202,15 @@ class Problem < ApplicationRecord
 
   # Returns how many submissions remain for the user, or nil if unlimited
   def submissions_remaining_for(user)
-    return nil if user&.admin?
+    return nil if user&.admin? || user&.problem_setter?
     return nil unless submission_limit?
     [max_submissions - submission_count_for(user), 0].max
   end
 
   # Returns true if the user has reached the submission limit
-  # Admins are never subject to submission limits
+  # Admins and problem setters are never subject to submission limits
   def submission_limit_reached?(user)
-    return false if user.admin?
+    return false if user&.admin? || user&.problem_setter?
     return false unless submission_limit?
     submission_count_for(user) >= max_submissions
   end

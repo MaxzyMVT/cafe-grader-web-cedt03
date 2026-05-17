@@ -387,9 +387,21 @@ class UserAdminController < ApplicationController
       @action[:gen_password] = params[:gen_password]
       @action[:add_group] = params[:add_group]
       @action[:group_name] = params[:group_name]
+      @action[:delete_users] = params[:delete_users]
     end
 
     if params[:commit] == "Perform"
+      if @action[:delete_users]
+        deleted_count = 0
+        @users.each do |user|
+          if user.destroy
+            deleted_count += 1
+          end
+        end
+        flash[:success] = "Successfully deleted #{deleted_count} user(s) from the database."
+        redirect_to action: 'index' and return
+      end
+
       if @action[:set_enable]
         @users.update_all(enabled: @action[:enabled])
       end

@@ -11,18 +11,30 @@
         .form-group
           = label_tag "regex", 'Regex Pattern'
           = text_field_tag "regex", params[:regex], class: 'form-control'
-        %p
-          Example
-        %ul
+        %p.fw-bold.mt-3.mb-1
+          Useful MySQL Regex Examples
+        %ul.small.text-muted.ps-3
           %li
             %code root
-            matches every user whose login contains "root"
+            matches any login containing "root"
           %li
             %code ^56
-            matches every user whose login starts with "56"
+            matches logins starting with "56"
           %li
             %code 21$
-            matches every user whose login ends with "21"
+            matches logins ending with "21"
+          %li
+            %code ^student.*2026
+            matches logins starting with "student" and ending with "2026" (wildcard matching)
+          %li
+            %code admin|setter
+            matches logins containing "admin" or "setter" (alternation)
+          %li
+            %code ^[a-c]
+            matches logins starting with letter "a", "b", or "c" (character class)
+          %li
+            %code ^[0-9]+$
+            matches logins consisting entirely of numbers
 
         .row.row-cols-lg-auto.align-items-center.my-3.g-3
           .col-auto
@@ -55,35 +67,91 @@
             = label_tag :add_group, 'Add users to group', class: 'form-check-label'
           .col-auto
             = select_tag :group_name, options_from_collection_for_select( Group.all.order('id DESC'), 'id','name',params[:group_id]), class: 'select2', style: 'width: 20em';
+        .row.my-2
+          .col-md-12
+            .form-check
+              = check_box_tag :delete_users, true, params[:delete_users], class: 'form-check-input text-danger border-danger'
+              = label_tag :delete_users, 'DELETE these users from database', class: 'form-check-label text-danger fw-bold'
 
 
 .row.my-2
   .col-md-12
     = submit_tag "Preview Result", class: 'btn btn-secondary'
 - if @users
-  .row
+  .row.mt-4
     .col-md-12
       - if @action
-        %h2 Confirmation
-        - if @action[:set_enable]
-          .alert.alert-info The following users will be set #{(@action[:enabled] ? 'enable' : 'disable')}.
-        - if @action[:gen_password]
-          .alert.alert-info The password of the following users will be randomly generated.
-        - if @action[:add_group]
-          .alert.alert-info The following users will be added to "#{Group.find(params[:group_name]).name}"
-  .row
-    .col-md-4
-      = submit_tag "Perform", class: 'btn btn-primary'
+        .card.border-secondary.mb-4
+          .card-header.bg-secondary-subtle.text-secondary-emphasis.fw-bold.d-flex.align-items-center.gap-2
+            %span.mi checklist
+            Action Confirmation Preview
+          .card-body
+            - if @action[:set_enable]
+              .alert.alert-info.d-flex.align-items-center.gap-2.mb-3
+                %span.mi info
+                The following users will be set to: #{(@action[:enabled] ? 'Enabled' : 'Disabled')}.
+            - if @action[:gen_password]
+              .alert.alert-info.d-flex.align-items-center.gap-2.mb-3
+                %span.mi key
+                The password of the following users will be randomly generated.
+            - if @action[:add_group]
+              .alert.alert-info.d-flex.align-items-center.gap-2.mb-3
+                %span.mi group_add
+                The following users will be added to group: "#{Group.find(params[:group_name]).name}"
+            - if @action[:delete_users]
+              .alert.alert-danger.fw-bold.d-flex.align-items-center.gap-2.mb-3
+                %span.mi.align-middle warning
+                CRITICAL WARNING: The following users will be PERMANENTLY DELETED from the database! This action is irreversible and will cascade-delete all their submissions and results!
+            
+            = submit_tag "Perform", class: 'btn btn-primary btn-lg'
+
   .row
     .col-md-12
-      The pattern matches #{@users.count} following users.
-      %br
-      - @users.each do |user|
-        = user.login
-        = ' '
-        = user.full_name
-        = ' '
-        = "(#{user.remark})" if user.remark
-        %br
+      .card.shadow-sm
+        .card-header.bg-light.d-flex.justify-content-between.align-items-center
+          %span.fw-bold.text-dark
+            Matching Users (#{@users.count})
+          %span.badge.bg-secondary.rounded-pill
+            #{@users.count} matched
+        .card-body.p-0
+          - if @users.empty?
+            .p-4.text-center.text-muted
+              No users matched the criteria.
+          - else
+            .table-responsive
+              %table.table.table-striped.table-hover.align-middle.mb-0
+                %thead.table-light
+                  %tr
+                    %th{style: 'width: 25%;'} Username
+                    %th{style: 'width: 30%;'} Full Name
+                    %th{style: 'width: 20%;'} Roles
+                    %th{style: 'width: 15%;'} Status
+                    %th{style: 'width: 10%;'} Remark
+                %tbody
+                  - @users.each do |user|
+                    %tr
+                      %td
+                        %code.fw-bold{style: 'font-size: 0.95rem;'}= user.login
+                      %td= user.full_name
+                      %td
+                        - if user.roles.any?
+                          - user.roles.each do |role|
+                            - role_class = case role.name
+                            - when 'admin' then 'bg-danger-subtle text-danger'
+                            - when 'problem_setter' then 'bg-warning-subtle text-warning-emphasis'
+                            - else 'bg-info-subtle text-info-emphasis'
+                            %span.badge{class: role_class}= role.name
+                        - else
+                          %span.text-muted.font-monospace{style: 'font-size: 0.85rem;'} default
+                      %td
+                        - if user.enabled?
+                          %span.badge.bg-success-subtle.text-success Enabled
+                        - else
+                          %span.badge.bg-danger-subtle.text-danger Disabled
+                      %td
+                        - if user.remark.present?
+                          %span.text-muted.small.italic= user.remark
+                        - else
+                          %span.text-muted.small -
 
 

@@ -11,22 +11,24 @@ class User < ApplicationRecord
   has_and_belongs_to_many :roles
 
   # has_and_belongs_to_many :groups
-  has_many :groups_users, class_name: 'GroupUser'
+  has_many :groups_users, class_name: 'GroupUser', dependent: :destroy
   has_many :groups, through: :groups_users
 
-  has_many :test_requests, -> { order(submitted_at: :desc) }
+  has_many :test_requests, -> { order(submitted_at: :desc) }, dependent: :destroy
 
   has_many :messages, -> { order(created_at: :desc) },
            class_name: "Message",
-           foreign_key: "sender_id"
+           foreign_key: "sender_id",
+           dependent: :destroy
 
   has_many :replied_messages, -> { order(created_at: :desc) },
            class_name: "Message",
-           foreign_key: "receiver_id"
+           foreign_key: "receiver_id",
+           dependent: :destroy
 
-  has_many :logins
+  has_many :logins, dependent: :destroy
 
-  has_many :submissions
+  has_many :submissions, dependent: :destroy
 
   has_one :contest_stat, class_name: "UserContestStat", dependent: :destroy
 
@@ -36,11 +38,11 @@ class User < ApplicationRecord
   belongs_to :default_language, class_name: 'Language', foreign_key: 'default_language_id', optional: true
 
   # contest
-  has_many :contests_users, class_name: 'ContestUser'
+  has_many :contests_users, class_name: 'ContestUser', dependent: :destroy
   has_many :contests, through: :contests_users
 
   # comments
-  has_many :comment_reveals
+  has_many :comment_reveals, dependent: :destroy
   has_many :revealed_comments, through: :comment_reveals, source: :comment
 
   scope :activated_users, -> { where activated: true }

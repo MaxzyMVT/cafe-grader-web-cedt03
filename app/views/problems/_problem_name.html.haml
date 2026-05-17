@@ -6,12 +6,18 @@
 .text-muted.font-monospace
   = "#{problem.name}".gsub("_","_&ZeroWidthSpace;").html_safe
 - if problem.submission_limit? && @current_user
-  - limit_reached = problem.submission_limit_reached?(@current_user)
+  - is_exempt = @current_user.admin? || @current_user.problem_setter?
+  - limit_reached = !is_exempt && problem.submission_limit_reached?(@current_user)
   - sub_count = problem.submission_count_for(@current_user)
-  - remaining = problem.submissions_remaining_for(@current_user)
-  %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info'), 'data-bs-toggle' => 'tooltip', title: (limit_reached ? 'Submission limit reached' : "#{remaining} submission#{'s' unless remaining == 1} remaining")}
-    %span.mi{style: 'font-size: 0.85rem;'} upload
-    = "#{sub_count}/#{problem.max_submissions} subs"
+  - remaining = is_exempt ? nil : problem.submissions_remaining_for(@current_user)
+  - if is_exempt
+    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1.bg-success-subtle.text-success.border.border-success-subtle{'data-bs-toggle' => 'tooltip', title: 'Exempt from limit (You can submit indefinitely)'}
+      %span.mi{style: 'font-size: 0.85rem;'} upload
+      = "#{sub_count}/#{problem.max_submissions} subs"
+  - else
+    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info'), 'data-bs-toggle' => 'tooltip', title: (limit_reached ? 'Submission limit reached' : "#{remaining} submission#{'s' unless remaining == 1} remaining")}
+      %span.mi{style: 'font-size: 0.85rem;'} upload
+      = "#{sub_count}/#{problem.max_submissions} subs"
 - if problem.bonus_first_blood.to_f != 0
   - n = problem.respond_to?(:first_n_bloods) ? problem.first_n_bloods : 0
   - if n > 0
