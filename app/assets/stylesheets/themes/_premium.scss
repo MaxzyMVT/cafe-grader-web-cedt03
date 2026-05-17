@@ -260,7 +260,15 @@
   }
 
   // Alerts
-  .alert { 
+  .alert:not([class*="alert-"]) {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .alert-primary, .alert-success, .alert-danger, .alert-warning, .alert-info { 
     backdrop-filter: blur(8px);
     border-radius: 10px !important;
     border-width: 1px;
