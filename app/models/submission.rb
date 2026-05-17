@@ -317,7 +317,7 @@ class Submission < ApplicationRecord
       errors.add(:problem, :blank, 'aaa')
     else
       # admin always have right
-      return if self.user.admin?
+      return if self.user.admin? || self.user.problem_setter?
 
       # check if user has the right to submit the problem
       errors[:base] << "Authorization error: you have no right to submit to this problem" if (!self.user.problems_for_action(:submit).include?(self.problem)) and (self.new_record?)
@@ -334,7 +334,7 @@ class Submission < ApplicationRecord
   def must_not_exceed_submission_limit
     return unless self.new_record?
     return if self.problem.nil? || self.user.nil?
-    return if self.user.admin?
+    return if self.user.admin? || self.user.problem_setter?
     if self.problem.submission_limit_reached?(self.user)
       remaining = self.problem.submissions_remaining_for(self.user)
       errors.add(:base, "Submission limit reached: this problem allows a maximum of #{self.problem.max_submissions} submissions (#{remaining} remaining)")

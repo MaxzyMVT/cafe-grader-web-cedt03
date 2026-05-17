@@ -273,10 +273,8 @@ class ReportController < ApplicationController
       subs_scope = subs_scope.where(language_id: params[:language_id])
     end
 
-    admin_ids = Role.find_by(name: 'admin')&.users&.pluck(:id) || []
-
-    # Exclude admins
-    admin_ids = User.joins(:roles).where(roles: { name: 'admin' }).pluck(:id)
+    # Exclude admins and problem setters
+    admin_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
     subs_scope = subs_scope.where.not(user_id: admin_ids)
 
     # Helper scope for passed submissions (score >= full_score)
@@ -513,7 +511,7 @@ class ReportController < ApplicationController
       end
 
       if sub.submitted_at and sub.submitted_at < @by_lang[lang.pretty_name][:first][:value] and sub.user and
-          !sub.user.admin?
+          !sub.user.admin? and !sub.user.problem_setter?
         @by_lang[lang.pretty_name][:first] = { avail: true, user_id: sub.user_id, value: sub.submitted_at, sub_id: sub.id }
       end
 

@@ -149,7 +149,7 @@ class User < ApplicationRecord
   #
   # valid action are :submit, :report, or :edit
   def problems_for_action(action, respect_admin: true)
-    return Problem.all if admin? && respect_admin
+    return Problem.all if (admin? || problem_setter?) && respect_admin
     return Problem.none unless enabled?
 
     action = action.to_sym
@@ -233,7 +233,7 @@ class User < ApplicationRecord
   end
 
   def reportable_users
-    return User.all if admin?
+    return User.all if admin? || problem_setter?
     User.joins(:groups).where(groups: {id: groups_for_action(:report)}).distinct
   end
 
@@ -307,6 +307,11 @@ class User < ApplicationRecord
   def admin?
     @is_admin = has_role?('admin') if @is_admin.nil?
     return @is_admin
+  end
+
+  def problem_setter?
+    @is_problem_setter = has_role?('problem_setter') if @is_problem_setter.nil?
+    return @is_problem_setter
   end
 
   def has_role?(role)
@@ -468,7 +473,7 @@ class User < ApplicationRecord
   # this also consider group based problem policy
   def can_view_problem?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     # if a user is a reporter or an editor, they can access disabled problem, which is not allowed in problems_for_action(:submit)
     # we need both :report and :submit action because :report is not the super set of :submit
@@ -481,20 +486,20 @@ class User < ApplicationRecord
 
   def can_report_problem?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     return problems_for_action(:report).where(id: problem.id).any?
   end
 
   def can_edit_problem?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
     return problems_for_action(:edit).where(id: problem).any?
   end
 
   def can_view_submission?(submission)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     # For group mode, reporters can always view the submission of the problem
     return true if problems_for_action(:report).include? submission.problem
@@ -516,7 +521,7 @@ class User < ApplicationRecord
 
   def can_view_testcase?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     return can_view_problem?(problem) && GraderConfiguration["right.view_testcase"]
   end

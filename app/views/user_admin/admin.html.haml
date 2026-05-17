@@ -10,9 +10,10 @@
     = render partial: 'admin_help'
 
 .row.g-3{data: {controller: 'init-ui-component'}}
-  - [{role: 'admin', title: 'Administrators', table_id: 'admin-table', query_url: admin_query_user_admin_index_path},
-     {role: 'ta',    title: 'TAs',            table_id: 'ta-table',    query_url: ta_query_user_admin_index_path}].each do |panel|
-    .col-md-6
+  - [{role: 'admin',          title: 'Administrators',     table_id: 'admin-table',           query_url: admin_query_user_admin_index_path},
+     {role: 'ta',             title: 'TAs',                table_id: 'ta-table',              query_url: ta_query_user_admin_index_path},
+     {role: 'problem_setter', title: 'Problem Setters',    table_id: 'problem-setter-table',  query_url: problem_setter_query_user_admin_index_path}].each do |panel|
+    .col-lg-4.col-md-6
       .card.shadow-sm
         .card-body
           %h4= panel[:title]

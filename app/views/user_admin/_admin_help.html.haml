@@ -14,7 +14,7 @@
     -# --- Section 1: The Roles (Tiles) ---
     .row.g-3.mb-4
       -# Tile 1: Admin
-      .col-md-6
+      .col-md-4
         .d-flex.align-items-start
           .text-info.me-3.lh-1
             %span.mi.md-24 admin_panel_settings
@@ -24,7 +24,7 @@
               Full access. Can log in anytime, see all problems, and create or delete users.
 
       -# Tile 2: TA
-      .col-md-6
+      .col-md-4
         .d-flex.align-items-start
           .text-info.me-3.lh-1
             %span.mi.md-24 supervisor_account
@@ -32,6 +32,16 @@
             %span.fw-bold.d-block.text-dark TA
             %small.text-muted.lh-sm
               Helper role for class operations.
+
+      -# Tile 3: Problem Setter
+      .col-md-4
+        .d-flex.align-items-start
+          .text-info.me-3.lh-1
+            %span.mi.md-24 assignment
+          %div
+            %span.fw-bold.d-block.text-dark Problem Setter
+            %small.text-muted.lh-sm
+              Can add/manage problems &amp; testcases, view all submissions, and test own submissions. Excluded from statistics &amp; system config.
 
     -# --- Divider ---
     %hr.text-secondary-subtle.my-3/

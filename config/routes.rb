@@ -236,6 +236,7 @@ Rails.application.routes.draw do
       get 'admin'
       post 'admin_query'
       post 'ta_query'
+      post 'problem_setter_query'
       get 'active'
       get 'mass_mailing'
       match 'modify_role', via: [:get, :post]

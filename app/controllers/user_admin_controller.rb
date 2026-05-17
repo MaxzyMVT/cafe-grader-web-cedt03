@@ -273,6 +273,7 @@ class UserAdminController < ApplicationController
   def admin
     @admins = Role.find_by(name: 'admin')&.users || User.none
     @tas = Role.find_by(name: 'ta')&.users || User.none
+    @problem_setters = Role.find_by(name: 'problem_setter')&.users || User.none
   end
 
   def admin_query
@@ -281,6 +282,10 @@ class UserAdminController < ApplicationController
 
   def ta_query
     render json: {data: Role.find_by(name: 'ta')&.users || User.none}
+  end
+
+  def problem_setter_query
+    render json: {data: Role.find_by(name: 'problem_setter')&.users || User.none}
   end
 
   # TURBO_STREAM
