@@ -168,7 +168,7 @@
   .btn-outline-success { color: var(--bs-success) !important; border-color: var(--bs-success) !important; &:hover { background-color: var(--bs-success) !important; color: #fff !important; } }
   .btn-outline-danger { color: var(--bs-danger) !important; border-color: var(--bs-danger) !important; &:hover { background-color: var(--bs-danger) !important; color: #fff !important; } }
 
-  .card, .modal-content, .alert {
+  .card, .modal-content {
     background: rgba(255, 255, 255, 0.05) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -260,7 +260,13 @@
   }
 
   // Alerts
-  .alert { backdrop-filter: blur(8px); border-width: 1px; overflow: hidden; }
+  .alert { 
+    backdrop-filter: blur(8px);
+    border-radius: 10px !important;
+    border-width: 1px;
+    border-style: solid;
+    overflow: hidden;
+  }
   .alert-primary { background: var(--bs-primary-bg-subtle) !important; border-color: var(--bs-primary) !important; color: var(--bs-primary-text-emphasis) !important; }
   .alert-success { background: var(--bs-success-bg-subtle) !important; border-color: var(--bs-success) !important; color: var(--bs-success-text-emphasis) !important; }
   .alert-danger { background: var(--bs-danger-bg-subtle) !important; border-color: var(--bs-danger) !important; color: var(--bs-danger-text-emphasis) !important; }
