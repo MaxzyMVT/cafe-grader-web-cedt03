@@ -194,7 +194,7 @@ class Grader
     GraderProcess.where(worker_id: worker_id).each do |gp|
       # check running status
       escaped_key = Shellwords.escape(server_key.to_s)
-      grader_process = `ps -e -o pid,args | grep "start([[:blank:]]*#{gp.box_id}[[:blank:]]*,[[:blank:]]*:#{escaped_key})$" | grep Grader`
+      grader_process = `ps -e -o pid,args | grep "start([[:blank:]]*#{gp.box_id}[[:blank:]]*,[[:blank:]]*:#{escaped_key})" | grep Grader | grep -v grep`
       running = grader_process.lines.count >= 1
       puts "grader process with box_id #{gp.box_id} is #{running ? 'found' : 'not found'}"
       if gp.enabled
