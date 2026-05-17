@@ -14,8 +14,8 @@ class Announcement < ApplicationRecord
   }
 
   scope :editable_by_user, ->(user) {
-    if user.admin?
-      # admin can edit any announcement
+    if user.admin? || user.problem_setter?
+      # admin or setter can edit any announcement
       return all
     elsif user.groups_for_action(:edit).any?
       # for editor, can only edit announcements of their editable groups

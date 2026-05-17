@@ -127,6 +127,12 @@ class User < ApplicationRecord
 
     [0.0, (raw_problem_scores - total_deductions + bonus).to_f].max
   end
+  def enabled?
+    return false unless self[:enabled]
+    return true if admin? || problem_setter?
+    return false if groups.where(enabled: false).any?
+    true
+  end
 
   # ---- problem for the users for specific action ------
   # Determines which problems a user is authorized to perform the specified action on.
@@ -193,7 +199,7 @@ class User < ApplicationRecord
   #
   # valid action is either :submit, :report, :edit
   def groups_for_action(action)
-    return Group.all if admin?
+    return Group.all if admin? || problem_setter?
     return Group.none unless enabled?
 
     action = action.to_sym
@@ -528,7 +534,7 @@ class User < ApplicationRecord
 
   def can_edit_announcement(announcement)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     # if the announcement is not group specific or is in a group t
     return true if Announcement.editable_by_user(self).where(id: announcement).any?
