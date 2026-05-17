@@ -158,7 +158,7 @@ Cheers!
       meaning: Meaning
       p: Correct Answer
       wrong: Wrong Answer
-      s: Skipped (Another test case in this group already passed)
+      s: Skipped (Wrong Answer. But some test cases in this group with equal or higher weight already passed)
       t: Time Limit Exceeded
       m: Memory Limit Exceeded
       x: Program Crashed
