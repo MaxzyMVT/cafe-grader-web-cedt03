@@ -203,7 +203,9 @@ class Grader
           # start it
           stdout_file = Rails.configuration.worker[:directory][:grader_stdout_base_file] + gp.box_id.to_s + '.txt'
           cmd = "#{RbConfig.ruby} #{Rails.root.join('bin', 'rails')} runner \"Grader.start(#{gp.box_id},:#{server_key})\""
-          spawn(cmd, [:out, :err] => [stdout_file, 'a'])
+          Bundler.with_unbundled_env do
+            spawn(cmd, [:out, :err] => [stdout_file, 'a'], pgroup: true)
+          end
 
           puts "spawning new grader main loop with #{cmd}, redirecting :out,:err to #{stdout_file}"
         end
