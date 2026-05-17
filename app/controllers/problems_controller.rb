@@ -291,7 +291,7 @@ class ProblemsController < ApplicationController
 
   def import
     @allow_test_pair_import = allow_test_pair_import?
-    @allow_blank_group = @current_user.admin?
+    @allow_blank_group = @current_user.admin? || @current_user.problem_setter?
   end
 
 
@@ -307,7 +307,7 @@ class ProblemsController < ApplicationController
 
     # check valid group
     group = Group.find(params[:problem][:groups]) rescue nil
-    unless @current_user.admin? || @current_user.groups_for_action(:edit).where(id: group).any?
+    unless @current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:edit).where(id: group).any?
       @errors = ['You can only upload a problem into a group that you are editor']
       render :import and return
     end
@@ -354,7 +354,7 @@ class ProblemsController < ApplicationController
 
       # when non-admin (editor) import a problem, we set available to true
       # (because they cannot set the available) but set the enabled to false
-      unless @current_user.admin?
+      unless @current_user.admin? || @current_user.problem_setter?
         @problem.update(available: true)
         GroupProblem.where(group: group, problem: @problem).first.update(enabled: false)
       end

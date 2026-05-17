@@ -48,7 +48,7 @@
             - if level == 'all' || (level == 'user' && @current_user) || (level == 'admin' && @current_user&.admin?)
               %li= link_to "Scoreboard", scoreboard_path, class: 'nav-link mx-2'+active_class_when(controller: :scoreboard)
           / admin section
-          - if @current_user && (@current_user.admin? || @current_user.groups_for_action(:edit).any?)
+          - if @current_user && (@current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:edit).any?)
             / management
             %li.nav-item.dropdown.mx-2
               %a.nav-link.dropdown-toggle.active-with-children{href: '#',
@@ -74,7 +74,7 @@
                 %li= link_to 'Languages', languages_path, class: 'dropdown-item'+active_class_when(controller: :languages) if @current_user.admin?
                 -#
           / report
-          - if @current_user && (@current_user.admin? || @current_user.groups_for_action(:report).any?)
+          - if @current_user && (@current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:report).any?)
             %li.nav-item.dropdown.mx-2
               %a.nav-link.dropdown-toggle.active-with-children{href: '#', data: {bs: {toggle:'dropdown'}},  aria: {haspopup:"true", expanded:"false"}, role: "button"}
                 Report

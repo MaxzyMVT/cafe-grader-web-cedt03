@@ -21,7 +21,7 @@ class TestcasesController < ApplicationController
   def show_problem
     @problem = Problem.includes(:testcases).find(params[:problem_id])
     @managers = @problem.live_dataset.managers
-    unless @current_user.admin? or @problem.view_testcase
+    unless @current_user.admin? or @current_user.problem_setter? or @problem.view_testcase
       flash[:error] = 'You cannot view the testcase of this problem'
       redirect_to controller: 'main', action: 'list'
     end
