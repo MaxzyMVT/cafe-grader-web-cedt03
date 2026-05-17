@@ -3,7 +3,7 @@ class Problem < ApplicationRecord
   audited only: %i[name full_name full_score available live_dataset_id
                    view_testcase view_submission allow_hint
                    permitted_lang submission_filename task_type compilation_type
-                   max_submissions bonus_first_blood]
+                   max_submissions bonus_first_blood first_n_bloods]
 
   # -- fields --
   # how the submission should be compiled
@@ -55,6 +55,7 @@ class Problem < ApplicationRecord
   validates_presence_of :full_score
 
   validates :max_submissions, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :first_n_bloods, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   # -- callback --
   after_initialize :set_default_full_score, if: :new_record?
@@ -64,21 +65,30 @@ class Problem < ApplicationRecord
     self.full_score ||= 100
   end
 
+  def first_n_bloods
+    val = self[:first_n_bloods]
+    (val.present? && val > 0) ? val : 1
+  end
+
   def first_blood_user
-    # Criteria:
-    # 1. Non-admin user
-    # 2. Active user (User#enabled is true)
-    # 3. Successful submission (points == full_score)
-    # 4. Standard submission (tag == default)
-    # 5. Earliest submission (submitted_at ASC)
+    first_n_blood_users(1).first
+  end
+
+  def first_n_blood_users(n = 1)
+    num = (n.present? && n > 0) ? n : 1
+    exclude_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+    disabled_group_user_ids = User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
+    exclude_ids = (exclude_ids + disabled_group_user_ids + User.where(enabled: false).pluck(:id)).uniq
     
-    admin_ids = User.joins(:roles).where(roles: { name: 'admin' }).pluck(:id)
-    submissions.tag_default.joins(:user)
-               .where(points: full_score)
-               .where(users: { enabled: true })
-               .where.not(user_id: admin_ids)
-               .order(:submitted_at)
-               .first&.user
+    results = submissions.tag_default.joins(:user)
+                .where(points: full_score)
+                .where.not(user_id: exclude_ids)
+                .group(:user_id)
+                .select('user_id, MIN(submissions.id) as first_sub_id, MIN(submitted_at) as first_time')
+                .order('first_time ASC')
+                .limit(num)
+    
+    User.where(id: results.map(&:user_id)).index_by(&:id).values_at(*results.map(&:user_id)).compact
   end
 
   # -- scope --

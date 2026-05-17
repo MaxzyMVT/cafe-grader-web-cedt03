@@ -51,11 +51,27 @@ class Comment < ApplicationRecord
     "#{kind}: #{title}"
   end
 
+  def available_in_contest?(contest, contest_user)
+    return true if available_after.blank? || available_after <= 0
+    return true unless GraderConfiguration.contest_mode? && contest
+
+    end_time = contest.stop + (contest_user&.extra_time_second || 0).seconds
+    return true if Time.zone.now > end_time
+
+    user_start_time = contest.start - (contest_user&.start_offset_second || 0).seconds
+    Time.zone.now >= user_start_time + available_after.seconds
+  end
+
   # check if the user can acquire this comment
   # This check both the logic of commentable, the contest, and the user itself
-  def acquirable_by?(user)
+  def acquirable_by?(user, contest = nil, contest_user = nil)
     # basic user logic
     return false unless user.present? && user.enabled?
+
+    # timing check
+    c = contest || (GraderConfiguration.contest_mode? ? user.contests.where(enabled: true).order(:stop).first : nil)
+    cu = contest_user || (c ? c.contests_users.where(user: user).take : nil)
+    return false unless available_in_contest?(c, cu)
 
     # call the specific model logic
     commentable.comment_reveal_prerequisite_satisfied?(self, user)

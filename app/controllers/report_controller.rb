@@ -313,12 +313,24 @@ class ReportController < ApplicationController
     # 3. Latest Submission
     @latest_sub = subs_scope.order(submitted_at: :desc).limit(10).includes(:user, :problem, :language)
 
-    # 4. First Bloods
-    # Submissions that were the first to get >= full_score for a problem
-    first_pass_subs = passed_scope.group(:problem_id).select('submissions.problem_id, MIN(submissions.submitted_at) as first_time')
+    # 4. First Bloods (N-th Bloods)
+    # Submissions that were the first N to get >= full_score for a problem
+    blood_sub_ids = []
+    problems_to_check = Problem.where(id: selected_prob_ids)
+    problems_to_check.each do |p|
+      n = p.respond_to?(:first_n_bloods) ? (p.first_n_bloods || 1) : 1
+      user_first_subs = p.submissions.tag_default.joins(:user)
+                         .where("submissions.points >= ?", p.full_score || 100)
+                         .where.not(user_id: exclude_user_ids.uniq)
+                         .group(:user_id)
+                         .select('MIN(submissions.id) as first_sub_id, MIN(submissions.submitted_at) as first_time')
+                         .order('first_time ASC')
+                         .limit(n)
+                         .map(&:first_sub_id)
+      blood_sub_ids.concat(user_first_subs)
+    end
     
-    fb_base = passed_scope
-      .joins("INNER JOIN (#{first_pass_subs.to_sql}) fp ON submissions.problem_id = fp.problem_id AND submissions.submitted_at = fp.first_time")
+    fb_base = passed_scope.where(id: blood_sub_ids)
 
     if params[:group_mode] == '1'
       fb_base = fb_base.joins(user: :groups).group('groups.id')

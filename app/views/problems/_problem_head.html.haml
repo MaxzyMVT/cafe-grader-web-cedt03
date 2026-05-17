@@ -11,6 +11,7 @@
     .badge.bg-info.text-dark.d-inline-flex.align-items-center.justify-content-center{style: 'min-width: 140px; height: 24px;'}
       Full Score: #{number_with_precision(problem.full_score, precision: 2, strip_insignificant_zeros: true)}
     - if problem.bonus_first_blood.to_f > 0
-      .badge.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.justify-content-center{title: 'First Blood Bonus', style: 'min-width: 140px; height: 24px;'}
+      - n = problem.respond_to?(:first_n_bloods) ? (problem.first_n_bloods || 1) : 1
+      .badge.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.justify-content-center{title: "First #{n} Bloods Bonus", style: 'min-width: 180px; height: 24px;'}
         %span.mi.md-14.me-1 bloodtype
-        Bonus: #{problem.bonus_first_blood.to_i}
+        Bonus: #{problem.bonus_first_blood.to_i} (First #{n})

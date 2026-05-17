@@ -78,11 +78,12 @@ class User < ApplicationRecord
   before_save :assign_default_contest
 
   def bonus_score
-    # Currently only includes "First Blood" bonus
-    # We find all problems where this user is the first blooder
+    # Includes "N-th Blood" bonus
+    # We find all problems where this user is one of the N-th blooders
     total_bonus = 0
     Problem.where.not(bonus_first_blood: [nil, 0]).find_each do |problem|
-      if problem.first_blood_user == self
+      n = problem.respond_to?(:first_n_bloods) ? (problem.first_n_bloods || 1) : 1
+      if problem.first_n_blood_users(n).include?(self)
         total_bonus += problem.bonus_first_blood
       end
     end

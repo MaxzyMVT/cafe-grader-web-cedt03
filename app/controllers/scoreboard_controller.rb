@@ -49,11 +49,13 @@ class ScoreboardController < ApplicationController
     submission_deductions.each { |uid, cost| @user_deductions[uid] += cost }
 
     # Calculate First Blood bonuses for all problems once
-    @first_blood_users = {}
+    @first_blood_users = {} # problem_id => list of user IDs
     @problems.each do |p|
       if p.bonus_first_blood.to_f > 0
-        fb_user = p.first_blood_user
-        @first_blood_users[p.id] = fb_user.id if fb_user
+        n = p.respond_to?(:first_n_bloods) ? (p.first_n_bloods || 1) : 1
+        @first_blood_users[p.id] = p.first_n_blood_users(n).map(&:id)
+      else
+        @first_blood_users[p.id] = []
       end
     end
 
@@ -68,7 +70,8 @@ class ScoreboardController < ApplicationController
         # Calculate bonus for this user
         bonus = 0
         @problems.each do |p|
-          if @first_blood_users[p.id] == u.id
+          u_ids = @first_blood_users[p.id] || []
+          if u_ids.include?(u.id)
             bonus += p.bonus_first_blood
           end
         end
@@ -113,7 +116,8 @@ class ScoreboardController < ApplicationController
           # Calculate bonus for this user
           user_bonus = 0
           @problems.each do |p|
-            if @first_blood_users[p.id] == u.id
+            u_ids = @first_blood_users[p.id] || []
+            if u_ids.include?(u.id)
               user_bonus += p.bonus_first_blood
             end
           end

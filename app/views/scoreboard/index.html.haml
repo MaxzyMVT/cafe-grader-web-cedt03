@@ -32,9 +32,10 @@
                       .vertical-text.mx-auto= p.name
                       .small.text-muted= p.full_score || 100
                       - if p.bonus_first_blood.to_f > 0
-                        .badge.bg-danger-subtle.text-danger.p-1.mt-1{title: "First Blood Bonus: #{p.bonus_first_blood}"}
+                        - n = p.respond_to?(:first_n_bloods) ? (p.first_n_bloods || 1) : 1
+                        .badge.bg-danger-subtle.text-danger.p-1.mt-1{title: "First #{n} Bloods Bonus: #{p.bonus_first_blood}"}
                           %span.mi.md-12 bloodtype
-                          %span.fw-bold.small= "+#{p.bonus_first_blood.to_i}"
+                          %span.fw-bold.small= "+#{p.bonus_first_blood.to_i} (x#{n})"
               
               %tbody
                 - if @mode == 'individual'
@@ -53,8 +54,8 @@
                           - if score > 0
                             %div.d-flex.align-items-center.justify-content-center.gap-1
                               = score.to_i
-                              - if @first_blood_users[p.id] == entry[:user].id
-                                %span.mi.text-danger.md-12{title: 'First Blood!'} bloodtype
+                              - if @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(entry[:user].id))
+                                %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received +#{p.bonus_first_blood.to_i} bonus!"} bloodtype
                 - else
                   - @leaderboard.each do |entry|
                     %tr.table-secondary
@@ -63,7 +64,10 @@
                       %td.text-center.fw-bold= entry[:total_score].to_i
                       %td.text-center.text-success.fw-bold= entry[:bonus_score].to_i if entry[:bonus_score] > 0
                       %td.text-center.text-danger= entry[:deducted_score].to_i if entry[:deducted_score] > 0
-                      %td{colspan: @problems.size}
+                      - @problems.each do |p|
+                        - group_score = entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.sum
+                        %td.text-center.fw-bold
+                          = group_score.to_i if group_score > 0
                     - entry[:members].each do |m|
                       %tr
                         %td.text-center.text-muted.small= m[:rank]
@@ -81,8 +85,8 @@
                             - if score > 0
                               %div.d-flex.align-items-center.justify-content-center.gap-1
                                 = score.to_i
-                                - if @first_blood_users[p.id] == m[:user].id
-                                  %span.mi.text-danger.md-12{title: 'First Blood!'} bloodtype
+                                - if @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(m[:user].id))
+                                  %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received +#{p.bonus_first_blood.to_i} bonus!"} bloodtype
 
 :css
   .scoreboard-table .vertical-text {

@@ -13,9 +13,10 @@
     %span.mi{style: 'font-size: 0.85rem;'} upload
     = "#{sub_count}/#{problem.max_submissions} subs"
 - if problem.bonus_first_blood.to_f > 0
-  %span.badge.rounded-pill.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.gap-1.ms-1{title: 'First Blood Bonus'}
+  - n = problem.respond_to?(:first_n_bloods) ? (problem.first_n_bloods || 1) : 1
+  %span.badge.rounded-pill.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.gap-1.ms-1{title: "First #{n} Bloods Bonus"}
     %span.mi{style: 'font-size: 0.85rem;'} bloodtype
-    = "+#{problem.bonus_first_blood.to_i}"
+    = "+#{problem.bonus_first_blood.to_i} (x#{n})"
 
 -# link for download statement, attachment, testcases
 %div.d-inline-flex.align-items-center.align-middle.gap-1

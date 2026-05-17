@@ -66,7 +66,7 @@ class CommentsController < ApplicationController
   end
 
   def update
-    hint_params = params.require(:comment).permit(:body, :title, :cost, :kind, :point_cost, :all_points, :success_rate)
+    hint_params = params.require(:comment).permit(:body, :title, :cost, :kind, :point_cost, :all_points, :success_rate, :available_after)
     if @hint.update(hint_params)
       @toast = {title: "Problem #{@problem.name}'s hint", body: "Hint #{@hint.title} updated"}
     else
@@ -81,7 +81,17 @@ class CommentsController < ApplicationController
   end
 
   def acquire
-    if @hint.acquirable_by?(@current_user)
+    unless @current_user.admin? || @current_user.problem_setter?
+      unless @hint.available_in_contest?(@current_contest, @current_contest_user)
+        render partial: 'msg_modal_show', locals: {do_popup: true,
+                                                   header_msg: 'Hint Locked',
+                                                   header_class: 'bg-warning-subtle',
+                                                   body_msg: "This hint is not available yet. It will release #{@hint.available_after} seconds after the contest start."}
+        return
+      end
+    end
+
+    if @hint.acquirable_by?(@current_user, @current_contest, @current_contest_user)
       success = true
       if (@hint.success_rate || 100.0) < 100.0
         roll = rand(0.0..100.0)
@@ -118,7 +128,14 @@ class CommentsController < ApplicationController
 
   # show hint as a modal
   def show_hint
-    # TODO: need to check whether the user can view this hint
+    unless @current_user.admin? || @current_user.problem_setter?
+      unless @hint.available_in_contest?(@current_contest, @current_contest_user)
+        @header_msg = "Hint Locked"
+        @body_msg = "This hint is not available yet. It will release #{@hint.available_after} seconds after the contest start."
+        render :show and return
+      end
+    end
+
     @header_msg = "Hint: #{@hint.title}"
     @body_msg = (@hint.body || '-- blank --').html_safe
     render :show
