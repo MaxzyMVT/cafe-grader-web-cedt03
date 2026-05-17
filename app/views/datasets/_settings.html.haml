@@ -10,7 +10,7 @@
           = link_to audit_logs_path(auditable_type: 'Dataset', auditable_id: ds.id), class: 'btn btn-sm bg-white shadow-sm border-0 text-secondary d-inline-flex align-items-center justify-content-center', data: {bs: {toggle: 'tooltip'}, bs_title: 'Change history (incl. testcases)'} do
             %span.mi history
         = f.input :name
-        = f.input :time_limit, label: "Time limit (s)", tooltip: 'Decimal is ok, e.g., 1.2. Minimum is 0.1 s.', input_html: { min: 0.1, step: 0.1 }
+        = f.input :time_limit, label: "Time limit (s)", tooltip: 'Decimal is ok, e.g., 1.2'
         = f.input :memory_limit, label: "Memory Limit (MB)"
         = f.input :score_type, collection: [['[SUM] The score is the sum of all testcase', :sum],['[GROUP MIN] The score is summation of minimum of each group', :group_min],['[GROUP MAX] The score is summation of maximum of each group', :group_max],['[RAW SUM] The score is the direct sum of checker testcase scores', :raw_sum]], include_blank: false, wrapper: :horizontal_select
         = f.input :evaluation_type, collection: Dataset.evaluation_types.keys, include_blank: false, wrapper: :horizontal_select

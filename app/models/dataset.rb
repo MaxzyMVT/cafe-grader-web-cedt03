@@ -9,8 +9,6 @@ class Dataset < ApplicationRecord
   has_many :testcases, dependent: :destroy
   has_many :submissions
 
-  validates :time_limit, numericality: { greater_than_or_equal_to: 0.1 }
-
   enum :evaluation_type, { default: 0,  # diff ignore trailing space, ignore blank line
                            exact: 1,    # diff ignore nothing
                            relative: 2, # token match float relate
