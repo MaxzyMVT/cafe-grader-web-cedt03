@@ -12,7 +12,7 @@
           { symbol: 'M', color: 'warning', text: t('help.grading_legend.m'), text_dark: true },
           { symbol: 'X', color: 'danger', text: t('help.grading_legend.x') },
           { symbol: '!', color: 'danger', text: t('help.grading_legend.grader_error') } ].each do |item|
-         .d-flex.align-items-start.gap-3.py-2
+        .d-flex.align-items-start.gap-3.py-2
           %span.badge.rounded-pill.px-3{class: "bg-#{item[:color]} #{'text-dark' if item[:text_dark]}", style: 'width: 2.8rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;'}
             = item[:symbol]
           %div
