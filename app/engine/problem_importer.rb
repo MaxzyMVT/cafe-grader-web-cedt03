@@ -80,10 +80,19 @@ class ProblemImporter
         end
 
         # overwrite with options if exists
-        if @options.has_key?(OptionConst::YAML_KEY[:testcases]) && @options[OptionConst::YAML_KEY[:testcases]].has_key?(codename.to_sym)
-          weight = @options[OptionConst::YAML_KEY[:testcases]][codename.to_sym][:weight]
-          group = @options[OptionConst::YAML_KEY[:testcases]][codename.to_sym][:group]
-          group_name = @options[OptionConst::YAML_KEY[:testcases]][codename.to_sym][:group_name]
+        if @options.has_key?(OptionConst::YAML_KEY[:testcases])
+          tc_options = nil
+          [codename.to_sym, codename, (Integer(codename) rescue nil)].compact.each do |key|
+            if @options[OptionConst::YAML_KEY[:testcases]].has_key?(key)
+              tc_options = @options[OptionConst::YAML_KEY[:testcases]][key]
+              break
+            end
+          end
+          if tc_options
+            weight = tc_options[:weight] if tc_options.has_key?(:weight)
+            group = tc_options[:group] if tc_options.has_key?(:group)
+            group_name = tc_options[:group_name] if tc_options.has_key?(:group_name)
+          end
         end
 
         # create new testcase
@@ -374,7 +383,7 @@ class ProblemImporter
     @log << "Found existing problem with the same name ('#{name}') !!! This import will UPDATE the existing problem." if @problem.id
     @problem.date_added = Time.zone.now unless @problem.date_added
     @problem.available = false if @problem.available.nil?
-    @problem.full_name = full_name
+    @problem.full_name = full_name.blank? ? name : full_name
     @problem.set_default_value unless @problem.id
     if dataset && dataset.problem == @problem
       @dataset = dataset

@@ -18,10 +18,9 @@
 
 /vendor/plugins/rails_upgrade
 
-#ignore public assets???
+# ignore compiled public assets and packs
 /public/assets
-/public
-
+/public/packs
 /data
 
 #ignore .orig and .swp
