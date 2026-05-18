@@ -26,7 +26,7 @@ class Evaluator
         prepare_submission_directory(@sub)
         prepare_dataset_directory(@working_dataset)
         prepare_worker_dataset(@working_dataset, :all)
-        prepare_testcase_directory(@sub, @testcase)
+        prepare_testcase_directory(@sub, @testcase, clean: true)
         File.write(@output_file, @sub.source)
         return evaluate("", {'time' => 0.0, 'max-rss' => 0, 'status' => '', 'message' => ''}, "")
       rescue => e
@@ -45,7 +45,7 @@ class Evaluator
     prepare_submission_directory(@sub)
     prepare_dataset_directory(@working_dataset)
     prepare_worker_dataset(@working_dataset, :all)
-    prepare_testcase_directory(@sub, @testcase)
+    prepare_testcase_directory(@sub, @testcase, clean: true)
     prepare_executable
 
     # prepare params for running sandbox

@@ -366,7 +366,7 @@ module JudgeBase
   end
 
   # set up directory and path/filename of the testcase directory
-  def prepare_testcase_directory(sub, testcase)
+  def prepare_testcase_directory(sub, testcase, clean: false)
     # preparing pathname for problem directory
     @prob_testcase_path = @problem_path + testcase.id.to_s
     @input_path = @prob_testcase_path + 'input' # we need additional dir because we will mount this dir to the isolate
@@ -384,6 +384,13 @@ module JudgeBase
 
       @sub_testcase_path.mkpath
       @output_path.mkpath
+      # Remove any existing output/metadata files to avoid permission issues under fs.protected_regular
+      # or stale results from previous runs.
+      if clean
+        File.delete(@output_file) if File.exist?(@output_file)
+        File.delete(@sub_testcase_path + StdErrFilename) if File.exist?(@sub_testcase_path + StdErrFilename)
+        File.delete(@sub_testcase_path + 'meta.txt') if File.exist?(@sub_testcase_path + 'meta.txt')
+      end
       @output_path.chmod(0777)
     end
   end
