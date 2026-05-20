@@ -14,7 +14,7 @@
         - @errors.each do |msg|
           %li= msg.html_safe
 
-.row
+.row{data: {controller: 'init-ui-component'}}
   .col-md-6
     .card.shadow-sm.mb-4
       .card-body
@@ -97,7 +97,10 @@
               .text-info.flex-shrink-0
                 %span.mi.md-24 settings
               %div
-                %h6.fw-bold.text-dark.mb-2 config.yml Configuration Guide
+                %h6.fw-bold.text-dark.mb-2.d-flex.align-items-center.gap-1
+                  config.yml Configuration Guide
+                  %a{href: 'https://github.com/cafe-grader-team/cafe-grader-web/wiki/Configuring-testcases', target: '_blank', data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Testcase configuration guide, including testcase attributes and config.yml formats.'}}}
+                    %span.mi.md-18 help_center
                 %p.small.text-muted.lh-sm.mb-2
                   Admins can optionally include a 
                   %code config.yml
