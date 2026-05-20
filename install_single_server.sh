@@ -51,9 +51,6 @@ if [ ! -d "web" ]; then
 fi
 cd web
 bundle install
-sudo corepack enable
-corepack prepare yarn@stable --activate
-yarn install
 
 echo "--------------------------------------------------------"
 echo "Installation almost complete! Some manual steps remain:"

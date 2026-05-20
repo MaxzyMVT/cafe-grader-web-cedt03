@@ -49,20 +49,9 @@
 /app/assets/builds/*
 #!/app/assets/builds/.keep
 
-# yarn
-/node_modules/*
+# Node modules
 /node_modules
-
-# Yarn 2/3/4
-# !.yarn/cache
-# !.yarn/releases
-# !.yarn/plugins
-# !.yarn/sdks
-# !.yarn/versions
-.yarn/*
-.pnp.*
-.yarn/install-state.gz
-.yarn/unplugged
+/node_modules/*
 
 /app/assets/builds/*
 #!/app/assets/builds/.keep

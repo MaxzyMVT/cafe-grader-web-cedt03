@@ -35,7 +35,6 @@ Here is an overview of the typical Rails structure found in this repository:
 cafe-grader-web/
 ├── .agents/          # Agent-related workflow configurations
 ├── .claude/          # Specific guides or configurations for Claude/AI
-├── .yarn/            # Yarn package manager cache and settings
 ├── app/              # Core application code (Models, Views, Controllers)
 │   ├── controllers/  # Logic bridging routes, models, and views
 │   ├── models/       # Database schemas and business logic
