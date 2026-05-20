@@ -135,6 +135,16 @@ class ApplicationController < ActionController::Base
     return true
   end
 
+  def admin_or_setter_authorization
+    return false unless check_valid_login
+    user = User.includes(:roles).find(session[:user_id])
+    unless user.admin? || user.problem_setter?
+      unauthorized_redirect
+      return false
+    end
+    return true
+  end
+
   # check whether the user is an editor of any group
   def group_editor_authorization
     return true if @current_user.admin? || @current_user.problem_setter?

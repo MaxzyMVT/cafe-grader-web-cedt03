@@ -46,3 +46,11 @@ disabled_user:
   hashed_password: <%= User.encrypt("disabled",salt) %>
   salt: <%= salt %>
   activated: false
+
+setter:
+  login: setter
+  full_name: Problem Setter
+  hashed_password: <%= User.encrypt("setter",salt) %>
+  salt: <%= salt %>
+  roles: problem_setter
+  activated: true

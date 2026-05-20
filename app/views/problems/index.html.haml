@@ -80,7 +80,8 @@
             %td= problem.date_added
             %td
               .form-check.form-switch.d-flex.justify-content-center
-                %input.form-check-input{id: "prob-#{problem.id}-available-switch", checked: problem.available, type: "checkbox", data: {action: 'problem#toggle', 'row-id': problem.id, field: 'available', readonly: @current_user.admin? ? 'false' : 'true'}, disabled: @current_user.admin? == false}
+                - is_allowed = @current_user.admin? || @current_user.problem_setter?
+                %input.form-check-input{id: "prob-#{problem.id}-available-switch", checked: problem.available, type: "checkbox", data: {action: 'problem#toggle', 'row-id': problem.id, field: 'available', readonly: is_allowed ? 'false' : 'true'}, disabled: !is_allowed}
             %td
               .form-check.form-switch.d-flex.justify-content-center
                 %input.form-check-input{id: "prob-#{problem.id}-view-testcase-switch", checked: problem.view_testcase, type: "checkbox", data: {action: 'problem#toggle', 'row-id': problem.id, field: 'view_testcase'}}

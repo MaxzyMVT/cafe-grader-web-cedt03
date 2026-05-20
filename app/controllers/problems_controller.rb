@@ -15,7 +15,8 @@ class ProblemsController < ApplicationController
   before_action :group_editor_authorization, except: [:download_by_type]
   before_action :can_view_problem, only: [:download_by_type]
 
-  before_action :admin_authorization, only: [:toggle_available, :turn_all_on, :turn_all_off, :download_archive]
+  before_action :admin_authorization, only: [:turn_all_on, :turn_all_off, :download_archive]
+  before_action :admin_or_setter_authorization, only: [:toggle_available]
   before_action :can_edit_problem, only: [:edit, :update, :destroy,
                                           :toggle_view_testcase, :stat,
                                           :add_dataset, :import_testcases,
