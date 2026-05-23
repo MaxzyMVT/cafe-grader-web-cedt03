@@ -147,7 +147,7 @@
                       %td
                         - if user.groups.any?
                           - user.groups.each do |group|
-                            %span.badge.bg-secondary-subtle.text-secondary-emphasis= group.name
+                            %span.badge.bg-secondary-subtle.text-secondary= group.name
                         - else
                           %span.text-muted.small -
                       %td
