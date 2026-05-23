@@ -20,16 +20,15 @@
           = form_tag modify_role_user_admin_index_path, class: 'role-form', data: {turbo: true, role_table: panel[:table_id], action: 'turbo:submit-end->user-admin--admin#afterUserAction'} do
             = hidden_field_tag :role, panel[:role]
             = hidden_field_tag :command, 'grant', class: 'role-command'
-            .row.row-cols-lg-auto.g-3.align-items-center
-              .col
-                %label.form-check-label= "Grant #{panel[:role]} role to"
-              .col
+            .mb-2
+              %label.form-label.fw-semibold= "Grant #{panel[:role]} role to"
+            .d-flex.gap-2.align-items-center
+              .flex-grow-1
                 = select_tag :id, options_from_collection_for_select(User.all, 'id', 'login_with_name'),
                              id: "#{panel[:role]}_user_id",
-                             class: 'select2 role-user-select', multiple: false, style: 'width: 20rem'
-              .col
-                = submit_tag 'Grant', class: 'btn btn-primary',
-                             data: {action: 'click->user-admin--admin#setGrantCommand'}
+                             class: 'select2 role-user-select', multiple: false, style: 'width: 100%'
+              = submit_tag 'Grant', class: 'btn btn-primary',
+                           data: {action: 'click->user-admin--admin#setGrantCommand'}
           %br
           %table.role-table.table.table-condense.table-hover{id: panel[:table_id], data: {query_url: panel[:query_url], role: panel[:role]}}
             %thead{:class => 'info-head'}
