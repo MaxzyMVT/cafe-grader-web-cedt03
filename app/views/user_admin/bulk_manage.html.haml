@@ -67,6 +67,12 @@
             = label_tag :add_group, 'Add users to group', class: 'form-check-label'
           .col-auto
             = select_tag :group_name, options_from_collection_for_select( Group.all.order('id DESC'), 'id','name',params[:group_id]), class: 'select2', style: 'width: 20em';
+        .row.row-cols-lg-auto.align-items-center.my-3
+          .col-auto
+            = check_box_tag :change_roles, true, params[:change_roles], class: 'form-check-input'
+            = label_tag :change_roles, 'Change roles to', class: 'form-check-label'
+          .col-auto
+            = select_tag :role_name, options_for_select([['Default (no roles)', 'default'], ['Admin', 'admin'], ['Problem Setter', 'problem_setter'], ['TA', 'ta']], params[:role_name]), class: 'select2', style: 'width: 20em';
         .row.my-2
           .col-md-12
             .form-check
@@ -98,6 +104,10 @@
               .alert.alert-info.d-flex.align-items-center.gap-2.mb-3
                 %span.mi group_add
                 The following users will be added to group: "#{Group.find(params[:group_name]).name}"
+            - if @action[:change_roles]
+              .alert.alert-info.d-flex.align-items-center.gap-2.mb-3
+                %span.mi shield
+                The roles of the following users will be set to: #{@action[:role_name] == 'default' ? 'Default (no roles)' : @action[:role_name].titleize}.
             - if @action[:delete_users]
               .alert.alert-danger.fw-bold.d-flex.align-items-center.gap-2.mb-3
                 %span.mi.align-middle warning
@@ -122,10 +132,11 @@
               %table.table.table-striped.table-hover.align-middle.mb-0
                 %thead.table-light
                   %tr
-                    %th{style: 'width: 25%;'} Username
-                    %th{style: 'width: 30%;'} Full Name
-                    %th{style: 'width: 20%;'} Roles
-                    %th{style: 'width: 15%;'} Status
+                    %th{style: 'width: 20%;'} Username
+                    %th{style: 'width: 25%;'} Full Name
+                    %th{style: 'width: 20%;'} Group
+                    %th{style: 'width: 15%;'} Roles
+                    %th{style: 'width: 10%;'} Status
                     %th{style: 'width: 10%;'} Remark
                 %tbody
                   - @users.each do |user|
@@ -133,6 +144,12 @@
                       %td
                         %code.fw-bold{style: 'font-size: 0.95rem;'}= user.login
                       %td= user.full_name
+                      %td
+                        - if user.groups.any?
+                          - user.groups.each do |group|
+                            %span.badge.bg-secondary-subtle.text-secondary-emphasis= group.name
+                        - else
+                          %span.text-muted.small -
                       %td
                         - if user.roles.any?
                           - user.roles.each do |role|
