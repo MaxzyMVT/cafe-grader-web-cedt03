@@ -388,6 +388,8 @@ class UserAdminController < ApplicationController
       @action[:add_group] = params[:add_group]
       @action[:group_name] = params[:group_name]
       @action[:delete_users] = params[:delete_users]
+      @action[:change_roles] = params[:change_roles]
+      @action[:role_name] = params[:role_name]
     end
 
     if params[:commit] == "Perform"
@@ -427,6 +429,31 @@ class UserAdminController < ApplicationController
         end
         flash[:success] = "The following users are added to the 'group #{@group.name}': " + ok.join(', ') if ok.count > 0
         flash[:alert] = "The following users are already in the 'group #{@group.name}': " + failed.join(', ') if failed.count > 0
+      end
+      if @action[:change_roles] and @action[:role_name]
+        role = Role.find_by(name: @action[:role_name]) unless @action[:role_name] == 'default'
+        @users.each do |user|
+          if user.login == 'root'
+            # Safety check: do not revoke admin role from root
+            admin_role = Role.find_by(name: 'admin')
+            user.roles.clear
+            user.roles << admin_role if admin_role
+          elsif user == @current_user && @action[:role_name] != 'admin'
+            # Do not allow current user to revoke their own admin role
+            if user.roles.where(name: 'admin').any?
+              admin_role = Role.find_by(name: 'admin')
+              user.roles.clear
+              user.roles << admin_role if admin_role
+              user.roles << role if role && role.name != 'admin'
+            else
+              user.roles.clear
+              user.roles << role if role
+            end
+          else
+            user.roles.clear
+            user.roles << role if role
+          end
+        end
       end
     end
   end
