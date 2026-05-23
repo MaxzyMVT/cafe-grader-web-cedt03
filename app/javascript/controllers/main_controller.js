@@ -21,23 +21,17 @@ export default class extends rowFieldToggle(Controller) {
     const activeBadges = this.element.querySelectorAll(".topic-badge.active-topic");
     const hasActive = activeBadges.length > 0;
 
-    const activeClass = ["text-bg-secondary"];
-    const backgroundClass = ["text-bg-light", "border", "border-dark-subtle", "text-body-tertiary"];
-
     badges.forEach((badge) => {
       if (badge.classList.contains('active-topic')) {
-        badge.classList.add(...activeClass);
-        badge.classList.remove(...backgroundClass);
-        badge.classList.remove('btn-outline-secondary');
+        badge.classList.add('active');
+        badge.classList.remove('opacity-50');
       } else {
         if (hasActive) {
-          badge.classList.remove(...activeClass);
-          badge.classList.add(...backgroundClass);
-          badge.classList.remove('btn-outline-secondary');
+          badge.classList.remove('active');
+          badge.classList.add('opacity-50');
         } else {
-          badge.classList.remove(...activeClass);
-          badge.classList.remove(...backgroundClass);
-          badge.classList.add('btn-outline-secondary');
+          badge.classList.remove('active');
+          badge.classList.remove('opacity-50');
         }
       }
     });
