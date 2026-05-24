@@ -25,8 +25,10 @@
                   %th.text-center{style: "min-width: 60px;"} Rank
                   %th{style: "min-width: 200px;"} Name
                   %th.text-center{style: "min-width: 80px;"} Sum
-                  %th.text-center{style: "min-width: 80px;"} Bonus
-                  %th.text-center{style: "min-width: 80px;"} Deducted
+                  - unless GraderConfiguration.disable_bonus?
+                    %th.text-center{style: "min-width: 80px;"} Bonus
+                  - unless GraderConfiguration.disable_penalty?
+                    %th.text-center{style: "min-width: 80px;"} Deducted
                   - @problems.each do |p|
                     %th.text-center.problem-header{title: p.full_name}
                       .vertical-text.mx-auto= p.name
@@ -46,8 +48,10 @@
                       %td.text-center.fw-bold= entry[:rank]
                       %td= entry[:user].full_name
                       %td.text-center.fw-bold= entry[:total_score].to_i
-                      %td.text-center.text-success= entry[:bonus_score].to_i if entry[:bonus_score] > 0
-                      %td.text-center.text-danger= entry[:deducted_score].to_i if entry[:deducted_score] > 0
+                      - unless GraderConfiguration.disable_bonus?
+                        %td.text-center.text-success= entry[:bonus_score].to_i if entry[:bonus_score] > 0
+                      - unless GraderConfiguration.disable_penalty?
+                        %td.text-center.text-danger= entry[:deducted_score].to_i if entry[:deducted_score] > 0
                       - @problems.each do |p|
                         - score = @scores[entry[:user].id][p.id] || 0
                         - full_score = p.full_score || 100
@@ -65,8 +69,10 @@
                       %td.text-center.fw-bold= entry[:rank]
                       %td.fw-bold= entry[:group].name
                       %td.text-center.fw-bold= entry[:total_score].to_i
-                      %td.text-center.text-success.fw-bold= entry[:bonus_score].to_i if entry[:bonus_score] > 0
-                      %td.text-center.text-danger= entry[:deducted_score].to_i if entry[:deducted_score] > 0
+                      - unless GraderConfiguration.disable_bonus?
+                        %td.text-center.text-success.fw-bold= entry[:bonus_score].to_i if entry[:bonus_score] > 0
+                      - unless GraderConfiguration.disable_penalty?
+                        %td.text-center.text-danger= entry[:deducted_score].to_i if entry[:deducted_score] > 0
                       - @problems.each do |p|
                         - group_score = entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.sum
                         %td.text-center.fw-bold
@@ -78,8 +84,10 @@
                           %i.mi.mi-subdirectory-arrow-right.text-muted.me-2
                           = m[:user].full_name
                         %td.text-center= m[:total_score].to_i
-                        %td.text-center.text-success= m[:bonus_score].to_i if m[:bonus_score] > 0
-                        %td.text-center.text-danger= m[:deducted_score].to_i if m[:deducted_score] > 0
+                        - unless GraderConfiguration.disable_bonus?
+                          %td.text-center.text-success= m[:bonus_score].to_i if m[:bonus_score] > 0
+                        - unless GraderConfiguration.disable_penalty?
+                          %td.text-center.text-danger= m[:deducted_score].to_i if m[:deducted_score] > 0
                         - @problems.each do |p|
                           - score = @scores[m[:user].id][p.id] || 0
                           - full_score = p.full_score || 100
