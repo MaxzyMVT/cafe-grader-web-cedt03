@@ -96,7 +96,7 @@ class ScoreboardController < ApplicationController
       
       # Optional name sorting
       if params[:sort] == 'name'
-        @leaderboard.sort_by! { |entry| entry[:user].full_name.to_s.downcase }
+        @leaderboard.sort_by! { |entry| [entry[:user].full_name.to_s.downcase, -entry[:total_score]] }
       end
     else
       # Group mode
@@ -161,6 +161,9 @@ class ScoreboardController < ApplicationController
       
       if params[:sort] == 'name'
         @leaderboard.sort_by! { |entry| entry[:group].name.to_s.downcase }
+        @leaderboard.each do |entry|
+          entry[:members].sort_by! { |m| [m[:user].full_name.to_s.downcase, -m[:total_score]] }
+        end
       end
     end
 
