@@ -13,3 +13,17 @@ tr {
   border: solid black 1px;
   padding: 10px;
 }
+
+tr[draggable="true"] {
+  cursor: grab;
+  
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+tr.dragging {
+  opacity: 0.5;
+  background-color: var(--bs-light) !important;
+  border: 2px dashed var(--bs-secondary);
+}

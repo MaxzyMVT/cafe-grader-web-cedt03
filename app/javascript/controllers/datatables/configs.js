@@ -161,6 +161,10 @@ export const configs = {
     processing: true,
     rowId: 'id',
     destroy: true,
+    createdRow: function(row, data, dataIndex) {
+      $(row).attr('draggable', 'true');
+      $(row).attr('data-row-id', data.problem_id);
+    },
     order: [[0, 'asc']],
     ajax: {
       type: 'POST',

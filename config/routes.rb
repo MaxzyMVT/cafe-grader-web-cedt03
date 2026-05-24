@@ -117,6 +117,7 @@ Rails.application.routes.draw do
       post 'toggle_view_testcase'
       post 'move_up'
       post 'move_down'
+      post 'reorder'
       get 'stat'
       get 'get_statement(/:filename)', as: 'get_statement', action: 'get_statement'
       get 'get_attachment(/:filename)', as: 'get_attachment', action: 'get_attachment'

@@ -6,7 +6,7 @@ class ProblemsController < ApplicationController
                    :toggle_available, :toggle_view_testcase, :stat,
                    :add_dataset, :import_testcases,
                    :download_archive, :download_by_type, :delete_by_type,
-                   :move_up, :move_down,
+                   :move_up, :move_down, :reorder,
                   ]
 
   before_action :set_problem, only: MEMBER_METHOD
@@ -21,7 +21,7 @@ class ProblemsController < ApplicationController
   before_action :can_edit_problem, only: [:edit, :update, :destroy,
                                           :toggle_view_testcase, :stat,
                                           :add_dataset, :import_testcases,
-                                          :delete_by_type, :move_up, :move_down,
+                                          :delete_by_type, :move_up, :move_down, :reorder,
                                          ]
   before_action :can_report_problem, only: [:stat]
   before_action :set_active_tab, only: %i[update]
@@ -207,6 +207,24 @@ class ProblemsController < ApplicationController
     old_number = @problem.number || 0
     Problem.set_problem_number(@problem, old_number + 1.2)
     redirect_to action: :index, notice: "Problem #{@problem.name} was moved down."
+  end
+
+  def reorder
+    old_number = @problem.number
+    target_pos = params[:target_position].to_i
+    if target_pos > 0
+      Problem.set_problem_number(@problem, target_pos)
+      AuditLog.record!(
+        auditable: @problem,
+        action: 'reorder',
+        object_changes: { 'number' => [old_number, target_pos] }
+      )
+      @toast = {title: "Problem #{@problem.name}", body: "Problem reordered to position #{target_pos}."}
+    end
+    respond_to do |format|
+      format.turbo_stream { render 'turbo_toast' }
+      format.html { redirect_to action: :index, notice: "Problem #{@problem.name} was reordered." }
+    end
   end
 
   def turn_all_off

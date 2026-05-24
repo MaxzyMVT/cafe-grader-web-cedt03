@@ -20,7 +20,7 @@
 .card.card-shadow
   .card-body
 
-    %table#main_table.table.table-condense.table-hover{'data-controller': 'init-ui-component'}
+    %table#main_table.table.table-condense.table-hover{'data-controller': 'init-ui-component row-reorder', 'data-row-reorder-url-value': reorder_problem_path(-123), 'data-row-reorder-reload-type-value': 'page'}
       %thead
         %tr
           %th.all Number
@@ -49,7 +49,7 @@
           %th.text-center.all
       %tbody
         - for problem in @problems
-          %tr{:class => "#{(problem.available) ? "row-available" : ""}", :id => "prob-#{problem.id}", :name => "prob-#{problem.id}"}
+          %tr{:class => "#{(problem.available) ? "row-available" : ""}", :id => "prob-#{problem.id}", :name => "prob-#{problem.id}", :draggable => 'true'}
             - @problem=problem
             %td= problem.number
             %td.font-monospace= problem.name

@@ -314,6 +314,19 @@ class ContestsController < ApplicationController
         object_changes: { 'problem' => [nil, @problem.name], 'number' => [old_number, new_number] }
       )
       @toast[:body] = "Problem #{@problem.name} was #{params[:command] == 'moveup' ? 'moved up' : 'moved down'}."
+    when 'reorder'
+      old_number = gp.number
+      target_pos = params[:target_position].to_i
+      AuditLog.paused do
+        @contest.set_problem_number(@problem, target_pos)
+      end
+      new_number = @contest.contests_problems.where(problem: @problem).first&.number
+      AuditLog.record!(
+        auditable:      @contest,
+        action:         'reorder',
+        object_changes: { 'problem' => [nil, @problem.name], 'number' => [old_number, new_number] }
+      )
+      @toast[:body] = "Problem #{@problem.name} was reordered to position #{new_number}."
     else
       @toast[:body] = "Unknown command"
       @toast[:type] = 'alert'

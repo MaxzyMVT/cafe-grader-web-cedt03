@@ -272,7 +272,7 @@
                             arrows to sort the display order of problems for the contest users.
               .row
                 .col-12
-                  %table#problem_table.table.datatable.table-hover
+                  %table#problem_table.table.datatable.table-hover{ data: { controller: 'row-reorder', 'row-reorder-url-value': do_problem_contest_path(@contest), 'row-reorder-record-param-name-value': 'problem_id', 'row-reorder-additional-params-value': { command: 'reorder' }.to_json } }
                     %thead
                       %tr
                         %th Number
