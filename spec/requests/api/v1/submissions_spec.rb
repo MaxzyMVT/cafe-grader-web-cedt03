@@ -61,7 +61,9 @@ RSpec.describe "Submissions API", type: :request do
         schema type: :object, additionalProperties: false, properties: {
           id: { type: :integer },
           number: { type: :integer },
-          status: { type: :string }
+          status: { type: :string },
+          max_submissions: { type: :integer, nullable: true },
+          submissions_remaining: { type: :integer, nullable: true }
         }, required: %w[id number status]
 
         let(:problem_id) { problems(:prob_add).id }

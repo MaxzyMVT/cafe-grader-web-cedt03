@@ -27,13 +27,7 @@
           %small.text-muted Select problems below, choose actions, then apply. You can shift-click to select a range.
       .row
         .col-md-6
-          .row.mb-3.align-items-center
-            .col-md-auto
-              .form-check
-                = f.check_box :change_date_added, class: 'form-check-input manage-action'
-                = f.label :change_date_added, 'Change "Date added" to'
-            .col-md-auto
-              = f.text_field :date_added, class: 'form-control'
+
           .row.mb-3.align-items-center
             .col-md-auto
               .form-check
@@ -161,7 +155,7 @@
       order: [[0]],
     });
 
-    td = new TempusDominus(document.getElementById('date_added'), cafe.config.td.date);
+
 
     let firstRowIndex = null;
     const checkboxColumnIndex = table.column('checkbox:name').index();

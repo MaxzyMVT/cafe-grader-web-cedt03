@@ -31,6 +31,8 @@ RSpec.describe "Problems API", type: :request do
             last_submission_time: { type: :string, format: "date-time", nullable: true },
             has_testcase: { type: :boolean },
             has_attachment: { type: :boolean },
+            max_submissions: { type: :integer, nullable: true },
+            submissions_remaining: { type: :integer, nullable: true },
             permitted_languages: {
               type: :array, nullable: true,
               items: {
@@ -76,6 +78,8 @@ RSpec.describe "Problems API", type: :request do
           last_submission_time: { type: :string, format: "date-time", nullable: true },
           has_testcase: { type: :boolean },
           has_attachment: { type: :boolean },
+          max_submissions: { type: :integer, nullable: true },
+          submissions_remaining: { type: :integer, nullable: true },
           permitted_languages: {
             type: :array, nullable: true,
             items: {

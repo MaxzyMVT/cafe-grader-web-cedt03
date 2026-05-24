@@ -6,6 +6,7 @@ class ProblemsController < ApplicationController
                    :toggle_available, :toggle_view_testcase, :stat,
                    :add_dataset, :import_testcases,
                    :download_archive, :download_by_type, :delete_by_type,
+                   :move_up, :move_down,
                   ]
 
   before_action :set_problem, only: MEMBER_METHOD
@@ -20,7 +21,7 @@ class ProblemsController < ApplicationController
   before_action :can_edit_problem, only: [:edit, :update, :destroy,
                                           :toggle_view_testcase, :stat,
                                           :add_dataset, :import_testcases,
-                                          :delete_by_type,
+                                          :delete_by_type, :move_up, :move_down,
                                          ]
   before_action :can_report_problem, only: [:stat]
   before_action :set_active_tab, only: %i[update]
@@ -196,6 +197,18 @@ class ProblemsController < ApplicationController
     render 'toggle'
   end
 
+  def move_up
+    old_number = @problem.number || 2
+    Problem.set_problem_number(@problem, old_number - 1.2)
+    redirect_to action: :index, notice: "Problem #{@problem.name} was moved up."
+  end
+
+  def move_down
+    old_number = @problem.number || 0
+    Problem.set_problem_number(@problem, old_number + 1.2)
+    redirect_to action: :index, notice: "Problem #{@problem.name} was moved down."
+  end
+
   def turn_all_off
     Problem.where(available: true).update_all(available: false)
     redirect_to action: :index
@@ -233,7 +246,7 @@ class ProblemsController < ApplicationController
   end
 
   def manage
-    @problems = @current_user.problems_for_action(:edit).order(date_added: :desc).includes(:tags)
+    @problems = @current_user.problems_for_action(:edit).order(:number).order(:name).includes(:tags)
   end
 
   def do_manage
@@ -242,8 +255,6 @@ class ProblemsController < ApplicationController
     problems = Problem.where(id: get_problems_from_params.ids).where(id: @current_user.problems_for_action(:edit).ids)
 
     @toast = {title: "Bulk Manage #{problems.count} #{'problem'.pluralize(problems.count)}"}
-
-    change_date_added(problems) if params[:change_date_added] == '1' && params[:date_added].strip.empty? == false
     add_to_contest(problems) if params.has_key? 'add_to_contest'
     if params[:change_enable] == '1'
       problems.update_all(available: params[:enable] == 'yes')
@@ -428,7 +439,7 @@ class ProblemsController < ApplicationController
     end
 
     def problem_params
-      params.require(:problem).permit(:name, :full_name, :change_date_added, :date_added, :available, :compilation_type, :full_score,
+      params.require(:problem).permit(:name, :full_name, :available, :compilation_type, :full_score,
                                       :submission_filename, :difficulty, :attachment, :statement, :markdown, :view_testcase,
                                       :test_allowed, :output_only, :url, :description, :description, :view_submission,
                                       :max_submissions, :bonus_first_blood, :first_n_bloods, tag_ids: [], group_ids: [])
@@ -444,13 +455,6 @@ class ProblemsController < ApplicationController
       else
         return false
       end
-    end
-
-    # for bulk manage
-    def change_date_added(problems)
-      date = Date.parse(params[:date_added])
-      problems.update_all(date_added: date)
-      @result << "Date added changed to <strong>#{date}</strong>"
     end
 
     def add_to_contest(problems)
@@ -487,7 +491,7 @@ class ProblemsController < ApplicationController
         .joins("LEFT JOIN (#{tc_count_sql}  ) TC ON problems.id = TC.problem_id")
         .joins("LEFT JOIN (#{ms_count_sql}  ) MS ON problems.id = MS.problem_id")
         .joins("LEFT JOIN (#{hint_count_sql}) HC ON problems.id = HC.problem_id")
-        .includes(:tags).order(date_added: :desc).group('problems.id')
+        .includes(:tags).order(:number).order(:name).group('problems.id')
         .includes(live_dataset: {checker_attachment: :blob})
         .select("problems.*", "count(datasets_problems.id) as dataset_count, MIN(TC.tc_count) as tc_count")
         .select("MIN(MS.ms_count) as ms_count")

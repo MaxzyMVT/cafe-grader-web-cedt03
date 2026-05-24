@@ -238,7 +238,7 @@ class ReportController < ApplicationController
   def extended_stat
     # Allow admins and users with report access
     # Parameters for filtering
-    @problems_all = @current_user.problems_for_action(:report).order(:date_added)
+    @problems_all = @current_user.problems_for_action(:report).default_order
     
     # if we have problems from selected_problems before_action, use them
     # If the user explicitly selected 'Specific Problems' (ids) mode but selected nothing,
@@ -793,7 +793,7 @@ ORDER BY submitted_at
       end
 
       # sort it
-      @problems = @current_user.problems_for_action(:report).where(id: @problems.ids).order(:date_added)
+      @problems = @current_user.problems_for_action(:report).where(id: @problems.ids).default_order
     end
 
     def selected_users

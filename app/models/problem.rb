@@ -172,9 +172,25 @@ class Problem < ApplicationRecord
     if GraderConfiguration.contest_mode?
       order('MIN(contests_problems.number)')
     else
-      order(date_added: :desc).order(:name)
+      order(:number).order(:name)
     end
   }
+
+  before_create :assign_default_number
+
+  def assign_default_number
+    self.number ||= (Problem.maximum(:number) || 0) + 1
+  end
+
+  def self.set_problem_number(problem, number)
+    num = 1
+    Problem.where.not(id: problem.id).order(:number).each do |p|
+      offset = (num >= number) ? 1 : 0
+      p.update_columns(number: num + offset)
+      num += 1
+    end
+    problem.update_columns(number: [Problem.count, [1, number.round].max].min)
+  end
 
   DEFAULT_TIME_LIMIT = 1
   DEFAULT_MEMORY_LIMIT = 32

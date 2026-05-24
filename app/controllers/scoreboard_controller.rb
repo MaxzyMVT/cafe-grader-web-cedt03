@@ -4,7 +4,7 @@ class ScoreboardController < ApplicationController
   def index
     # Fetch all enabled users, problems that are available/reportable
     # For now we fetch all problems for simplicity
-    @problems = Problem.available.order(:date_added)
+    @problems = Problem.available.default_order
 
     # Fetch users, but depending on group toggle, we might need groups
     disabled_group_user_ids = User.joins(:groups).where(groups: { enabled: false }).pluck(:id)

@@ -23,6 +23,7 @@
     %table#main_table.table.table-condense.table-hover{'data-controller': 'init-ui-component'}
       %thead
         %tr
+          %th.all Number
           %th.all Name
           %th Full name
           %th Difficulty
@@ -50,6 +51,7 @@
         - for problem in @problems
           %tr{:class => "#{(problem.available) ? "row-available" : ""}", :id => "prob-#{problem.id}", :name => "prob-#{problem.id}"}
             - @problem=problem
+            %td= problem.number
             %td.font-monospace= problem.name
             %td
               .d-inline-flex.align-items-center
@@ -87,6 +89,8 @@
                 %input.form-check-input{id: "prob-#{problem.id}-view-testcase-switch", checked: problem.view_testcase, type: "checkbox", data: {action: 'problem#toggle', 'row-id': problem.id, field: 'view_testcase'}}
             %td.py-1.all
               .d-flex.gap-1.justify-content-end
+                = link_to mdi(:arrow_upward), move_up_problem_path(problem), class: 'btn btn-outline-secondary border-0 p-1 btn-flex', title: 'Move Up', data: {turbo: true, turbo_method: :post}
+                = link_to mdi(:arrow_downward), move_down_problem_path(problem), class: 'btn btn-outline-secondary border-0 p-1 btn-flex', title: 'Move Down', data: {turbo: true, turbo_method: :post}
                 = link_to "#{mdi(:finance)} Stat".html_safe, {:action => 'stat', :id => problem.id}, class: 'btn btn-flex btn-outline-primary border-0'
                 = link_to "#{mdi(:edit)} Edit".html_safe, {:action => 'edit', :id => problem}, class: 'btn btn-flex btn-outline-primary border-0'
                 = link_to "#{mdi(:delete)}".html_safe, { :action => 'destroy', :id => problem }, 'data-confirm': 'Are you sure?', :method => :delete, class: 'btn btn-outline-danger btn-flex border-0'
@@ -103,7 +107,7 @@
     $("#main_table").DataTable({
       sorting: false,
       columnDefs: [
-        { targets: [3,4,5,6,7,8,9,10,13], sortable: false },
+        { targets: [4,5,6,7,8,9,10,11,14], sortable: false },
       ],
       paging: false,
       responsive: true,
