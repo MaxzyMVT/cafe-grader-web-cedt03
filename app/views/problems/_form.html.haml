@@ -61,12 +61,47 @@
                 %input.form-control#problem_max_submissions{type: 'number', name: 'problem[max_submissions]', value: problem.max_submissions, min: 1, placeholder: 'Max', disabled: !problem.submission_limit?}
                 %span.input-group-text submissions
         = form.input :full_score, required: true, tooltip: 'Maximum points a contestant can get from this problem (default 100)'
-        = form.input :difficulty, tooltip: 'Input integer value from 0 to 10'
-        = form.input :bonus_first_blood, label: 'First Blood Bonus Point', tooltip: 'Additional points for the first active user to solve this problem'
+        = form.input :difficulty, tooltip: 'Input integer value from 0 to 10. 1 difficulty = half star'
+        = form.input :bonus_first_blood, label: 'First Blood Bonus Point', tooltip: 'Additional points for the first active user to solve this problem', input_html: { step: 'any' }
         = form.input :first_n_bloods, label: 'N-th Blood Winners Count', tooltip: 'Number of unique users who can receive the First Blood bonus points (default: 0). Setting to 0 disables first blood bonus for this problem.', input_html: { min: 0, step: 1 }
         = form.input :compilation_type, collection: [['[Self Contained] The submissions can be compiled by itself','self_contained'],['[With managers] The submission will be compiled with the managers','with_managers'],['[Viva Exam] LLM-driven Socratic interview + rubric grading','viva_exam']], wrapper: :horizontal_select, tooltip: 'For Viva Exam, attach llm_prompt tags (interviewer persona + rubric) and viva_grounding tags (course materials). Test-case datasets do not apply.', include_blank: false
         = form.input :submission_filename
-        = form.input :output_only, wrapper: :horizontal_boolean, tooltip: 'If set, the grader will not compile or run the submission. It will only grade the submitted output file(s) against the test cases. Useful for "output-only" tasks.'
+        = form.input :output_only, wrapper: :horizontal_boolean, tooltip: 'If set, the grader will not compile or run the submission. It will only grade the submitted output file(s) against the test cases. Useful for "output-only" tasks.', input_html: { id: 'problem_output_only', onchange: "document.getElementById('quick_testcase_box').style.display = this.checked ? 'flex' : 'none';" }
+        #quick_testcase_box.row.mb-3{style: ('display: none;' unless @problem.output_only?)}
+          .col-sm-3
+          .col-sm-9
+            .card.bg-light.p-3.border.border-secondary-subtle
+              %h6.card-title.d-flex.align-items-center.gap-2.mb-3.text-secondary.fw-bold
+                %span.mi.md-18 add_box
+                Quick Test Case Creator
+              .row.g-3
+                .col-md-12
+                  %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                    Answer Text
+                    %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'The content that will be saved into the .sol file'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                  %textarea.form-control{name: 'answer_text', form: 'quick_testcase_form', rows: 3, placeholder: 'Answer content...'}
+                .col-md-6
+                  %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                    Codename
+                    %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Unique code name for this testcase (e.g. 01, task1)'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                  %input.form-control{type: 'text', name: 'codename', form: 'quick_testcase_form', placeholder: 'e.g. 01'}
+                .col-md-6
+                  %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                    Weight
+                    %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Weight for this testcase (integer)'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                  %input.form-control{type: 'number', name: 'weight', form: 'quick_testcase_form', value: 1, min: 0}
+                .col-md-6
+                  %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                    Group
+                    %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Group number for subtask/scoring (integer)'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                  %input.form-control{type: 'number', name: 'group', form: 'quick_testcase_form', value: 1, min: 1}
+                .col-md-6
+                  %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                    Group Name
+                    %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Label or name of the group/subtask'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                  %input.form-control{type: 'text', name: 'group_name', form: 'quick_testcase_form', placeholder: 'e.g. Subtask 1'}
+              .mt-3.text-end
+                %button.btn.btn-secondary.btn-sm{type: 'submit', form: 'quick_testcase_form'} Add
         = form.button :submit, class: 'btn btn-primary me-2'
       %div#description.my-3.tab-pane.fade{class: (' show active ' if @active_problem_tab == '#description')}
         -# Description
@@ -99,6 +134,8 @@
         = render partial: 'hint_select', locals: {ds: @problem.live_dataset, problem: @problem}
       -# dataset form
       = turbo_frame_tag :hint_detail, src: edit_problem_hint_index_path(@problem,@problem.hints.first)
+  = form_with url: quick_add_testcase_problem_path(problem), method: :post, id: 'quick_testcase_form', data: { turbo: true } do
+    -# empty block
 
 
 :javascript

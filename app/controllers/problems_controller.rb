@@ -6,7 +6,7 @@ class ProblemsController < ApplicationController
                    :toggle_available, :toggle_view_testcase, :stat,
                    :add_dataset, :import_testcases,
                    :download_archive, :download_by_type, :delete_by_type,
-                   :move_up, :move_down, :reorder,
+                   :move_up, :move_down, :reorder, :quick_add_testcase,
                   ]
 
   before_action :set_problem, only: MEMBER_METHOD
@@ -22,6 +22,7 @@ class ProblemsController < ApplicationController
                                           :toggle_view_testcase, :stat,
                                           :add_dataset, :import_testcases,
                                           :delete_by_type, :move_up, :move_down, :reorder,
+                                          :quick_add_testcase,
                                          ]
   before_action :can_report_problem, only: [:stat]
   before_action :set_active_tab, only: %i[update]
@@ -442,6 +443,71 @@ class ProblemsController < ApplicationController
     respond_to do |format|
       format.turbo_stream { render 'datasets/update' }
       format.html { render :import }
+    end
+  end
+
+  def quick_add_testcase
+    dataset = @problem.live_dataset || @problem.datasets.first
+    unless dataset
+      dataset = @problem.datasets.create(name: @problem.get_next_dataset_name)
+      @problem.update(live_dataset: dataset)
+    end
+
+    codename = params[:codename].to_s.strip
+    if codename.blank?
+      @toast = { title: 'Error', body: 'Codename cannot be blank.', type: :danger }
+      respond_to do |format|
+        format.turbo_stream { render 'application/turbo_toast' }
+        format.html { redirect_to edit_problem_path(@problem), alert: 'Codename cannot be blank.' }
+      end
+      return
+    end
+
+    existing_tc = dataset.testcases.find_by(code_name: codename)
+    if existing_tc
+      @toast = { title: 'Error', body: "Test case with codename '#{codename}' already exists in dataset '#{dataset.name}'.", type: :danger }
+      respond_to do |format|
+        format.turbo_stream { render 'application/turbo_toast' }
+        format.html { redirect_to edit_problem_path(@problem), alert: 'Codename already exists.' }
+      end
+      return
+    end
+
+    num = (dataset.testcases.maximum(:num) || 0) + 1
+    weight = params[:weight].presence ? params[:weight].to_f : 1.0
+    group = params[:group].presence ? params[:group].to_i : 1
+    group_name = params[:group_name].presence || group.to_s
+
+    new_tc = Testcase.new(
+      dataset: dataset,
+      problem: @problem,
+      code_name: codename,
+      num: num,
+      weight: weight,
+      group: group,
+      group_name: group_name
+    )
+
+    input_text = ""
+    ans_text = params[:answer_text].to_s
+
+    new_tc.inp_file.attach(io: StringIO.new(input_text), filename: "#{codename}.in", content_type: 'text/plain', identify: false)
+    new_tc.ans_file.attach(io: StringIO.new(ans_text), filename: "#{codename}.sol", content_type: 'text/plain', identify: false)
+
+    if new_tc.save
+      @toast = { title: 'Success', body: "Testcase ##{num} (codename: #{codename}) successfully added to dataset '#{dataset.name}'.", type: :success }
+    else
+      @toast = { title: 'Error', body: new_tc.errors.full_messages.join(', '), type: :danger }
+    end
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.append('toast-area', partial: 'toast', locals: {toast: @toast}),
+          (turbo_stream.append('toast-area') { "<script>document.getElementById('quick_testcase_form').reset();</script>".html_safe } if new_tc.persisted?)
+        ].compact
+      end
+      format.html { redirect_to edit_problem_path(@problem), notice: 'Testcase added successfully.' }
     end
   end
 

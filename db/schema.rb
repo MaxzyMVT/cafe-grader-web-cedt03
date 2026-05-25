@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_05_24_083334) do
+ActiveRecord::Schema[8.0].define(version: 2026_05_25_150030) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -322,7 +322,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_05_24_083334) do
     t.boolean "allow_hint", default: true
     t.boolean "view_submission", default: true
     t.integer "max_submissions"
-    t.integer "bonus_first_blood"
+    t.decimal "bonus_first_blood", precision: 16, scale: 6
     t.integer "first_n_bloods", default: 0
     t.integer "number", default: 0
     t.index ["live_dataset_id"], name: "index_problems_on_live_dataset_id"

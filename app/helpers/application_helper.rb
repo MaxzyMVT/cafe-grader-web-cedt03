@@ -345,6 +345,16 @@ TITLEBAR
     @current_user && @current_user.admin?
   end
 
+  def format_score(val)
+    return "" if val.nil?
+    rounded = val.to_f.round(2)
+    if rounded == rounded.to_i
+      rounded.to_i.to_s
+    else
+      sprintf("%.2f", rounded).sub(/0+$/, '').sub(/\.$/, '')
+    end
+  end
+
   # Handles value formatting to keep the main helper clean.
   # Easily extendable with more formats.
   def format_key_pair_value(value, format)
