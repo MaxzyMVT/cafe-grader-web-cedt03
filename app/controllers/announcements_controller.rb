@@ -47,7 +47,7 @@ class AnnouncementsController < ApplicationController
 
   def delete_file
     @announcement.file.purge
-    redirect_to(@announcement)
+    redirect_to(edit_announcement_path(@announcement), notice: 'Attachment was successfully deleted.')
   end
 
   # POST /announcements
@@ -65,7 +65,7 @@ class AnnouncementsController < ApplicationController
     respond_to do |format|
       if @announcement.save
         flash[:notice] = 'Announcement was successfully created.'
-        format.html { redirect_to(@announcement) }
+        format.html { redirect_to(edit_announcement_path(@announcement)) }
         format.xml  { render xml: @announcement, status: :created, location: @announcement }
       else
         format.html { render action: "new" }
@@ -79,7 +79,7 @@ class AnnouncementsController < ApplicationController
   def update
     respond_to do |format|
       if @announcement.update(announcement_params)
-        format.html { redirect_to(@announcement) }
+        format.html { redirect_to(edit_announcement_path(@announcement), notice: 'The announcement is successfully updated.') }
         format.js   { }
         format.xml  { head :ok }
       else
