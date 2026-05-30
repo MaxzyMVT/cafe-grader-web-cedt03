@@ -26,10 +26,10 @@
   --bs-primary-bg-subtle: rgba(74, 158, 255, 0.1);
   --bs-primary-text-emphasis: #9ec5fe;
   
-  --bs-success: #2ecc71;
-  --bs-success-rgb: 46, 204, 113;
-  --bs-success-bg-subtle: rgba(46, 204, 113, 0.15);
-  --bs-success-text-emphasis: #a2f2c1;
+  --bs-success: #34d399;
+  --bs-success-rgb: 52, 211, 153;
+  --bs-success-bg-subtle: rgba(52, 211, 153, 0.1);
+  --bs-success-text-emphasis: #6ee7b7;
   
   --bs-danger: #e74c3c;
   --bs-danger-rgb: 231, 76, 60;
@@ -76,7 +76,7 @@
   --color-border-gray: #3d3d5c;
   --color-border-lightest: #222240;
   --color-border-bs: #2d2d44;
-  --color-success-bg: #0d3320;
+  --color-success-bg: rgba(52, 211, 153, 0.1);
   --color-danger-bg: #3d1a1a;
   --color-danger-light-bg: #3d1a1a;
   --color-danger-text: #ff6b6b;
@@ -193,11 +193,11 @@
     thead th { background-color: #1a2744 !important; color: #c8d6e5 !important; border-color: #2d2d44 !important; }
 
     .table-success, &.table-success, tr.table-success {
-      --bs-table-bg: rgba(46, 204, 113, 0.15) !important;
-      --bs-table-color: #2ecc71 !important;
-      --bs-table-border-color: rgba(46, 204, 113, 0.2) !important;
-      --bs-table-hover-bg: rgba(46, 204, 113, 0.25) !important;
-      --bs-table-hover-color: #2ecc71 !important;
+      --bs-table-bg: rgba(52, 211, 153, 0.1) !important;
+      --bs-table-color: #6ee7b7 !important;
+      --bs-table-border-color: rgba(52, 211, 153, 0.15) !important;
+      --bs-table-hover-bg: rgba(52, 211, 153, 0.18) !important;
+      --bs-table-hover-color: #6ee7b7 !important;
     }
     .table-info, &.table-info, tr.table-info {
       --bs-table-bg: rgba(52, 152, 219, 0.15) !important;

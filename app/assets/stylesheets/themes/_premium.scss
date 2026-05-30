@@ -6,26 +6,26 @@
 
 [data-theme="premium"] {
   // Bootstrap & Core Overrides
-  --bs-body-bg: #0c0c1d;
-  --bs-body-color: #e8e8f0;
-  --bs-emphasis-color: #ffffff;
-  --bs-secondary-color: #9a8ec0;
-  --bs-secondary-color-rgb: 154, 142, 192;
-  --bs-tertiary-color: #8a7eb0;
-  --bs-tertiary-color-rgb: 138, 126, 176;
-  --bs-link-color: #b8a9e8;
-  --bs-link-hover-color: #d0c4f0;
-  --bs-border-color: rgba(255, 255, 255, 0.1);
-  --bs-card-bg: rgba(255, 255, 255, 0.05);
-  --bs-card-border-color: rgba(255, 255, 255, 0.1);
-  --bs-secondary-bg: #1a1035;
-  --bs-tertiary-bg: #0d1b2a;
+  --bs-body-bg: #080614;
+  --bs-body-color: #e2ddf5;
+  --bs-emphasis-color: #f5f0ff;
+  --bs-secondary-color: #9488c0;
+  --bs-secondary-color-rgb: 148, 136, 192;
+  --bs-tertiary-color: #7a6ea8;
+  --bs-tertiary-color-rgb: 122, 110, 168;
+  --bs-link-color: #c4b4f0;
+  --bs-link-hover-color: #ddd0ff;
+  --bs-border-color: rgba(160, 120, 255, 0.15);
+  --bs-card-bg: #1c1038;
+  --bs-card-border-color: rgba(160, 120, 255, 0.18);
+  --bs-secondary-bg: #160f30;
+  --bs-tertiary-bg: #0e0b22;
 
   // Redefine Bootstrap colors for full component support
-  --bs-primary: #8b5cf6;
-  --bs-primary-rgb: 139, 92, 246;
-  --bs-primary-bg-subtle: rgba(139, 92, 246, 0.1);
-  --bs-primary-text-emphasis: #c8b6ff;
+  --bs-primary: #7c4dff;
+  --bs-primary-rgb: 124, 77, 255;
+  --bs-primary-bg-subtle: rgba(124, 77, 255, 0.12);
+  --bs-primary-text-emphasis: #c4acff;
   
   --bs-success: #10b981;
   --bs-success-rgb: 16, 185, 129;
@@ -53,66 +53,65 @@
   --bs-dark-rgb: 12, 12, 29;
 
   // Custom property overrides from globals.scss
-  --color-primary: #8b5cf6;
-  --color-primary-dark: #6d28d9;
-  --color-primary-light: #a78bfa;
-  --color-primary-lightest: rgba(139, 92, 246, 0.2);
-  --color-secondary: #7c3aed;
-  --color-secondary-dark: #5b21b6;
-  --color-secondary-light: #a78bfa;
-  --color-text-main: #e8e8f0;
-  --color-text-muted: #9a8ec0;
-  --color-text-dark: #ffffff;
-  --color-text-light: #8a7eb0;
-  --color-text-slate: #9a8ec0;
-  --color-bg-main: #0c0c1d;
-  --color-surface: rgba(255, 255, 255, 0.05);
-  --color-surface-hover: rgba(255, 255, 255, 0.1);
-  --color-surface-alt: rgba(255, 255, 255, 0.03);
-  --color-surface-gray: rgba(255, 255, 255, 0.08);
-  --color-border-light: rgba(255, 255, 255, 0.1);
-  --color-border-main: rgba(255, 255, 255, 0.15);
-  --color-border-dark: rgba(255, 255, 255, 0.3);
-  --color-border-muted: rgba(255, 255, 255, 0.08);
-  --color-border-gray: rgba(255, 255, 255, 0.12);
-  --color-border-lightest: rgba(255, 255, 255, 0.05);
-  --color-border-bs: rgba(255, 255, 255, 0.1);
-  --color-success-bg: rgba(16, 185, 129, 0.2);
-  --color-danger-bg: rgba(239, 68, 68, 0.2);
-  --color-danger-light-bg: rgba(239, 68, 68, 0.15);
+  --color-primary: #7c4dff;
+  --color-primary-dark: #5c35c9;
+  --color-primary-light: #a98eff;
+  --color-primary-lightest: rgba(124, 77, 255, 0.18);
+  --color-secondary: #6930d4;
+  --color-secondary-dark: #4e1fa8;
+  --color-secondary-light: #a98eff;
+  --color-text-main: #e2ddf5;
+  --color-text-muted: #9488c0;
+  --color-text-dark: #f5f0ff;
+  --color-text-light: #7a6ea8;
+  --color-text-slate: #9488c0;
+  --color-bg-main: #080614;
+  --color-surface: rgba(124, 77, 255, 0.06);
+  --color-surface-hover: rgba(124, 77, 255, 0.12);
+  --color-surface-alt: rgba(124, 77, 255, 0.03);
+  --color-surface-gray: rgba(255, 255, 255, 0.07);
+  --color-border-light: rgba(160, 120, 255, 0.15);
+  --color-border-main: rgba(160, 120, 255, 0.2);
+  --color-border-dark: rgba(160, 120, 255, 0.4);
+  --color-border-muted: rgba(160, 120, 255, 0.08);
+  --color-border-gray: rgba(160, 120, 255, 0.12);
+  --color-border-lightest: rgba(160, 120, 255, 0.05);
+  --color-border-bs: rgba(160, 120, 255, 0.15);
+  --color-success-bg: rgba(16, 185, 129, 0.18);
+  --color-danger-bg: rgba(239, 68, 68, 0.18);
+  --color-danger-light-bg: rgba(239, 68, 68, 0.12);
   --color-danger-text: #ff7b7b;
   --color-danger-text-alt: #ff9b9b;
-  --color-highlight-blue: rgba(139, 92, 246, 0.15);
-  --color-highlight-yellow: rgba(245, 158, 11, 0.15);
-  --color-highlight-pink: rgba(236, 72, 153, 0.15);
-  --color-gray-dark: #d1d5db;
-  --color-gray-medium: #9ca3af;
-  --color-gray-light: rgba(255, 255, 255, 0.1);
-  --color-limit-info-bg: #8b5cf6;
+  --color-highlight-blue: rgba(124, 77, 255, 0.15);
+  --color-highlight-yellow: rgba(201, 163, 72, 0.15);
+  --color-highlight-pink: rgba(216, 72, 153, 0.15);
+  --color-gray-dark: #d1cde8;
+  --color-gray-medium: #9488c0;
+  --color-gray-light: rgba(160, 120, 255, 0.1);
+  --color-limit-info-bg: #7c4dff;
   --color-limit-danger-bg: #ef4444;
   --color-limit-text: #fff;
 
   // Body & General
-  // Use a ::before pseudo-element for the fixed gradient background instead of
-  // background-attachment:fixed. Fixed backgrounds repaint the entire viewport
-  // on every scroll frame (cannot be composited). This avoids that cost entirely.
+  // Fixed gradient: deep midnight indigo-purple — avoids scroll repaint cost.
   &::before {
     content: '';
     position: fixed;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(135deg, #0c0c1d 0%, #1a1035 50%, #0d1b2a 100%);
+    // Royal purple: starts very dark near-black indigo, deepens to wine purple
+    background: linear-gradient(150deg, #0a0618 0%, #150e30 40%, #1a0e28 70%, #0e0b1e 100%);
     pointer-events: none;
   }
-  background: #0c0c1d !important; // solid fallback — no fixed attachment
-  color: #e8e8f0;
+  background: #080614 !important;
+  color: #e2ddf5;
 
   // Utilities
-  .text-muted { color: #9a8ec0 !important; }
-  .text-secondary { color: #9a8ec0 !important; }
-  .text-body { color: #e8e8f0 !important; }
-  .bg-white { background: rgba(255, 255, 255, 0.08) !important; backdrop-filter: blur(8px); }
-  .bg-light { background: rgba(255, 255, 255, 0.05) !important; }
+  .text-muted { color: #9488c0 !important; }
+  .text-secondary { color: #9488c0 !important; }
+  .text-body { color: #e2ddf5 !important; }
+  .bg-white { background: #1c1038 !important; }
+  .bg-light { background: #160f30 !important; }
   .text-dark { color: #ffffff !important; }
   
   // Specific fix for subtle elements
@@ -133,69 +132,70 @@
   .text-primary-emphasis { color: var(--bs-primary-text-emphasis) !important; }
 
   .dropdown-menu {
-    background: #180f30 !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+    background: #12093a !important;
+    border: 1px solid rgba(160, 120, 255, 0.2) !important;
+    box-shadow: 0 12px 40px rgba(30, 0, 80, 0.6) !important;
     overflow: hidden;
     & > :first-child { border-top-left-radius: inherit; border-top-right-radius: inherit; }
     & > :last-child { border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; }
     .dropdown-item {
       color: #d0c4f0 !important;
-      &:hover, &:focus { background: rgba(139, 92, 246, 0.2) !important; color: #ffffff !important; }
-      &.active { background: #8b5cf6 !important; color: #ffffff !important; }
+      &:hover, &:focus { background: rgba(124, 77, 255, 0.18) !important; color: #f0eaff !important; }
+      &.active { background: #6930d4 !important; color: #ffffff !important; }
     }
-    .dropdown-divider { border-color: rgba(255, 255, 255, 0.1) !important; }
+    .dropdown-divider { border-color: rgba(160, 120, 255, 0.15) !important; }
   }
 
   .navbar {
-    background: linear-gradient(135deg, #1a0533 0%, #2d1b69 50%, #1a3a5c 100%) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
+    // Deep royal purple navbar — dark wine-indigo
+    background: linear-gradient(135deg, #110833 0%, #1e0d50 50%, #160b3a 100%) !important;
+    border-bottom: 1px solid rgba(160, 120, 255, 0.2);
+    box-shadow: 0 2px 20px rgba(30, 0, 80, 0.5);
+    .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #e8e0ff !important; }
   }
 
   // Headings
-  h1 { color: #c8b6ff !important; text-shadow: 0 0 15px rgba(200, 182, 255, 0.3); }
-  h2 { color: #b8a9e8 !important; }
-  h3, h4, h5, h6 { color: #d0c4f0 !important; }
+  h1 { color: #c4acff !important; text-shadow: 0 0 20px rgba(160, 100, 255, 0.25); }
+  h2 { color: #b0a0e8 !important; }
+  h3, h4, h5, h6 { color: #ccc0f0 !important; }
 
   // Buttons
   .btn-primary { 
-    background: linear-gradient(135deg, #6c3ce0, #8b5cf6) !important;
+    background: linear-gradient(135deg, #4a20b0, #7c4dff) !important;
     border: none !important;
     color: #fff !important;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
-    &:hover { box-shadow: 0 6px 25px rgba(139, 92, 246, 0.5); transform: translateY(-1px); }
+    box-shadow: 0 4px 15px rgba(100, 60, 220, 0.4);
+    &:hover { box-shadow: 0 6px 25px rgba(124, 77, 255, 0.55); transform: translateY(-1px); }
   }
   .btn-success { background-color: #10b981 !important; color: #fff !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
   .btn-danger { background-color: #ef4444 !important; color: #fff !important; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
   .btn-warning { color: #000 !important; background-color: #f59e0b !important; }
-  .btn-secondary { color: #fff !important; background-color: rgba(255, 255, 255, 0.1) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; }
-  .btn-outline-light { color: #e8e8f0 !important; border-color: rgba(255, 255, 255, 0.2) !important; &:hover { background: rgba(255, 255, 255, 0.1) !important; } }
+  .btn-secondary { color: #e2ddf5 !important; background-color: rgba(124, 77, 255, 0.12) !important; border: 1px solid rgba(160, 120, 255, 0.2) !important; }
+  .btn-outline-light { color: #e2ddf5 !important; border-color: rgba(160, 120, 255, 0.3) !important; &:hover { background: rgba(124, 77, 255, 0.12) !important; } }
   
   .btn-outline-success { color: var(--bs-success) !important; border-color: var(--bs-success) !important; &:hover { background-color: var(--bs-success) !important; color: #fff !important; } }
   .btn-outline-danger { color: var(--bs-danger) !important; border-color: var(--bs-danger) !important; &:hover { background-color: var(--bs-danger) !important; color: #fff !important; } }
 
   .card, .modal-content {
-    // Solid card background — preserves the dark-purple palette without
-    // backdrop-filter compositing overhead on every frame.
-    background: #1a1040 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    // Deep wine-purple card — royal velvet feel
+    background: #1c1038 !important;
+    border: 1px solid rgba(160, 120, 255, 0.18) !important;
     border-radius: 10px !important;
     overflow: hidden !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-    color: #e8e8f0 !important;
+    box-shadow: 0 8px 32px rgba(30, 0, 80, 0.45), inset 0 1px 0 rgba(200, 160, 255, 0.07) !important;
+    color: #e2ddf5 !important;
     
     & > :first-child { border-top-left-radius: inherit !important; border-top-right-radius: inherit !important; }
     & > :last-child { border-bottom-left-radius: inherit !important; border-bottom-right-radius: inherit !important; }
 
     .card-header, .modal-header { 
-      background: rgba(255, 255, 255, 0.04) !important; 
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; 
-      color: #d0c4f0 !important;
+      background: rgba(124, 77, 255, 0.06) !important; 
+      border-bottom: 1px solid rgba(160, 120, 255, 0.15) !important; 
+      color: #ccc0f0 !important;
     }
     .card-footer, .modal-footer { 
-      background: rgba(255, 255, 255, 0.03) !important; 
-      border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      background: rgba(124, 77, 255, 0.04) !important; 
+      border-top: 1px solid rgba(160, 120, 255, 0.1) !important;
     }
   }
 
