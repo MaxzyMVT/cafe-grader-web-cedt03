@@ -91,14 +91,14 @@
                   class: 'navbar-btn btn btn-default btn-warning me-2', data: {toggle: 'tooltip'},title: 'Number of ungraded submission'
               = form_with id: :view_sub_form, url: list_main_path, method: :get do |f|
                 .input-group.flex-nowrap
-                  %input#view_sub_num.form-control{style: "width: 7rem", type: :text, placeholder: 'Submission #'}
+                  %input#view_sub_num.form-control{style: "width: 9.5rem", type: :text, placeholder: 'Submission #'}
                   %button#view_sub.btn.btn-secondary{type: :button, onclick: "go_to_sub();"} View
           - elsif @current_user && @current_user.problem_setter?
             %li.nav-item= link_to 'Report', extended_stat_report_path, class: 'nav-link mx-2'+active_class_when(controller: :report, action: :extended_stat)
             %li.nav-item.d-flex.align-items-center
               = form_with id: :view_sub_form, url: list_main_path, method: :get do |f|
                 .input-group.flex-nowrap
-                  %input#view_sub_num.form-control{style: "width: 7rem", type: :text, placeholder: 'Submission #'}
+                  %input#view_sub_num.form-control{style: "width: 9.5rem", type: :text, placeholder: 'Submission #'}
                   %button#view_sub.btn.btn-secondary{type: :button, onclick: "go_to_sub();"} View
         %ul.navbar-nav
           -#
