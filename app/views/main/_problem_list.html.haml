@@ -12,17 +12,18 @@
           - @primary_tags.each do |tag|
             - data_hash = { action: 'click->main#setActiveTopic',  bs: tag.description.present? ?  { toggle: 'tooltip', title: tag.description } : nil }
             %span.btn.btn-outline-secondary.btn-sm.rounded-pill.topic-badge.me-1{data: data_hash}= tag.name
-    %table#main_table.table.table-hover.align-middle{width: '100%'}
-      %thead
-        %tr
-          %th.d-none.d-sm-table-cell No.
-          %th.all Name
-          %th.d-none.d-md-table-cell Full Score
-          %th Best Score
-          %th.d-none.d-lg-table-cell Latest Results
-          %th.all
-          %th
-      %tbody{data: {controller: 'problem-name'}}
+    .table-responsive
+      %table#main_table.table.table-hover.align-middle{width: '100%'}
+        %thead
+          %tr
+            %th.d-none.d-sm-table-cell No.
+            %th.all Name
+            %th.d-none.d-md-table-cell Full Score
+            %th Best Score
+            %th.d-none.d-lg-table-cell Latest Results
+            %th.all
+            %th.d-none
+        %tbody{data: {controller: 'problem-name'}}
         - @numbering = 1
         / problem count = #{problems.count}
         = render partial: 'problem', collection: problems

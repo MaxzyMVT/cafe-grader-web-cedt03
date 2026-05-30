@@ -75,5 +75,5 @@
       - else
         = link_to 'New', direct_edit_problem_submissions_path(problem.id), class: 'btn btn-outline-success btn-sm'
   -# hidden column
-  %td
+  %td.d-none
     = problem.public_tags.pluck(:name).join ','
