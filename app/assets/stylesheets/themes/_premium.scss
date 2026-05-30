@@ -133,17 +133,15 @@
   .text-primary-emphasis { color: var(--bs-primary-text-emphasis) !important; }
 
   .dropdown-menu {
-    background: rgba(20, 15, 40, 0.95) !important;
-    will-change: backdrop-filter;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+    background: #180f30 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
     overflow: hidden;
     & > :first-child { border-top-left-radius: inherit; border-top-right-radius: inherit; }
     & > :last-child { border-bottom-left-radius: inherit; border-bottom-right-radius: inherit; }
     .dropdown-item {
       color: #d0c4f0 !important;
-      &:hover, &:focus { background: rgba(139, 92, 246, 0.15) !important; color: #ffffff !important; }
+      &:hover, &:focus { background: rgba(139, 92, 246, 0.2) !important; color: #ffffff !important; }
       &.active { background: #8b5cf6 !important; color: #ffffff !important; }
     }
     .dropdown-divider { border-color: rgba(255, 255, 255, 0.1) !important; }
@@ -151,8 +149,6 @@
 
   .navbar {
     background: linear-gradient(135deg, #1a0533 0%, #2d1b69 50%, #1a3a5c 100%) !important;
-    will-change: backdrop-filter;
-    backdrop-filter: blur(6px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
@@ -180,31 +176,25 @@
   .btn-outline-danger { color: var(--bs-danger) !important; border-color: var(--bs-danger) !important; &:hover { background-color: var(--bs-danger) !important; color: #fff !important; } }
 
   .card, .modal-content {
-    background: rgba(255, 255, 255, 0.05) !important;
-    // Use will-change to pre-promote to its own compositing layer, avoiding
-    // re-compositing the whole stack on every frame.
-    will-change: backdrop-filter;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    // Solid card background — preserves the dark-purple palette without
+    // backdrop-filter compositing overhead on every frame.
+    background: #1a1040 !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 10px !important;
     overflow: hidden !important;
-    isolation: isolate;
-    -webkit-mask-image: -webkit-radial-gradient(white, black); // Force clipping of backdrop-filter
-    mask-image: radial-gradient(white, black);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
     color: #e8e8f0 !important;
     
-    // Ensure all internal backgrounds are clipped by inheriting radius on outer edges only
     & > :first-child { border-top-left-radius: inherit !important; border-top-right-radius: inherit !important; }
     & > :last-child { border-bottom-left-radius: inherit !important; border-bottom-right-radius: inherit !important; }
 
     .card-header, .modal-header { 
-      background: rgba(255, 255, 255, 0.03) !important; 
+      background: rgba(255, 255, 255, 0.04) !important; 
       border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; 
       color: #d0c4f0 !important;
     }
     .card-footer, .modal-footer { 
-      background: rgba(255, 255, 255, 0.02) !important; 
+      background: rgba(255, 255, 255, 0.03) !important; 
       border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
   }
@@ -283,7 +273,6 @@
     margin: 0 !important;
   }
   .alert-primary, .alert-success, .alert-danger, .alert-warning, .alert-info { 
-    backdrop-filter: blur(8px);
     border-radius: 10px !important;
     border-width: 1px;
     border-style: solid;
@@ -351,7 +340,6 @@
     .select2-selection__rendered { color: #e8e8f0 !important; }
     .select2-dropdown { 
       background: #1a1035 !important; 
-      backdrop-filter: blur(20px) !important; 
       border: 1px solid rgba(255, 255, 255, 0.2) !important; 
       z-index: 9999 !important; 
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;

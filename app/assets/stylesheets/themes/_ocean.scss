@@ -132,11 +132,9 @@
 
   // Global Dropdown Override
   .dropdown-menu {
-    background-color: rgba(255, 255, 255, 0.95) !important;
-    will-change: backdrop-filter;
-    backdrop-filter: blur(8px) !important;
+    background-color: #ffffff !important;
     border-color: #bae6fd !important;
-    box-shadow: 0 10px 40px rgba(14, 116, 144, 0.1) !important;
+    box-shadow: 0 12px 40px rgba(14, 116, 144, 0.15) !important;
     .dropdown-item {
       color: #1a3a4a !important;
       &:hover, &:focus { background-color: #ecfeff !important; color: #0891b2 !important; }
@@ -147,8 +145,6 @@
 
   .navbar {
     background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%) !important;
-    will-change: backdrop-filter;
-    backdrop-filter: blur(6px);
     .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
 
@@ -172,12 +168,10 @@
 
   // Cards
   .card {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    will-change: backdrop-filter;
-    backdrop-filter: blur(6px);
+    background-color: #ffffff !important;
     border-color: #bae6fd !important;
-    box-shadow: 0 4px 12px rgba(14, 116, 144, 0.05) !important;
-    .card-header { background-color: rgba(236, 254, 255, 0.6) !important; border-bottom: 1px solid #bae6fd !important; color: #0e7490 !important; font-weight: 600 !important; }
+    box-shadow: 0 4px 16px rgba(14, 116, 144, 0.1) !important;
+    .card-header { background-color: #ecfeff !important; border-bottom: 1px solid #bae6fd !important; color: #0e7490 !important; font-weight: 600 !important; }
   }
 
   // Forms
