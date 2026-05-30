@@ -154,11 +154,12 @@
                             form: {data: {turbo: true}} do
                             %span.mi.md-18.text-secondary block
                             Disable All
-                        %li
-                          = button_to do_all_users_contest_path(@contest), class: 'dropdown-item d-flex align-items-center gap-2', value: 'clear_ip', name: 'command',
-                            form: {data: {turbo: true}} do
-                            %span.mi.md-18.text-warning lock_reset
-                            Clear Session Locks
+                        - if @current_user.admin?
+                          %li
+                            = button_to do_all_users_contest_path(@contest), class: 'dropdown-item d-flex align-items-center gap-2', value: 'clear_ip', name: 'command',
+                              form: {data: {turbo: true}} do
+                              %span.mi.md-18.text-warning lock_reset
+                              Clear Session Locks
                         %li
                           %hr.dropdown-divider
                         %li
