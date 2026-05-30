@@ -15,7 +15,7 @@
   --bs-link-color: #268bd2;
   --bs-link-hover-color: #2aa198;
   --bs-border-color: #eee8d5;
-  --bs-card-bg: rgba(253, 246, 227, 0.9);
+  --bs-card-bg: rgba(253, 246, 227, 0.95);
   --bs-card-border-color: #eee8d5;
   --bs-secondary-bg: #eee8d5;
   --bs-tertiary-bg: #f5efd7;
@@ -65,8 +65,8 @@
   --color-text-light: #93a1a1;
   --color-text-slate: #586e75;
   --color-bg-main: #fdf6e3;
-  --color-surface: rgba(253, 246, 227, 0.9);
-  --color-surface-hover: rgba(238, 232, 213, 0.95);
+  --color-surface: rgba(253, 246, 227, 0.95);
+  --color-surface-hover: rgba(238, 232, 213, 0.98);
   --color-surface-alt: #f5efd7;
   --color-surface-gray: #eee8d5;
   --color-border-light: #eee8d5;
@@ -123,9 +123,11 @@
 
   // Global Dropdown Override
   .dropdown-menu {
-    background-color: #eee8d5 !important;
+    background-color: rgba(238, 232, 213, 0.95) !important;
+    will-change: backdrop-filter;
+    backdrop-filter: blur(12px) !important;
     border-color: #ddd6c1 !important;
-    box-shadow: 0 12px 40px rgba(7, 54, 66, 0.15) !important;
+    box-shadow: 0 10px 40px rgba(7, 54, 66, 0.1) !important;
     .dropdown-item {
       color: #586e75 !important;
       &:hover, &:focus { background-color: #fdf6e3 !important; color: #073642 !important; }
@@ -135,7 +137,9 @@
   }
 
   .navbar {
-    background-color: #073642 !important;
+    background-color: rgba(7, 54, 66, 0.9) !important;
+    will-change: backdrop-filter;
+    backdrop-filter: blur(10px);
     .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #93a1a1 !important; }
     .nav-link:hover { color: #fdf6e3 !important; }
   }
@@ -161,10 +165,18 @@
 
   // Cards
   .card {
-    background-color: #fdf6e3 !important;
+    background-color: rgba(253, 246, 227, 0.95) !important;
     border-color: #eee8d5 !important;
-    box-shadow: 0 4px 16px rgba(7, 54, 66, 0.08) !important;
-    .card-header { background-color: #eee8d5 !important; border-bottom: 1px solid #ddd6c1 !important; color: #657b83 !important; font-weight: 600 !important; }
+    .card-header { background-color: rgba(238, 232, 213, 0.6) !important; border-bottom: 1px solid #ddd6c1 !important; color: #657b83 !important; font-weight: 600 !important; }
+  }
+
+  // Modals
+  .modal-content {
+    background-color: rgba(253, 246, 227, 0.97) !important;
+    will-change: backdrop-filter;
+    backdrop-filter: blur(10px);
+    border-color: #eee8d5 !important;
+    color: #586e75 !important;
   }
 
   // Forms
@@ -268,6 +280,12 @@
       }
     }
     .select2-selection__rendered { color: #586e75 !important; }
+    .select2-dropdown {
+      background-color: rgba(253, 246, 227, 0.98) !important;
+      will-change: backdrop-filter;
+      backdrop-filter: blur(10px);
+      border-color: #ddd6c1 !important;
+    }
     .select2-results__option--highlighted { background-color: #268bd2 !important; color: #ffffff !important; }
     .select2-results__option--selected { background-color: #eee8d5 !important; color: #268bd2 !important; }
     .select2-results__option[aria-selected=true] { background-color: #eee8d5 !important; color: #268bd2 !important; }
