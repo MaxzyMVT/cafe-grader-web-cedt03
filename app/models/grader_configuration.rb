@@ -7,6 +7,12 @@ class GraderConfiguration < ApplicationRecord
   include Auditable
   audited
 
+  after_save :reload_cache
+
+  def reload_cache
+    GraderConfiguration.read_config
+  end
+
   SYSTEM_MODE_CONF_KEY = 'system.mode'
   TEST_REQUEST_EARLY_TIMEOUT_KEY = 'contest.test_request.early_timeout'
   MULTICONTESTS_KEY = 'system.multicontests'

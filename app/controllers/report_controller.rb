@@ -275,8 +275,11 @@ class ReportController < ApplicationController
       subs_scope = subs_scope.where(language_id: params[:language_id])
     end
 
-    # Exclude admins, problem setters, and disabled users / users in disabled groups
-    exclude_user_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+    roles_to_exclude = []
+    unless GraderConfiguration['system.statistic_include_admins']
+      roles_to_exclude += ['admin', 'problem_setter']
+    end
+    exclude_user_ids = User.joins(:roles).where(roles: { name: roles_to_exclude }).pluck(:id)
     exclude_user_ids += User.where(enabled: false).pluck(:id)
     exclude_user_ids += User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
     subs_scope = subs_scope.where.not(user_id: exclude_user_ids.uniq)
@@ -492,7 +495,11 @@ class ReportController < ApplicationController
 
     @summary = {count: 0, solve: 0, attempt: 0}
     user = Hash.new(0)
-    exclude_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+    roles_to_exclude = []
+    unless GraderConfiguration['system.statistic_include_admins']
+      roles_to_exclude += ['admin', 'problem_setter']
+    end
+    exclude_ids = User.joins(:roles).where(roles: { name: roles_to_exclude }).pluck(:id)
     exclude_ids += User.where(enabled: false).pluck(:id)
     exclude_ids += User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
     exclude_ids = exclude_ids.uniq
@@ -526,8 +533,9 @@ class ReportController < ApplicationController
         @by_lang[lang.pretty_name][:memory] = { avail: true, user_id: sub.user_id, value: sub.peak_memory, sub_id: sub.id }
       end
 
+      is_excluded = (sub.user.admin? || sub.user.problem_setter?) && !GraderConfiguration['system.statistic_include_admins']
       if sub.submitted_at and sub.submitted_at < @by_lang[lang.pretty_name][:first][:value] and sub.user and
-          !sub.user.admin? and !sub.user.problem_setter?
+          !is_excluded
         @by_lang[lang.pretty_name][:first] = { avail: true, user_id: sub.user_id, value: sub.submitted_at, sub_id: sub.id }
       end
 

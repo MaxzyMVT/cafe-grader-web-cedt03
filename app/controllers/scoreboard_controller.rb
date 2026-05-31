@@ -13,9 +13,6 @@ class ScoreboardController < ApplicationController
     unless GraderConfiguration['system.scoreboard_include_admins']
       exclude_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
       @users = @users.where.not(id: exclude_ids)
-    else
-      exclude_ids = User.joins(:roles).where(roles: { name: 'problem_setter' }).pluck(:id)
-      @users = @users.where.not(id: exclude_ids)
     end
     
     # Mode toggle: individual vs groups
