@@ -24,6 +24,6 @@
             %th.all
             %th.d-none
         %tbody{data: {controller: 'problem-name'}}
-        - @numbering = 1
-        / problem count = #{problems.count}
-        = render partial: 'problem', collection: problems
+          - @numbering = 1
+          / problem count = #{problems.count}
+          = render partial: 'problem', collection: problems
