@@ -279,20 +279,30 @@ class ProblemsController < ApplicationController
       problems.update_all(available: params[:enable] == 'yes')
       @result << "Set \"Available\" to <strong>#{params[:enable]}</strong>"
     end
-    if params[:add_tags] == '1'
+    if params[:add_tags] == '1' && params[:tag_ids].present?
       problems.each { |p| p.tag_ids += params[:tag_ids] }
       tag_names = Tag.where(id: params[:tag_ids]).pluck(:name).map { |x| "[<strong>#{x}</strong>]" }.join(', ')
       @result << "Add tags #{tag_names}"
     end
 
-    if params[:set_languages] == '1'
+    if params[:clear_tags] == '1'
+      problems.each { |p| p.tags.clear }
+      @result << "Cleared all tags"
+    end
+
+    if params[:set_languages] == '1' && params[:lang_ids].present?
       permitted_lang = Language.where(id: params[:lang_ids]).pluck(:name)
       problems.update_all(permitted_lang: permitted_lang.join(' '))
       @result << "Permitted languages are changed to #{permitted_lang.map { |x| "[<strong>#{x}</strong>]" }.join(', ')}"
     end
 
+    if params[:clear_languages] == '1'
+      problems.update_all(permitted_lang: nil)
+      @result << "Cleared permitted languages (all languages are now allowed)"
+    end
+
     # add to groups
-    if params[:add_group] == '1'
+    if params[:add_group] == '1' && params[:group_id].present?
       Group.where(id: params[:group_id]).each do |group|
         ok = []
         failed = []
@@ -307,8 +317,11 @@ class ProblemsController < ApplicationController
         @result << "Added to group <strong>#{group.name}</strong>"
         @result << "The following problem are already in the group <strong>#{group.name}</strong>: " + failed.join(', ') if failed.count > 0
       end
-      # flash[:success] = "The following problems are added to the group #{group.name}: " + ok.join(', ') if ok.count > 0
-      # flash[:alert] = "The following problems are already in the group #{group.name}: " + failed.join(', ') if failed.count > 0
+    end
+
+    if params[:clear_groups] == '1'
+      problems.each { |p| p.groups.clear }
+      @result << "Cleared from all groups"
     end
 
     @toast[:body] = "<ul> #{@result.map { |x| "<li>#{x}</li>" }.join}  </ul>".html_safe
@@ -575,7 +588,7 @@ class ProblemsController < ApplicationController
         .joins("LEFT JOIN (#{tc_count_sql}  ) TC ON problems.id = TC.problem_id")
         .joins("LEFT JOIN (#{ms_count_sql}  ) MS ON problems.id = MS.problem_id")
         .joins("LEFT JOIN (#{hint_count_sql}) HC ON problems.id = HC.problem_id")
-        .includes(:tags).order(:number).order(:name).group('problems.id')
+        .includes(:tags, :groups).order(:number).order(:name).group('problems.id')
         .includes(live_dataset: {checker_attachment: :blob})
         .select("problems.*", "count(datasets_problems.id) as dataset_count, MIN(TC.tc_count) as tc_count")
         .select("MIN(MS.ms_count) as ms_count")

@@ -46,21 +46,33 @@
                 = f.check_box :add_group, class: 'form-check-input manage-action'
                 = f.label :add_group, 'Add to groups'
             .col-md-auto
-              = f.select "group_id", options_from_collection_for_select( Group.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "400px", placeholder: 'Click to select groups'}
+              = f.select "group_id", options_from_collection_for_select( Group.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "300px", placeholder: 'Click to select groups'}
+            .col-md-auto
+              .form-check
+                = f.check_box :clear_groups, class: 'form-check-input manage-action'
+                = f.label :clear_groups, 'Clear groups'
           .row.mb-3.align-items-center
             .col-md-auto
               .form-check
                 = f.check_box :add_tags, class: 'form-check-input manage-action'
                 = f.label :add_tags, 'Add tags'
             .col-md-auto
-              = f.select "tag_ids", options_from_collection_for_select( Tag.all, 'id','name'), {},class: 'select2', multiple: true, data: {placeholder: 'Select tags by clicking', width: "400px"}
+              = f.select "tag_ids", options_from_collection_for_select( Tag.all, 'id','name'), {},class: 'select2', multiple: true, data: {placeholder: 'Select tags by clicking', width: "300px"}
+            .col-md-auto
+              .form-check
+                = f.check_box :clear_tags, class: 'form-check-input manage-action'
+                = f.label :clear_tags, 'Clear tags'
           .row.mb-3.align-items-center
             .col-md-auto
               .form-check
                 = f.check_box :set_languages, class: 'form-check-input manage-action'
                 = f.label :set_languages, 'Set permitted languages'
             .col-md-auto
-              = f.select "lang_ids", options_from_collection_for_select( Language.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "400px", placeholder: 'Click to select languages'}
+              = f.select "lang_ids", options_from_collection_for_select( Language.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "300px", placeholder: 'Click to select languages'}
+            .col-md-auto
+              .form-check
+                = f.check_box :clear_languages, class: 'form-check-input manage-action'
+                = f.label :clear_languages, 'Clear languages'
       .d-flex.justify-content-end
         = f.submit 'Apply to Selected', class: 'btn btn-primary btn-flex px-4'
 
@@ -77,6 +89,7 @@
             %th Difficulty
             %th Permitted Languages
             %th Tags
+            %th Group
             %th Date added
             %th Available
 
@@ -148,6 +161,7 @@
         {data: 'difficulty', render: difficulty_render, className: 'text-start'},
         {data: 'permitted_lang', render: permitted_langs_render},
         {data: 'tags', render: cafe.dt.render_factory.badge()},
+        {data: 'groups', render: cafe.dt.render_factory.badge()},
         {data: 'date_added', render: cafe.dt.render.datetime("Y-MM-DD")},
         {data: 'available', render: cafe.dt.render.yes_no_pill()},
       ],
