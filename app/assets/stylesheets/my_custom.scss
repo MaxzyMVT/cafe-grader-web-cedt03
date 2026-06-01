@@ -561,6 +561,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
       top: 0;
       z-index: 10;
       background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-light-bg, #f8f9fa)) !important;
+      will-change: transform;
 
       &:nth-child(1) {
         left: 0;
@@ -582,6 +583,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
         position: sticky;
         z-index: 5;
         background-color: var(--color-scoreboard-sticky-bg, var(--color-surface-alt, #fff)) !important;
+        will-change: transform;
       }
       &:nth-child(1) {
         left: 0;
@@ -599,6 +601,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
       &:nth-child(1), &:nth-child(2), &:nth-child(3) {
         background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-hover-bg, #e2e3e5)) !important;
         z-index: 6; // slightly higher than standard row td
+        will-change: transform;
       }
     }
   }
