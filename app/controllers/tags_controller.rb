@@ -1,15 +1,15 @@
 class TagsController < ApplicationController
   before_action :stimulus_controller
   before_action :tag_authorization
-  before_action :set_tag, only: [:edit, :update, :destroy, :toggle_public]
+  before_action :set_tag, only: [:edit, :update, :destroy, :toggle_public, :move_up, :move_down, :reorder]
 
   # GET /tags
   def index
-    @tags = Tag.all
+    @tags = Tag.order(:number)
   end
 
   def index_query
-    @tags = Tag.all
+    @tags = Tag.order(:number)
   end
 
   # GET /tags/new
@@ -46,6 +46,31 @@ class TagsController < ApplicationController
     @tag.update(public: !@tag.public)
     @toast = {title: "Tag #{@tag.name}", body: "public updated"}
     render 'turbo_toast'
+  end
+
+  def move_up
+    old_number = @tag.number || 2
+    Tag.set_tag_number(@tag, old_number - 1.2)
+    redirect_to action: :index, notice: "Tag #{@tag.name} was moved up."
+  end
+
+  def move_down
+    old_number = @tag.number || 0
+    Tag.set_tag_number(@tag, old_number + 1.2)
+    redirect_to action: :index, notice: "Tag #{@tag.name} was moved down."
+  end
+
+  def reorder
+    old_number = @tag.number
+    target_pos = params[:target_position].to_i
+    if target_pos > 0
+      Tag.set_tag_number(@tag, target_pos)
+      @toast = {title: "Tag #{@tag.name}", body: "Tag reordered to position #{target_pos}."}
+    end
+    respond_to do |format|
+      format.turbo_stream { render 'turbo_toast' }
+      format.html { redirect_to action: :index, notice: "Tag #{@tag.name} was reordered." }
+    end
   end
 
   # DELETE /tags/1

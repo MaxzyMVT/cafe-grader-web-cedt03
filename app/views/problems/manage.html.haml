@@ -99,6 +99,20 @@
 
     badge_renderer = cafe.dt.render_factory.badge()
 
+    function tags_render(data, type, row, meta) {
+      if (!data || !Array.isArray(data)) return '';
+
+      if (type == 'display' || type == 'filter') {
+        return data.map(t => {
+          const color = t.color || '#6C757D';
+          const name = cafe.escapeHtml(t.name);
+          return `<span class="badge" style="background-color: ${color}; color: #fff;">${name}</span>`;
+        }).join(' ');
+      }
+
+      return data.map(t => t.name).join(' ');
+    }
+
     function permitted_langs_render(data,type,row,meta) {
       if (data == null) return ''
 
@@ -160,7 +174,7 @@
         {data: 'full_name', render: full_name_render},
         {data: 'difficulty', render: difficulty_render, className: 'text-start'},
         {data: 'permitted_lang', render: permitted_langs_render},
-        {data: 'tags', render: cafe.dt.render_factory.badge()},
+        {data: 'tags', render: tags_render},
         {data: 'groups', render: cafe.dt.render_factory.badge()},
         {data: 'date_added', render: cafe.dt.render.datetime("Y-MM-DD")},
         {data: 'available', render: cafe.dt.render.yes_no_pill()},

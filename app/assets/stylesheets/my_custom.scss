@@ -612,3 +612,15 @@ golden-btn + .golden-btn { margin-top: 1em; }
     }
   }
 }
+
+// Topic badges styling on /main/list
+.topic-badge {
+  background-color: transparent !important;
+  transition: all 0.2s ease-in-out;
+
+  &:hover, &.active {
+    background-color: var(--tag-color) !important;
+    border-color: var(--tag-color) !important;
+    color: #fff !important;
+  }
+}
