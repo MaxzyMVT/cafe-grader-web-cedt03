@@ -108,6 +108,24 @@ $color-gray-light: #eeeeee;
   color: var(--color-limit-text) !important;
 }
 
+.badge-group-mode {
+  background-color: rgba(0, 116, 217, 0.08) !important;
+  color: #0056b3 !important;
+  border: 1px solid rgba(0, 116, 217, 0.25) !important;
+}
+
+[data-theme="dark"] .badge-group-mode {
+  background-color: rgba(13, 202, 240, 0.12) !important;
+  color: #5bc0de !important;
+  border: 1px solid rgba(13, 202, 240, 0.3) !important;
+}
+
+[data-theme="premium"] .badge-group-mode {
+  background-color: rgba(255, 215, 0, 0.1) !important;
+  color: #f1c40f !important;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+}
+
 // Problem management row highlight
 .row-available {
   &, & > td {
