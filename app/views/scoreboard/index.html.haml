@@ -109,6 +109,9 @@
                                   %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
 
 :css
+  .scoreboard-table, .scoreboard-table tr, .scoreboard-table td, .scoreboard-table th {
+    transition: none !important;
+  }
   .scoreboard-table .vertical-text {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
@@ -125,6 +128,5 @@
     padding: 5px;
   }
   .scoreboard-table .score-cell {
-    transition: background-color 0.3s ease;
     font-size: 0.9em;
   }
