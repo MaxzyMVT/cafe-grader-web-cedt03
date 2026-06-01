@@ -45,7 +45,7 @@
           / scoreboard
           - if GraderConfiguration['system.scoreboard_enabled']
             - level = GraderConfiguration['system.scoreboard_view_level'] || 'user'
-            - if level == 'all' || (level == 'user' && @current_user) || (level == 'admin' && @current_user&.admin?)
+            - if level == 'all' || level == 'public' || (level == 'user' && @current_user) || (level == 'admin' && (@current_user&.admin? || @current_user&.problem_setter?))
               %li.nav-item= link_to "Scoreboard", scoreboard_path, class: 'nav-link mx-2'+active_class_when(controller: :scoreboard)
           / admin section
           - if @current_user && (@current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:edit).any?)
