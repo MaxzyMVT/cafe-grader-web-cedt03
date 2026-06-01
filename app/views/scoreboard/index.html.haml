@@ -24,7 +24,7 @@
               Scoring Mode:
               %strong= @group_score_type == 'group_max' ? "Group Max (Highest score per problem)" : "Group Sum (Sum of member scores)"
     .d-flex.justify-content-center
-      .card.shadow-sm{style: "min-width: 75%; max-width: 100%;"}
+      .card.shadow-sm.scoreboard-card{style: "min-width: 75%; max-width: 100%;"}
         .card-body.p-0
           .table-responsive{style: "max-height: 80vh; overflow-y: auto;"}
             %table.table.table-hover.table-bordered.m-0.scoreboard-table.w-100
@@ -109,6 +109,11 @@
                                   %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
 
 :css
+  .scoreboard-card {
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+    isolation: auto !important;
+  }
   .scoreboard-table, .scoreboard-table tr, .scoreboard-table td, .scoreboard-table th {
     transition: none !important;
   }
