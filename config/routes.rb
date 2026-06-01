@@ -41,6 +41,9 @@ Rails.application.routes.draw do
   resources :tags, except: [:show] do
     post :toggle_public, on: :member
     post :index_query, on: :collection
+    post :move_up, on: :member
+    post :move_down, on: :member
+    post :reorder, on: :member
   end
 
   get "sources/direct_edit"

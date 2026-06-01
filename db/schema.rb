@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_01_121928) do
+ActiveRecord::Schema[8.0].define(version: 2026_06_01_191734) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -423,6 +423,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_01_121928) do
     t.string "color", default: "#6C757D"
     t.text "params", size: :medium
     t.integer "kind", default: 0
+    t.integer "number"
   end
 
   create_table "tasks", id: :integer, charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
