@@ -543,3 +543,63 @@ golden-btn + .golden-btn { margin-top: 1em; }
     white-space: nowrap !important;
   }
 }
+
+// Scoreboard sticky columns styling
+.scoreboard-table {
+  thead th, tbody tr td {
+    border-bottom: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.12)) !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .scoreboard-table {
+    border-collapse: separate !important;
+    border-spacing: 0;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-light-bg, #f8f9fa)) !important;
+
+      &:nth-child(1) {
+        left: 0;
+        z-index: 12;
+      }
+      &:nth-child(2) {
+        left: 60px;
+        z-index: 12;
+      }
+      &:nth-child(3) {
+        left: 260px;
+        z-index: 12;
+        border-right: 2px solid var(--bs-border-color, #dee2e6) !important;
+      }
+    }
+
+    tbody tr td {
+      &:nth-child(1), &:nth-child(2), &:nth-child(3) {
+        position: sticky;
+        z-index: 5;
+        background-color: var(--color-scoreboard-sticky-bg, var(--color-surface-alt, #fff)) !important;
+      }
+      &:nth-child(1) {
+        left: 0;
+      }
+      &:nth-child(2) {
+        left: 60px;
+      }
+      &:nth-child(3) {
+        left: 260px;
+        border-right: 2px solid var(--bs-border-color, #dee2e6) !important;
+      }
+    }
+
+    tbody tr.table-secondary td {
+      &:nth-child(1), &:nth-child(2), &:nth-child(3) {
+        background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-hover-bg, #e2e3e5)) !important;
+        z-index: 6; // slightly higher than standard row td
+      }
+    }
+  }
+}
