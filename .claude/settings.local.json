@@ -40,7 +40,10 @@
       "Bash(awk '/create_table \"users\"/,/^  end/' /home/dae/cafe-grader/web/db/schema.rb)",
       "Bash(awk '/create_table \"contests_problems\"/,/^  end/' /home/dae/cafe-grader/web/db/schema.rb)",
       "Bash(awk '/create_table \"contests_users\"/,/^  end/' /home/dae/cafe-grader/web/db/schema.rb)",
-      "Bash(bin/rails db:migrate:status)"
+      "Bash(bin/rails db:migrate:status)",
+      "Bash(bash -n deploy/backup/huawei-cbr-setup.sh)",
+      "Bash(SERVER_IPS='' bash -c 'set -- 1.2.3.4 5.6.7.8; if [ \"$#\" -gt 0 ]; then S=\"$*\"; fi; echo \"args->[$S]\"; S2=\"\"; if [ -z \"${S2// /}\" ]; then echo \"empty-detected\"; fi')",
+      "Bash(bash -n deploy/backup/install.sh)"
     ]
   }
 }
