@@ -143,6 +143,18 @@ You'll see progress like `==> web+db : ...`, `pull db_....sql.gz`, ending with `
 > DB_USER=grader DB_PASS=yourpassword ./pull-backup.sh <web-db-ip> <worker1-ip> <worker2-ip>
 > ```
 
+> **If you see "app dir not found", or only the `db_*.sql.gz` appears with no `files_*.tar.gz`:** the
+> script couldn't find where Cafe-Grader lives on the servers, so `config/` (including `master.key`),
+> `storage/`, and the workers were skipped. Find the real path, then pass it with `APP_DIR`:
+> ```bash
+> # 1. find it (replace KEY with your key file):
+> ssh -i KEY root@<web-db-ip> "find / -maxdepth 6 -type d -name cafe-grader-web 2>/dev/null"
+> # 2. back up again, giving that path:
+> APP_DIR=/real/path/to/cafe-grader-web ./pull-backup.sh <web-db-ip> <worker1-ip> <worker2-ip>
+> ```
+> (If the servers keep the app in different paths, run the script once per server with the matching
+> `APP_DIR`.)
+
 ---
 
 ## 7. Make it automatic (so you don't have to remember)

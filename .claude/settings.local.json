@@ -45,7 +45,9 @@
       "Bash(SERVER_IPS='' bash -c 'set -- 1.2.3.4 5.6.7.8; if [ \"$#\" -gt 0 ]; then S=\"$*\"; fi; echo \"args->[$S]\"; S2=\"\"; if [ -z \"${S2// /}\" ]; then echo \"empty-detected\"; fi')",
       "Bash(bash -n deploy/backup/install.sh)",
       "PowerShell(Out-Null *)",
-      "Bash(bash -n deploy/backup/pull-backup.sh)"
+      "Bash(bash -n deploy/backup/pull-backup.sh)",
+      "Bash(bash -n /c/CU_1/CEDT_grader/cafe-grader-web/deploy/backup/pull-backup.sh)",
+      "Bash(bash /c/CU_1/CEDT_grader/cafe-grader-web/deploy/backup/pull-backup.sh -h)"
     ]
   }
 }

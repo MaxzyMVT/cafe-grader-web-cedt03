@@ -22,11 +22,12 @@
 # Environment overrides:
 #   SSH_USER (root)  DEST_DIR (~/cafe-grader-backups)  KEEP_DAYS (14)
 #   DB_USER / DB_PASS  (only if mysqldump needs a login)
+#   APP_DIR          (Cafe-Grader path on the servers, if auto-detect fails)
 #   SSH_KEY          (key CONTENTS, not a path - lets it run unattended for cron)
 
 set -euo pipefail
 
-case "${1:-}" in -h|--help) sed -n '3,28p' "$0" | sed 's/^#\s\?//'; exit 0;; esac
+case "${1:-}" in -h|--help) awk 'NR>=3&&/^#/{sub(/^# ?/,"");print;next} NR>=3{exit}' "$0"; exit 0;; esac
 
 # --- settings (override via env) --------------------------------------------
 SSH_USER="${SSH_USER:-root}"
@@ -34,6 +35,7 @@ DEST_DIR="${DEST_DIR:-$HOME/cafe-grader-backups}"
 KEEP_DAYS="${KEEP_DAYS:-14}"
 DB_USER="${DB_USER:-}"
 DB_PASS="${DB_PASS:-}"
+APP_DIR="${APP_DIR:-}"   # path to Cafe-Grader ON THE SERVERS (blank = auto-detect common paths)
 
 # --- prerequisites -----------------------------------------------------------
 for t in ssh scp mktemp grep; do
@@ -71,6 +73,11 @@ REMOTE_ENV=""
 [ -n "$DB_USER" ] && REMOTE_ENV+="DBUSER_ARG='-u$DB_USER' "
 [ -n "$DB_PASS" ] && REMOTE_ENV+="MYSQL_PWD='$DB_PASS' "
 
+# APP_DIR (if given) is passed to every host so file/config backup finds the app.
+COMMON_ENV=""
+[ -n "$APP_DIR" ] && COMMON_ENV+="APP_DIR='$APP_DIR' "
+WEB_ENV="$COMMON_ENV$REMOTE_ENV"
+
 # --- run a script on a host (via stdin); print its non-empty output lines -----
 run_remote() {  # run_remote <host> <script> [env-prefix]
   printf '%s\n' "$2" | "${SSH[@]}" "$SSH_USER@$1" "${3:-}bash -s" | grep -v '^[[:space:]]*$' || true
@@ -98,10 +105,13 @@ OUT=/tmp/cafebk; mkdir -p "$OUT"
 DB="$OUT/db_$TS.sql.gz"
 mysqldump ${DBUSER_ARG:-} --single-transaction --quick --routines --triggers --events --databases grader grader_queue | gzip > "$DB"
 [ -s "$DB" ] && echo "$DB"
-APP=""
-for d in /home/*/cafe-grader-web /var/www/cafe-grader-web /opt/cafe-grader-web /root/cafe-grader-web; do
-  [ -d "$d" ] && { APP="$d"; break; }
-done
+APP="${APP_DIR:-}"
+if [ -z "$APP" ]; then
+  for d in /root/cafe_grader/web /home/*/cafe_grader/web /opt/cafe_grader/web \
+           /root/cafe-grader-web /home/*/cafe-grader-web /var/www/cafe-grader-web /opt/cafe-grader-web; do
+    [ -d "$d" ] && { APP="$d"; break; }
+  done
+fi
 if [ -n "$APP" ]; then
   F="$OUT/files_$TS.tar.gz"
   tar -C "$APP" --ignore-failed-read -czf "$F" config storage 2>/dev/null || true
@@ -109,19 +119,24 @@ if [ -n "$APP" ]; then
 fi
 REMOTE
 
-mapfile -t webfiles < <(run_remote "$WEB_DB_HOST" "$WEB_SCRIPT" "$REMOTE_ENV")
+mapfile -t webfiles < <(run_remote "$WEB_DB_HOST" "$WEB_SCRIPT" "$WEB_ENV")
 [ "${#webfiles[@]}" -gt 0 ] || { echo "ERROR: web+db produced no backup (mysqldump may need DB_USER/DB_PASS)"; exit 1; }
 fetch "$WEB_DB_HOST" "$DEST_DIR/web-db" "${webfiles[@]}"
+printf '%s\n' "${webfiles[@]}" | grep -q 'files_' || \
+  echo "    WARNING: only the database was saved. config/ (incl. master.key) and storage/ were skipped because the app folder was not found. Re-run with APP_DIR=/real/path"
 
 # ============================== WORKERS ======================================
 read -r -d '' WORKER_SCRIPT <<'REMOTE' || true
 set -eo pipefail
 TS=$(date +%F_%H%M%S)
 OUT=/tmp/cafebk; mkdir -p "$OUT"
-APP=""
-for d in /home/*/cafe-grader-web /var/www/cafe-grader-web /opt/cafe-grader-web /root/cafe-grader-web; do
-  [ -d "$d" ] && { APP="$d"; break; }
-done
+APP="${APP_DIR:-}"
+if [ -z "$APP" ]; then
+  for d in /root/cafe_grader/web /home/*/cafe_grader/web /opt/cafe_grader/web \
+           /root/cafe-grader-web /home/*/cafe-grader-web /var/www/cafe-grader-web /opt/cafe-grader-web; do
+    [ -d "$d" ] && { APP="$d"; break; }
+  done
+fi
 if [ -n "$APP" ]; then
   W="$OUT/worker_$TS.tar.gz"
   tar -C "$APP" --ignore-failed-read -czf "$W" config/worker.yml 2>/dev/null || true
@@ -136,7 +151,7 @@ REMOTE
 
 for w in $WORKER_HOSTS; do
   echo "==> worker : $w"
-  mapfile -t wf < <(run_remote "$w" "$WORKER_SCRIPT")
+  mapfile -t wf < <(run_remote "$w" "$WORKER_SCRIPT" "$COMMON_ENV")
   if [ "${#wf[@]}" -gt 0 ]; then fetch "$w" "$DEST_DIR/$w" "${wf[@]}"
   else echo "    (nothing to back up - app dir not found on $w)"; fi
 done
