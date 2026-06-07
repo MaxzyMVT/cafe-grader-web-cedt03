@@ -178,11 +178,13 @@ run is **database-only**. The two cron lines below set this up.
 Because the automatic run can't stop to ask you to paste the key, you first save the key into a private
 file, then tell cron to use it.
 
-1. Save your key once, readable only by you:
+1. Save your key once, readable only by you. Paste the key, then press **Ctrl+D**:
    ```bash
-   install -m 600 /dev/stdin ~/.cafe-backup.key
+   ( umask 077; cat > ~/.cafe-backup.key )
+   chmod 600 ~/.cafe-backup.key
    ```
-   …then paste your key and press **Ctrl+D**.
+   (`umask 077` makes the file private from the moment it's created.) If your key is already a file on
+   this machine, just copy it instead: `cp /path/to/key ~/.cafe-backup.key && chmod 600 ~/.cafe-backup.key`.
 
 2. Open cron's schedule list:
    ```bash
