@@ -163,16 +163,17 @@ Right now you run it by hand. To have Ubuntu run it for you **every hour**, use 
 
 ### How often should it run?
 
-| Situation | Suggested frequency |
-|-----------|---------------------|
-| Normal use | **every hour** |
-| Exam / contest periods | **every hour** (same — keeps worst-case loss under ~1 hour) |
-| Old backups | kept **14 days**, then auto-deleted (change with `KEEP_DAYS`) |
+The database changes constantly, but the uploaded files (`storage/`, ~1 GB) and the worker folders
+barely change. So back them up at **different rates**:
 
-Rule of thumb: *how often you back up = how much you could lose.* Backing up **every hour** keeps your
-worst-case loss to about an hour of recent submissions — a safe default for normal use, exams, and
-contests alike. The schedule below runs hourly. (To go less often, change the time field — see the note
-after the cron line.)
+| What | How often | Why |
+|------|-----------|-----|
+| **Database only** (`SCOPE=db`) | **every hour** | The hot data — keeps worst-case loss under ~1 hour |
+| **Full** (database + storage + workers) | **once a day** | Large (~1.5 GB); changes slowly, so daily is plenty |
+| Old backups | kept **14 days**, then auto-deleted (`KEEP_DAYS`) | |
+
+A *full* backup every hour would copy ~1.5 GB each time and fill your disk fast — that's why the hourly
+run is **database-only**. The two cron lines below set this up.
 
 Because the automatic run can't stop to ask you to paste the key, you first save the key into a private
 file, then tell cron to use it.
@@ -189,12 +190,16 @@ file, then tell cron to use it.
    ```
    (If it asks which editor, pick `nano` — the easiest.)
 
-3. Add this **one line** at the bottom (fix the path and the IPs), then save:
+3. Add these **two lines** at the bottom (fix the path and the IPs), then save:
    ```cron
-   0 * * * *  SSH_KEY="$(cat $HOME/.cafe-backup.key)" /home/you/cafe-grader-web/deploy/backup/pull-backup.sh <web-db-ip> <worker1-ip> <worker2-ip> >> $HOME/cafe-backup.log 2>&1
+   # every hour - DATABASE ONLY (small & fast; only the web+db server is needed)
+   0 * * * *   SCOPE=db   SSH_KEY="$(cat $HOME/.cafe-backup.key)" /home/you/cafe-grader-web/deploy/backup/pull-backup.sh <web-db-ip> >> $HOME/cafe-backup.log 2>&1
+
+   # every day at 02:30 - FULL backup (database + storage + workers)
+   30 2 * * *  SCOPE=full SSH_KEY="$(cat $HOME/.cafe-backup.key)" /home/you/cafe-grader-web/deploy/backup/pull-backup.sh <web-db-ip> <worker1-ip> <worker2-ip> >> $HOME/cafe-backup.log 2>&1
    ```
-   `0 * * * *` means "at the top of every hour." Your computer must be **on and awake** for it to run.
-   To back up less often, use `0 */6 * * *` (every 6 hours) or `0 2 * * *` (once a day at 02:00).
+   The first field is the schedule: `0 * * * *` = top of every hour, `30 2 * * *` = 02:30 daily. Your
+   computer must be **on and awake** at those times for the backup to run.
 
 Backups older than 14 days are deleted automatically so your disk doesn't fill up (change with
 `KEEP_DAYS`).

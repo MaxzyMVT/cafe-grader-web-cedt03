@@ -23,6 +23,7 @@
 #   SSH_USER (root)  DEST_DIR (~/cafe-grader-backups)  KEEP_DAYS (14)
 #   DB_USER / DB_PASS  (only if mysqldump needs a login)
 #   APP_DIR          (Cafe-Grader path on the servers, if auto-detect fails)
+#   SCOPE            (full = DB+files+workers [default] ; db = database only, for hourly)
 #   SSH_KEY          (key CONTENTS, not a path - lets it run unattended for cron)
 
 set -euo pipefail
@@ -36,6 +37,7 @@ KEEP_DAYS="${KEEP_DAYS:-14}"
 DB_USER="${DB_USER:-}"
 DB_PASS="${DB_PASS:-}"
 APP_DIR="${APP_DIR:-}"   # path to Cafe-Grader ON THE SERVERS (blank = auto-detect common paths)
+SCOPE="${SCOPE:-full}"   # full = DB + files + workers ; db = database only (small/fast, for hourly)
 
 # --- prerequisites -----------------------------------------------------------
 for t in ssh scp mktemp grep; do
@@ -77,6 +79,7 @@ REMOTE_ENV=""
 COMMON_ENV=""
 [ -n "$APP_DIR" ] && COMMON_ENV+="APP_DIR='$APP_DIR' "
 WEB_ENV="$COMMON_ENV$REMOTE_ENV"
+[ "$SCOPE" = db ] && WEB_ENV+="SKIP_FILES=1 "   # db scope: dump database, skip storage/config
 
 # --- run a script on a host (via stdin); print its non-empty output lines -----
 run_remote() {  # run_remote <host> <script> [env-prefix]
@@ -112,7 +115,7 @@ if [ -z "$APP" ]; then
     [ -d "$d" ] && { APP="$d"; break; }
   done
 fi
-if [ -n "$APP" ]; then
+if [ -n "$APP" ] && [ "${SKIP_FILES:-0}" != 1 ]; then
   F="$OUT/files_$TS.tar.gz"
   tar -C "$APP" --ignore-failed-read -czf "$F" config storage 2>/dev/null || true
   [ -s "$F" ] && echo "$F"
@@ -122,8 +125,10 @@ REMOTE
 mapfile -t webfiles < <(run_remote "$WEB_DB_HOST" "$WEB_SCRIPT" "$WEB_ENV")
 [ "${#webfiles[@]}" -gt 0 ] || { echo "ERROR: web+db produced no backup (mysqldump may need DB_USER/DB_PASS)"; exit 1; }
 fetch "$WEB_DB_HOST" "$DEST_DIR/web-db" "${webfiles[@]}"
-printf '%s\n' "${webfiles[@]}" | grep -q 'files_' || \
-  echo "    WARNING: only the database was saved. config/ (incl. master.key) and storage/ were skipped because the app folder was not found. Re-run with APP_DIR=/real/path"
+if [ "$SCOPE" != db ]; then
+  printf '%s\n' "${webfiles[@]}" | grep -q 'files_' || \
+    echo "    WARNING: only the database was saved. config/ (incl. master.key) and storage/ were skipped because the app folder was not found. Re-run with APP_DIR=/real/path"
+fi
 
 # ============================== WORKERS ======================================
 read -r -d '' WORKER_SCRIPT <<'REMOTE' || true
@@ -149,6 +154,7 @@ if [ -n "$APP" ]; then
 fi
 REMOTE
 
+[ "$SCOPE" = db ] && WORKER_HOSTS=""   # db scope: web database only, skip workers
 for w in $WORKER_HOSTS; do
   echo "==> worker : $w"
   mapfile -t wf < <(run_remote "$w" "$WORKER_SCRIPT" "$COMMON_ENV")
