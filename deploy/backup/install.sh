@@ -2,61 +2,52 @@
 #
 # Cafe-Grader — one-shot backup installer (Layer B: app backups -> Huawei OBS).
 #
-# Run this ONCE on each server. It does everything:
-#   - installs obsutil (if missing) and connects it to your OBS account
-#   - sets the clock to Asia/Bangkok
-#   - copies the right backup script to /opt/cafe-backup
-#   - installs the cron schedule (hourly+daily for web+db, weekly for a worker)
-#   - runs one backup immediately so you know it works
+# You only choose the SERVER ROLE. Everything else is auto-filled from the
+# defaults below (edit them once if your setup differs, or pass env vars).
 #
-# Usage:
-#   sudo ./install.sh                 # interactive — it asks a few questions
-#   sudo ROLE=web-db OBS_BUCKET=... OBS_AK=... OBS_SK=... ./install.sh   # non-interactive
+# Run ONCE on each server:
+#   sudo ./install.sh                 # asks: web-db or worker?
+#   sudo ./install.sh web-db          # or pass the role directly
+#   sudo ./install.sh worker
 #
-# (Whole-VM disk snapshots = Layer A = a separate one-time step; see huawei-cbr-setup.sh / README.)
+# It installs obsutil, sets the clock, copies the backup script, schedules it,
+# and runs the first backup. (Whole-VM snapshots = Layer A = huawei-cbr-setup.sh.)
 
 set -euo pipefail
+
+# ============================================================================
+# AUTO-FILLED DEFAULTS — edit here once if needed, or override with env vars.
+# ============================================================================
+APP_DIR="${APP_DIR:-/home/grader/cafe-grader-web}"          # where Cafe-Grader lives
+OBS_BUCKET="${OBS_BUCKET:-cafe-grader-backups}"             # OBS bucket for backups
+OBS_ENDPOINT="${OBS_ENDPOINT:-obs.ap-southeast-2.myhuaweicloud.com}"
+DB_USER="${DB_USER:-grader}"
+
+# Secrets — leave BLANK to reuse an already-configured obsutil / existing ~/.my.cnf.
+# To set them on the fly:  sudo OBS_AK=.. OBS_SK=.. DB_PASS=.. ./install.sh web-db
+OBS_AK="${OBS_AK:-}"
+OBS_SK="${OBS_SK:-}"
+DB_PASS="${DB_PASS:-}"
+# ============================================================================
+
+DEST_DIR="/opt/cafe-backup"
+SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- must be root ------------------------------------------------------------
 [ "$(id -u)" -eq 0 ] || { echo "Please run with sudo:  sudo ./install.sh"; exit 1; }
 
-SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEST_DIR="/opt/cafe-backup"
-
-ask() { # ask VAR "Prompt" "default"   (skips if VAR already set in env)
-  local var="$1" prompt="$2" def="${3:-}" cur ans
-  cur="$(eval "printf '%s' \"\${$var:-}\"")"
-  if [ -n "$cur" ]; then return; fi
-  if [ -n "$def" ]; then read -rp "$prompt [$def]: " ans; ans="${ans:-$def}"
-  else read -rp "$prompt: " ans; fi
-  eval "$var=\$ans"
-}
-ask_secret() { # ask_secret VAR "Prompt"  (no echo)
-  local var="$1" prompt="$2" cur ans
-  cur="$(eval "printf '%s' \"\${$var:-}\"")"
-  if [ -n "$cur" ]; then return; fi
-  read -rsp "$prompt: " ans; echo; eval "$var=\$ans"
-}
-
-echo "=== Cafe-Grader backup installer ==="
-
-# --- gather settings ---------------------------------------------------------
-ask ROLE         "Server role — type 'web-db' or 'worker'" "web-db"
-case "$ROLE" in web-db|worker) ;; *) echo "ROLE must be web-db or worker"; exit 1;; esac
-
-ask APP_DIR      "Path to the Rails app" "/home/grader/cafe-grader-web"
-[ -d "$APP_DIR" ] || echo "  (note: $APP_DIR not found yet — make sure it's correct)"
-
-ask OBS_BUCKET   "OBS bucket name to store backups" "cafe-grader-backups"
-ask OBS_ENDPOINT "OBS endpoint for your region" "obs.ap-southeast-2.myhuaweicloud.com"
-ask OBS_AK       "OBS Access Key (AK)"
-ask_secret OBS_SK "OBS Secret Key (SK)"
-
-DB_PASS="${DB_PASS:-}"
-if [ "$ROLE" = "web-db" ]; then
-  ask DB_USER    "MySQL username" "grader"
-  ask_secret DB_PASS "MySQL password (leave blank if ~/.my.cnf already set)"
+# --- the ONLY input: server role --------------------------------------------
+ROLE="${1:-${ROLE:-}}"
+if [ -z "$ROLE" ]; then
+  read -rp "Server role — type 'web-db' or 'worker': " ROLE
 fi
+case "$ROLE" in
+  web-db|worker) ;;
+  *) echo "ROLE must be 'web-db' or 'worker' (got: '$ROLE')"; exit 1;;
+esac
+
+echo "=== Installing Cafe-Grader backups: role=$ROLE ==="
+[ -d "$APP_DIR" ] || echo "  (note: APP_DIR '$APP_DIR' not found yet — edit the default if wrong)"
 
 # --- 1. timezone -------------------------------------------------------------
 echo "==> Setting timezone to Asia/Bangkok"
@@ -71,17 +62,32 @@ if ! command -v obsutil >/dev/null; then
   install -m 0755 obsutil_linux_amd64_*/obsutil /usr/local/bin/obsutil
   popd >/dev/null; rm -rf "$tmp"
 fi
-echo "==> Connecting obsutil to your account"
-obsutil config -i="$OBS_AK" -k="$OBS_SK" -e="$OBS_ENDPOINT" >/dev/null
-# create the bucket (ignore error if it already exists)
+
+if [ -n "$OBS_AK" ] && [ -n "$OBS_SK" ]; then
+  echo "==> Connecting obsutil to your account"
+  obsutil config -i="$OBS_AK" -k="$OBS_SK" -e="$OBS_ENDPOINT" >/dev/null
+elif [ -f "$HOME/.obsutilconfig" ]; then
+  echo "==> Reusing existing obsutil config ($HOME/.obsutilconfig)"
+else
+  echo "ERROR: obsutil is not configured and no OBS_AK/OBS_SK were given."
+  echo "  Either configure once:  obsutil config -i=AK -k=SK -e=$OBS_ENDPOINT"
+  echo "  or re-run:              sudo OBS_AK=.. OBS_SK=.. ./install.sh $ROLE"
+  exit 1
+fi
+# create the bucket (harmless if it already exists)
 obsutil mb "obs://$OBS_BUCKET" >/dev/null 2>&1 || true
 
 # --- 3. MySQL credentials (web-db only) --------------------------------------
-if [ "$ROLE" = "web-db" ] && [ -n "$DB_PASS" ]; then
-  echo "==> Writing /root/.my.cnf (chmod 600)"
-  umask 077
-  printf '[client]\nuser=%s\npassword=%s\n' "${DB_USER:-grader}" "$DB_PASS" > /root/.my.cnf
-  umask 022
+if [ "$ROLE" = "web-db" ]; then
+  if [ -n "$DB_PASS" ]; then
+    echo "==> Writing /root/.my.cnf (chmod 600)"
+    ( umask 077; printf '[client]\nuser=%s\npassword=%s\n' "$DB_USER" "$DB_PASS" > /root/.my.cnf )
+  elif [ -f /root/.my.cnf ] || [ -f "$HOME/.my.cnf" ]; then
+    echo "==> Reusing existing ~/.my.cnf for MySQL auth"
+  else
+    echo "  WARN: no DB_PASS given and no ~/.my.cnf found — the DB dump may fail."
+    echo "        Re-run with  sudo DB_PASS=.. ./install.sh web-db  or create ~/.my.cnf."
+  fi
 fi
 
 # --- 4. install backup scripts ----------------------------------------------
@@ -131,6 +137,6 @@ cat <<EOF
 
 Next:
   - Set up whole-VM snapshots (Layer A) once — see README "Whole-server snapshots".
-  - In OBS console, add Lifecycle Rules to auto-delete old backups (see README step 6).
+  - In OBS console, add Lifecycle Rules to auto-delete old backups (README step 6).
   - Check it landed:  obsutil ls obs://$OBS_BUCKET/
 EOF

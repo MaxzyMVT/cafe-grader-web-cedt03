@@ -130,26 +130,27 @@ The installer does the whole job: installs the upload tool, connects it to your 
 clock, copies the backup script, schedules it, and runs the first backup. Do this on **each** server.
 
 1. Get this `deploy/backup/` folder onto the server (via `git pull` or `scp`).
-2. Run the installer and answer a few short questions:
+2. Run the installer — **the only thing it asks is the server role**:
    ```bash
    cd deploy/backup
-   sudo ./install.sh
+   sudo ./install.sh            # then type:  web-db   (or  worker)
+   # ...or pass the role directly and answer nothing:
+   sudo ./install.sh web-db
+   sudo ./install.sh worker
    ```
-   It asks for:
-   - **role** — `web-db` for the web+database server, or `worker` for a grader
-   - **app path** — where Cafe-Grader lives (default `/home/grader/cafe-grader-web`)
-   - **OBS bucket name**, plus your **AK/SK keys** and **endpoint** (keys come from Console → *My Credentials*)
-   - **MySQL password** (web-db only; leave blank if you already have a `~/.my.cnf`)
 
-That's the whole setup. When it finishes you'll see a `.tar.gz` land in your OBS bucket and the
-schedule is live. Run it again on the other two servers and pick `worker` for those.
+Everything else (app path, bucket name, endpoint) is **auto-filled** from the defaults at the top of
+`install.sh`. Two things just need to exist first:
 
-> **No prompts (for automation)?** Pass everything as environment variables:
-> ```bash
-> sudo ROLE=web-db APP_DIR=/home/grader/cafe-grader-web OBS_BUCKET=cafe-grader-backups \
->      OBS_AK=YOUR_AK OBS_SK=YOUR_SK OBS_ENDPOINT=obs.ap-southeast-2.myhuaweicloud.com \
->      DB_PASS=YOUR_DB_PASSWORD ./install.sh
-> ```
+- **obsutil connected to your account** — if it's already configured, great; otherwise give the keys
+  once: `sudo OBS_AK=YOUR_AK OBS_SK=YOUR_SK ./install.sh web-db` (keys: Console → *My Credentials*).
+- **MySQL access (web-db only)** — a `~/.my.cnf`, or pass it: `sudo DB_PASS=YOUR_DB_PASSWORD ./install.sh web-db`.
+
+To change a default for good (e.g. the app path or bucket name), edit the **AUTO-FILLED DEFAULTS**
+block at the top of `install.sh`.
+
+When it finishes you'll see a `.tar.gz` land in your OBS bucket and the schedule is live. Run it again
+on the other two servers and pick `worker` for those.
 
 **What the installer set up** (so you know where things are):
 - backup scripts → `/opt/cafe-backup/`
