@@ -121,7 +121,8 @@ class DatasetsController < ApplicationController
     begin
       tc = Testcase.find(params[:tc_id])
       text = ERB::Util.html_escape(tc.inp_file.download)
-      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Input', body_msg: "<pre>#{text}</pre>".html_safe }
+      header_btn = "<a href='#{download_input_testcase_path(tc)}' class='btn btn-sm btn-primary d-inline-flex align-items-center gap-1' data-turbo='false'><span class='mi' style='font-size: 1.1rem;'>file_download</span>Download #{tc.code_name}.in</a>".html_safe
+      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Input', body_msg: "<pre>#{text}</pre>".html_safe, header_content: header_btn }
     rescue  ActiveStorage::FileNotFoundError
       text = "<div class='alert alert-danger'>File NOT Found on the server!!!</div>".html_safe
       render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Input ERROR', body_msg: text }
@@ -133,7 +134,8 @@ class DatasetsController < ApplicationController
     begin
       tc = Testcase.find(params[:tc_id])
       text = ERB::Util.html_escape(tc.ans_file.download)
-      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Answer', body_msg: "<pre>#{text}</pre>".html_safe }
+      header_btn = "<a href='#{download_sol_testcase_path(tc)}' class='btn btn-sm btn-primary d-inline-flex align-items-center gap-1' data-turbo='false'><span class='mi' style='font-size: 1.1rem;'>download</span>Download #{tc.code_name}.sol</a>".html_safe
+      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Answer', body_msg: "<pre>#{text}</pre>".html_safe, header_content: header_btn }
     rescue  ActiveStorage::FileNotFoundError
       text = "<div class='alert alert-danger'>File NOT Found on the server!!!</div>".html_safe
       render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Answer ERROR', body_msg: text }
