@@ -615,8 +615,6 @@ golden-btn + .golden-btn { margin-top: 1em; }
 
 // Topic badges styling on /main/list
 .topic-badge {
-  border-color: var(--tag-color, #6C757D) !important;
-  color: var(--tag-color, #6C757D) !important;
   background-color: transparent !important;
   transition: all 0.2s ease-in-out;
   filter: brightness(0.75);
