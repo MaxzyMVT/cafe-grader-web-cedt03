@@ -46,8 +46,6 @@ $color-gray-light: #eeeeee;
 
 // Export them as CSS Custom Properties (so they can be used at runtime or in dev tools)
 :root {
-  --tag-mix-color: #000000;
-  --tag-mix-amount: 30%;
   --color-primary: #{$color-primary};
   --color-primary-dark: #{$color-primary-dark};
   --color-primary-light: #{$color-primary-light};
