@@ -122,5 +122,13 @@ class Dataset < ApplicationRecord
     return false
   end
 
+  def resequence_testcases!
+    AuditLog.paused do
+      testcases.order(:group, :num, :id).each_with_index do |tc, idx|
+        tc.update(num: idx + 1)
+      end
+    end
+  end
+
   protected
 end

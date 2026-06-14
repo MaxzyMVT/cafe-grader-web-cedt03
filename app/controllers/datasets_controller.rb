@@ -142,8 +142,10 @@ class DatasetsController < ApplicationController
   # as turbo
   def testcase_delete
     tc = Testcase.find(params[:tc_id])
+    dataset = tc.dataset
     num = tc.num
     tc.destroy
+    dataset.resequence_testcases!
 
     @active_dataset_tab = '#testcases'
     @toast = {title: 'Testcase changed',

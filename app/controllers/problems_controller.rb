@@ -511,6 +511,7 @@ class ProblemsController < ApplicationController
     new_tc.ans_file.attach(io: StringIO.new(ans_text), filename: "#{codename}.sol", content_type: 'text/plain', identify: false)
 
     if new_tc.save
+      dataset.resequence_testcases!
       @toast = { title: 'Success', body: "Testcase ##{num} (codename: #{codename}) successfully added to dataset '#{dataset.name}'.", type: :success }
     else
       @toast = { title: 'Error', body: new_tc.errors.full_messages.join(', '), type: :danger }

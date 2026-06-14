@@ -99,9 +99,11 @@ class ProblemImporter
         new_tc = @dataset.testcases.where(code_name: codename).first
         if new_tc
           @log << "replace existing testcase with codename #{codename} (num,weight,group,group_name are #{[num, weight, group, group_name].join ','})"
+          new_tc.num = num
           new_tc.weight = weight
           new_tc.group = group
           new_tc.group_name = group_name
+          num += 1
         else
           @log << "add a testcase #{num} with codename #{codename} (num,weight,group,group_name are #{[num, weight, group, group_name].join ','})"
           new_tc = Testcase.new(code_name: codename, num: num, group: group, weight: weight, group_name: group_name, dataset: @dataset)
@@ -117,6 +119,7 @@ class ProblemImporter
       end
     end
 
+    @dataset.resequence_testcases!
     @problem.save
   end
 

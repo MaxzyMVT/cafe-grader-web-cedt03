@@ -8,7 +8,7 @@ class Scorer
 
   def sorted_evaluation
     @sub.evaluations.joins(:testcase).includes(:testcase)
-          .order(:group, :code_name, 'testcases.id ASC')
+          .order(:group, :num, 'testcases.id ASC')
   end
 
   # return a score, full score is always 100
