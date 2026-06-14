@@ -159,7 +159,7 @@
   .btn-info { color: #fff !important; }
   .btn-light { background-color: #2d2d44 !important; border-color: #3d3d5c !important; color: #f0f0f0 !important; }
   .btn-outline-light { color: #f0f0f0 !important; border-color: #3d3d5c !important; &:hover { background-color: #3d3d5c !important; } }
-  .btn-outline-secondary { color: #8e99a4 !important; border-color: #3d3d5c !important; &:hover { background-color: #3d3d5c !important; color: #fff !important; } }
+  .btn-outline-secondary:not(.topic-badge) { color: #8e99a4 !important; border-color: #3d3d5c !important; &:hover { background-color: #3d3d5c !important; color: #fff !important; } }
   .btn-secondary { color: #fff !important; }
   
   .btn-outline-success { color: var(--bs-success) !important; border-color: var(--bs-success) !important; &:hover { background-color: var(--bs-success) !important; color: #fff !important; } }
