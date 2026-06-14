@@ -615,6 +615,9 @@ golden-btn + .golden-btn { margin-top: 1em; }
 
 // Topic badges styling on /main/list
 .topic-badge {
+  --tag-display-color: color-mix(in srgb, var(--tag-color, #6C757D), var(--tag-mix-color) var(--tag-mix-amount));
+  border-color: var(--tag-display-color) !important;
+  color: var(--tag-display-color) !important;
   background-color: transparent !important;
   transition: all 0.2s ease-in-out;
 
@@ -623,4 +626,12 @@ golden-btn + .golden-btn { margin-top: 1em; }
     border-color: var(--tag-color) !important;
     color: var(--tag-text-color, #fff) !important;
   }
+}
+
+// Subtle badge border for filled badges so they don't blend into the background
+.badge {
+  border: 1px solid rgba(128, 128, 128, 0.15) !important;
+}
+[data-theme="dark"] .badge, [data-theme="premium"] .badge {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
