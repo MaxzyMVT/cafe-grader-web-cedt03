@@ -32,7 +32,7 @@
 - else
   - total_weight = testcases.sum(:weight)
 - total_weight = 1.0 if total_weight == 0
-- full_score = dataset&.problem&.full_score || testcases.first&.problem&.full_score || 100
+- full_score = dataset&.problem&.effective_full_score || testcases.first&.problem&.effective_full_score || 100
 - group_achieved_max = Hash.new(0.to_d)
 - if dataset&.st_group_max?
   - testcases.each do |tc|

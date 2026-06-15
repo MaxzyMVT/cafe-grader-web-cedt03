@@ -18,12 +18,11 @@
           %span.mi{style: 'font-size: 0.85rem;'} group
           = "Group Max: #{number_with_precision(@group_max_scores[problem.id], precision: 2, strip_insignificant_zeros: true)}"
   %td.text-end.d-none.d-md-table-cell{style: 'width: 5rem;'}
-    = number_with_precision problem.full_score, precision: 2, strip_insignificant_zeros: true
+    = number_with_precision problem.effective_full_score, precision: 2, strip_insignificant_zeros: true
 
   -# score column
   - score = @prob_submissions[problem.id][:max_score] || 0
-  - full_score = problem.full_score || 100
-  - full_score = 100 if full_score <= 0
+  - full_score = problem.effective_full_score
   - raw_sum_mode = problem.live_dataset&.st_raw_sum?
   - cc = score >= full_score ? 'bg-success' : 'bg-warning text-dark'
   %td{style: "width: 10rem; min-width: 10rem; vertical-align: middle", 'data-order': score || 0}

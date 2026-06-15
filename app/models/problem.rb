@@ -65,6 +65,15 @@ class Problem < ApplicationRecord
     self.full_score ||= 100
   end
 
+  def effective_full_score
+    if live_dataset&.st_raw_sum?
+      count = live_dataset.testcases.count
+      count > 0 ? count : (full_score || 100)
+    else
+      full_score || 100
+    end
+  end
+
   def first_n_bloods
     val = self[:first_n_bloods]
     val.present? ? val : 0
