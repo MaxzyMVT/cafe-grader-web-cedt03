@@ -23,6 +23,7 @@
   -# score column
   - score = @prob_submissions[problem.id][:max_score] || 0
   - full_score = problem.full_score || 100
+  - full_score = 100 if full_score <= 0
   - raw_sum_mode = problem.live_dataset&.st_raw_sum?
   - cc = score >= full_score ? 'bg-success' : 'bg-warning text-dark'
   %td{style: "width: 10rem; min-width: 10rem; vertical-align: middle", 'data-order': score || 0}
