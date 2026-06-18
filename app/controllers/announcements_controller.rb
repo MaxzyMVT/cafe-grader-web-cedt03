@@ -56,7 +56,7 @@ class AnnouncementsController < ApplicationController
     @announcement = Announcement.new(announcement_params)
 
     # check if the user can, and has, set group
-    unless @current_user.admin?
+    unless @current_user.admin? || @current_user.problem_setter?
       editor_groups = @current_user.groups_for_action(:edit)
       unless !@announcement.nil? || editor_groups.include?(@announcement.group)
         @announcement.group = editor_groups.take
