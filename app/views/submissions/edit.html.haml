@@ -20,11 +20,16 @@
         .col-md-6.text-md-end
           .d-inline-flex.align-items-center.gap-1
             = link_to_description_if_any "<span class='mi md-18'>description</span> Read".html_safe, @problem, class: 'link-flex'
+            - if @problem.statement.attached?
+              = link_to download_by_type_problem_path(@problem, 'statement', disposition: 'attachment'), class: 'text-secondary d-inline-flex align-items-center p-0', title: 'Download statement' do
+                %span.mi{style: 'font-size: 1.1rem;'} download
             - if @problem.attachment.attached?
               .d-md-none
               %span.d-none.d-md-inline
                 |
               = link_to "<span class='mi md-18'>archive</span> File".html_safe, download_by_type_problem_path(@problem,'attachment'), class: 'link-flex'
+              = link_to download_by_type_problem_path(@problem, 'attachment', disposition: 'attachment'), class: 'text-secondary d-inline-flex align-items-center p-0', title: 'Download file' do
+                %span.mi{style: 'font-size: 1.1rem;'} download
             - if @problem.can_view_testcase
               %span
                 |

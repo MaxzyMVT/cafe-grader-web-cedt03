@@ -34,9 +34,11 @@
       %hr.my-2
       .text-uppercase.small.fw-bold.text-muted.mb-1 Attachments
       .mt-2
-        %span.badge.bg-light.text-dark.border
+        %span.badge.bg-light.text-dark.border.d-inline-flex.align-items-center.gap-1
           = mdi('attachment', 'md-18')
-          = link_to announcement.file.filename, url_for(announcement.file), class: 'text-decoration-none ms-1'
+          = link_to announcement.file.filename, url_for(announcement.file), class: 'text-decoration-none ms-1', target: '_blank', data: {turbo: false}
+          = link_to rails_blob_path(announcement.file, disposition: 'attachment'), class: 'text-secondary d-inline-flex align-items-center p-0 ms-1', title: 'Download instantly' do
+            %span.mi{style: 'font-size: 1rem;'} download
 
   - if !is_contest
     .modal.fade{:id => "announcementModal-#{announcement.id}", :tabindex => "-1", "aria-labelledby" => "announcementModalLabel-#{announcement.id}", "aria-hidden" => "true"}
@@ -51,8 +53,10 @@
               %hr.my-2
               .text-uppercase.small.fw-bold.text-muted.mb-1 Attachments
               .mt-2
-                %span.badge.bg-light.text-dark.border
+                %span.badge.bg-light.text-dark.border.d-inline-flex.align-items-center.gap-1
                   = mdi('attachment', 'md-18')
-                  = link_to announcement.file.filename, url_for(announcement.file), class: 'text-decoration-none ms-1'
+                  = link_to announcement.file.filename, url_for(announcement.file), class: 'text-decoration-none ms-1', target: '_blank', data: {turbo: false}
+                  = link_to rails_blob_path(announcement.file, disposition: 'attachment'), class: 'text-secondary d-inline-flex align-items-center p-0 ms-1', title: 'Download instantly' do
+                    %span.mi{style: 'font-size: 1rem;'} download
           .modal-footer
             %button.btn.btn-secondary{"data-bs-dismiss" => "modal"} Close
