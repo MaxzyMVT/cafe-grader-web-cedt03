@@ -22,13 +22,7 @@
       - if is_contest
         = markdown(announcement.body)
       - else
-        - parsed_body = markdown(announcement.body)
-        - raw_text = CGI.unescapeHTML(strip_tags(parsed_body))
-        - if raw_text.length > 150
-          = truncate(raw_text, length: 150)
-          %a.ms-1.fw-bold{:href => "#", "data-bs-toggle" => "modal", "data-bs-target" => "#announcementModal-#{announcement.id}", :style => "text-decoration: none;"} Read More &rarr;
-        - else
-          = parsed_body
+        = render_announcement_body(announcement)
 
     - if announcement.file.attached?
       %hr.my-2
@@ -40,6 +34,7 @@
           = link_to rails_blob_path(announcement.file, disposition: 'attachment'), class: 'text-secondary d-inline-flex align-items-center p-0 ms-1', title: 'Download instantly' do
             %span.mi{style: 'font-size: 1rem;'} download
 
+- content_for :modals do
   - if !is_contest
     .modal.fade{:id => "announcementModal-#{announcement.id}", :tabindex => "-1", "aria-labelledby" => "announcementModalLabel-#{announcement.id}", "aria-hidden" => "true"}
       .modal-dialog.modal-lg.modal-dialog-scrollable

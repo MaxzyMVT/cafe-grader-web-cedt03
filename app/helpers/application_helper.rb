@@ -291,7 +291,7 @@ TITLEBAR
     # markdown.to_html.html_safe
 
     # redcarpet
-    renderer = Redcarpet::Render::HTML.new(prettify: true)
+    renderer = Redcarpet::Render::HTML.new(prettify: true, hard_wrap: true)
     markdown = Redcarpet::Markdown.new(renderer, fenced_code_blocks: true, autolink: true)
     markdown.render(text.to_s).html_safe
 
@@ -305,7 +305,7 @@ TITLEBAR
   # browser. Use this for viva turns, AI-comment bodies, and anything else
   # where the markdown source isn't authored by a trusted user.
   def safe_markdown(text)
-    renderer = Redcarpet::Render::HTML.new(prettify: true, filter_html: true)
+    renderer = Redcarpet::Render::HTML.new(prettify: true, filter_html: true, hard_wrap: true)
     parser   = Redcarpet::Markdown.new(
       renderer,
       fenced_code_blocks: true,
@@ -316,6 +316,38 @@ TITLEBAR
       lax_spacing:        true
     )
     parser.render(text.to_s).html_safe
+  end
+
+  def render_announcement_body(announcement, modal_id_prefix: 'announcementModal')
+    body = announcement.body.to_s.strip
+    body_lines = body.split(/\r?\n/)
+    
+    if body_lines.size > 5 || body.length > 300
+      preview_lines = body_lines[0...5]
+      joined_preview = preview_lines.join("\n")
+      
+      if joined_preview.length > 300
+        truncated_text = joined_preview[0...300] + "..."
+        preview_lines = truncated_text.split(/\r?\n/)
+        preview_text = truncated_text
+      else
+        preview_text = joined_preview
+      end
+      
+      html = markdown(preview_text)
+      
+      button_html = "<button class='btn btn-link p-0 ms-1 fw-bold text-decoration-none' type='button' data-bs-toggle='modal' data-bs-target='##{modal_id_prefix}-#{announcement.id}' style='vertical-align: baseline;'>Read More &rarr;</button>".html_safe
+      
+      last_line_len = preview_lines.last.to_s.strip.length
+      
+      if last_line_len > 40 && html.match?(/(<\/p>\s*)\z/)
+        html.sub(/(<\/p>\s*)\z/, " #{button_html}\\1").html_safe
+      else
+        (html + "<div class='mt-1'>#{button_html}</div>".html_safe).html_safe
+      end
+    else
+      markdown(body)
+    end
   end
 
 
