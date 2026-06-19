@@ -292,8 +292,8 @@ TITLEBAR
 
     # redcarpet
     renderer = Redcarpet::Render::HTML.new(prettify: true)
-    markdown = Redcarpet::Markdown.new(renderer, fenced_code_blocks: true)
-    markdown.render(text).html_safe
+    markdown = Redcarpet::Markdown.new(renderer, fenced_code_blocks: true, autolink: true)
+    markdown.render(text.to_s).html_safe
 
     # kramdown
     # Kramdown::Document.new(text).to_html.html_safe
