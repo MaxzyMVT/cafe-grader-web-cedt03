@@ -1,7 +1,7 @@
 -#
   show evaluation with respect to the dataset
   requires 
-    testcases, which should be @submission.problem.live_dataset.testcases.order(:group, :num)
+    testcases, which should be @submission.problem.live_dataset.testcases.display_order
     evaluations_by_tcid, which should be Evaluation.where(submission: @submission, testcase: @testcases.ids).index_by(&:testcase_id)
 -# header row
 .alert.my-0.py-0
@@ -72,7 +72,7 @@
 
   .row.mb-1
     .col.text-end
-      =tc.num
+      =idx + 1
     .col.text-end
       - if ev
         %span= (ev&.time || 0) / 1000.0

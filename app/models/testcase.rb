@@ -13,7 +13,7 @@ class Testcase < ApplicationRecord
   has_one_attached :inp_file
   has_one_attached :ans_file
 
-  scope :display_order, ->  { order(:group, :num) }
+  scope :display_order, ->  { order(:group, :num, :id) }
 
   def get_name_for_dir
     return code_name unless code_name.blank?
