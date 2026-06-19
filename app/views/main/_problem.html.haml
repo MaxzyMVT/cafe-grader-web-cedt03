@@ -61,7 +61,7 @@
       %div
         %small= text.join(', ')
       %div
-        %small= "Full score reduced by #{number_with_precision(sum_cost, precision: 2, strip_insignificant_zeros: true)}" if sum_cost > 0
+        %small= "Reduced by #{number_with_precision(sum_cost, precision: 2, strip_insignificant_zeros: true)}" if sum_cost > 0
   -# last submission column
   %td.d-none.d-lg-table-cell{style: 'min-width: 15rem; width: 15rem;'}
     = render partial: 'submission_short',
