@@ -66,7 +66,7 @@ echo "============================================================"
 echo "[1/13] Installing system dependencies..."
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y \
-  apache2 apache2-dev \
+  apache2 apache2-dev libapache2-mod-xsendfile \
   mysql-server git software-properties-common \
   libmysqlclient-dev libcap-dev libsystemd-dev libseccomp-dev pkg-config \
   apt-transport-https \
@@ -395,6 +395,7 @@ EOF
 
 # Ensure the module is enabled (idempotent — safe to run even if already enabled).
 sudo a2enmod passenger
+sudo a2enmod xsendfile
 
 # Suppress Apache's "Could not determine FQDN" warning which causes slow
 # startup on cloud instances that have no DNS reverse entry.
@@ -421,6 +422,10 @@ sudo tee /etc/apache2/sites-available/cafe_grader.conf > /dev/null <<EOF
   PassengerEnabled on
   PassengerRuby $PASSENGER_RUBY
   PassengerAppEnv production
+
+  # Enable X-Sendfile to offload file downloads to Apache
+  XSendFile on
+  XSendFilePath $APP_DIR/storage
 
   ErrorLog \${APACHE_LOG_DIR}/cafe_grader_error.log
   CustomLog \${APACHE_LOG_DIR}/cafe_grader_access.log combined
