@@ -710,7 +710,7 @@ UNION
       WHERE l.created_at >= ? and l.created_at <= ?
       GROUP BY l.ip_address
       HAVING count > 1
-    ) ml on ml.ip_address = s.ip_address
+    ) ml on ml.ip_address = s.ip_address COLLATE utf8mb4_unicode_ci
     WHERE s.submitted_at >= ? and s.submitted_at <= ?
 ORDER BY ip_address,submitted_at
             SQL
@@ -807,11 +807,7 @@ ORDER BY submitted_at
     def selected_users
       return (@users = User.none) unless params.has_key? :users
       @users = if params[:users][:use] == "group" then
-                 if params[:users][:only_users]
-                   User.where(id: Group.where(id: params[:users][:group_ids]).joins(:groups_users).where(groups_users: {role: 'user'}).pluck(:user_id))
-                 else
-                   User.where(id: Group.where(id: params[:users][:group_ids]).joins(:groups_users).pluck(:user_id))
-                 end
+                 User.where(id: Group.where(id: params[:users][:group_ids]).joins(:groups_users).pluck(:user_id))
       elsif params[:users][:use] == 'enabled'
                  User.where(enabled: true)
       elsif params[:users][:use] == 'all'

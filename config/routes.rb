@@ -195,6 +195,7 @@ Rails.application.routes.draw do
       post 'show_problems_query'
       post 'add_problem', to: 'groups#add_problem', as: 'add_problem'
       post 'add_problem_by_group'
+      post 'add_problem_by_tag'
       post 'do_all_problems'
       post 'do_problem'
     end

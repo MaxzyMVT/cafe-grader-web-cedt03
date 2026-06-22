@@ -423,5 +423,16 @@ TITLEBAR
     yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000
     yiq >= 150 ? '#212529' : '#ffffff'
   end
+
+  def user_associated_with_problem?(user_id, problem_id)
+    return true if @admin_setter_ids&.include?(user_id)
+    return true unless @problems_with_groups&.include?(problem_id)
+    (@user_groups[user_id] & @problem_groups[problem_id]).any?
+  end
+
+  def group_associated_with_problem?(group_id, problem_id)
+    return true unless @problems_with_groups&.include?(problem_id)
+    @problem_groups[problem_id].include?(group_id)
+  end
 end
 

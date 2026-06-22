@@ -105,6 +105,25 @@ class Problem < ApplicationRecord
   # -- scope --
   scope :available, -> { where(available: true) }
 
+  scope :visible_to_user, ->(user) {
+    if GraderConfiguration.contest_mode? || user&.admin? || user&.problem_setter?
+      all
+    elsif user
+      where("NOT EXISTS (SELECT 1 FROM groups_problems WHERE groups_problems.problem_id = problems.id) OR EXISTS (
+        SELECT 1 FROM groups_problems gp
+        INNER JOIN `groups` g ON g.id = gp.group_id
+        INNER JOIN groups_users gu ON gu.group_id = g.id
+        WHERE gp.problem_id = problems.id
+          AND gp.enabled = true
+          AND g.enabled = true
+          AND gu.user_id = ?
+          AND gu.enabled = true
+      )", user.id)
+    else
+      where("NOT EXISTS (SELECT 1 FROM groups_problems WHERE groups_problems.problem_id = problems.id)")
+    end
+  }
+
   # These group_xxx scopes ALWAYS take groups into account
   # REGARDLESS of the group mode configuration
   # It also NEGLECT admin privileges, i.e., you won't get any special treatment if you are an admin

@@ -93,22 +93,20 @@ class UserAuthorizationTest < ActiveSupport::TestCase
     assert_empty john.problems_for_action(:report)
   end
 
-  test "standard group: editor can edit problems in their group" do
-    set_grader_config("system.mode", "standard")
-    set_grader_config("system.use_problem_group", "true")
-    mary = users(:mary)  # editor in group_a
-
-    editable = mary.problems_for_action(:edit)
-    assert_includes editable, problems(:prob_add)
-  end
-
-  test "standard group: editor can report problems in their group" do
+  test "standard group: standard user (mary) cannot edit problems" do
     set_grader_config("system.mode", "standard")
     set_grader_config("system.use_problem_group", "true")
     mary = users(:mary)
 
-    reportable = mary.problems_for_action(:report)
-    assert_includes reportable, problems(:prob_add)
+    assert_empty mary.problems_for_action(:edit)
+  end
+
+  test "standard group: standard user (mary) cannot report problems" do
+    set_grader_config("system.mode", "standard")
+    set_grader_config("system.use_problem_group", "true")
+    mary = users(:mary)
+
+    assert_empty mary.problems_for_action(:report)
   end
 
   test "standard group: user not in any group gets nothing" do
@@ -182,13 +180,12 @@ class UserAuthorizationTest < ActiveSupport::TestCase
     assert_empty james.problems_for_action(:report)
   end
 
-  test "contest mode: contest editor can edit/report contest problems" do
+  test "contest mode: contest user (mary) cannot edit/report contest problems" do
     set_grader_config("system.mode", "contest")
-    mary = users(:mary)  # editor in contest_a
+    mary = users(:mary)
 
-    editable = mary.problems_for_action(:edit)
-    assert_includes editable, problems(:prob_add)
-    assert_includes editable, problems(:easy)
+    assert_empty mary.problems_for_action(:edit)
+    assert_empty mary.problems_for_action(:report)
   end
 
   test "contest mode: ended contest hides problems" do
@@ -226,13 +223,12 @@ class UserAuthorizationTest < ActiveSupport::TestCase
     assert_not users(:john).can_view_problem?(problems(:prob_sub))
   end
 
-  test "can_view_problem: group editor can view unavailable problem in their group" do
+  test "can_view_problem: standard user (mary) cannot view unavailable problem in their group" do
     set_grader_config("system.mode", "standard")
     set_grader_config("system.use_problem_group", "true")
-    mary = users(:mary)  # editor in group_a, prob_sub is in group_a
+    mary = users(:mary)  # in group_a, prob_sub is in group_a but unavailable
 
-    # editors have report access which covers unavailable problems
-    assert mary.can_view_problem?(problems(:prob_add))
+    assert_not mary.can_view_problem?(problems(:prob_sub))
   end
 
   test "can_view_problem: contest user can view contest problem during contest" do
@@ -318,14 +314,13 @@ class UserAuthorizationTest < ActiveSupport::TestCase
     assert_not james.can_view_submission?(submissions(:sub1_by_admin))
   end
 
-  test "can_view_submission: group reporter can view any submission for their problems" do
+  test "can_view_submission: standard user (mary) cannot view other group members' submissions" do
     set_grader_config("system.mode", "standard")
     set_grader_config("system.use_problem_group", "true")
     set_grader_config("right.user_view_submission", "false")
 
-    mary = users(:mary)  # editor(=reporter+) in group_a
-    # mary should be able to view john's submission for prob_add (in group_a)
-    assert mary.can_view_submission?(submissions(:add1_by_john))
+    mary = users(:mary)
+    assert_not mary.can_view_submission?(submissions(:add1_by_john))
   end
 
   test "can_view_submission: group member can view other group members' submissions in group_max mode" do
@@ -409,10 +404,10 @@ class UserAuthorizationTest < ActiveSupport::TestCase
     assert_not users(:john).can_edit_problem?(problems(:prob_add))
   end
 
-  test "can_edit_problem: group editor can edit in group mode" do
+  test "can_edit_problem: standard user (mary) cannot edit in group mode" do
     set_grader_config("system.mode", "standard")
     set_grader_config("system.use_problem_group", "true")
-    assert users(:mary).can_edit_problem?(problems(:prob_add))
+    assert_not users(:mary).can_edit_problem?(problems(:prob_add))
   end
 
   test "can_edit_problem: group user(role=0) cannot edit even in group mode" do
@@ -436,10 +431,10 @@ class UserAuthorizationTest < ActiveSupport::TestCase
     assert_not users(:john).can_report_problem?(problems(:prob_add))
   end
 
-  test "can_report_problem: group editor can report problems in their group" do
+  test "can_report_problem: standard user (mary) cannot report in group mode" do
     set_grader_config("system.mode", "standard")
     set_grader_config("system.use_problem_group", "true")
-    assert users(:mary).can_report_problem?(problems(:prob_add))
+    assert_not users(:mary).can_report_problem?(problems(:prob_add))
   end
 
   test "can_report_problem: group user cannot report even in their group" do
@@ -448,10 +443,10 @@ class UserAuthorizationTest < ActiveSupport::TestCase
     assert_not users(:john).can_report_problem?(problems(:prob_add))
   end
 
-  test "can_report_problem: contest editor can report contest problems" do
+  test "can_report_problem: contest user (mary) cannot report contest problems" do
     set_grader_config("system.mode", "contest")
-    mary = users(:mary)  # editor in contest_a
-    assert mary.can_report_problem?(problems(:prob_add))
+    mary = users(:mary)
+    assert_not mary.can_report_problem?(problems(:prob_add))
   end
 
   test "can_report_problem: contest user cannot report" do

@@ -61,16 +61,20 @@
                       - unless GraderConfiguration.disable_penalty?
                         %td.text-center.text-danger= format_score(entry[:deducted_score]) if entry[:deducted_score].to_f > 0
                       - @problems.each do |p|
-                        - score = @scores[entry[:user].id][p.id] || 0
-                        - full_score = p.effective_full_score || 100
-                        - pct = (full_score > 0) ? (score / full_score.to_f).clamp(0, 1) : 0
-                        %td.text-center.score-cell{style: "background-color: color-mix(in srgb, var(--color-success-bg) #{pct * 100}%, transparent);"}
-                          - if score > 0
-                            %div.d-flex.align-items-center.justify-content-center.gap-1
-                              = format_score(score)
-                              - if p.bonus_first_blood.to_f != 0 && @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(entry[:user].id))
-                                - formatted_bonus = p.bonus_first_blood.to_f > 0 ? "+#{format_score(p.bonus_first_blood)}" : format_score(p.bonus_first_blood)
-                                %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
+                        - if user_associated_with_problem?(entry[:user].id, p.id)
+                          - score = @scores[entry[:user].id][p.id] || 0
+                          - full_score = p.effective_full_score || 100
+                          - pct = (full_score > 0) ? (score / full_score.to_f).clamp(0, 1) : 0
+                          %td.text-center.score-cell{style: "background-color: color-mix(in srgb, var(--color-success-bg) #{pct * 100}%, transparent);"}
+                            - if score > 0
+                              %div.d-flex.align-items-center.justify-content-center.gap-1
+                                = format_score(score)
+                                - if p.bonus_first_blood.to_f != 0 && @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(entry[:user].id))
+                                  - formatted_bonus = p.bonus_first_blood.to_f > 0 ? "+#{format_score(p.bonus_first_blood)}" : format_score(p.bonus_first_blood)
+                                  %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
+                        - else
+                          %td.text-center.score-cell.text-muted
+                            %span{style: "opacity: 0.4;"} —
                 - else
                   - @leaderboard.each do |entry|
                     %tr.table-secondary
@@ -82,9 +86,13 @@
                       - unless GraderConfiguration.disable_penalty?
                         %td.text-center.text-danger= format_score(entry[:deducted_score]) if entry[:deducted_score].to_f > 0
                       - @problems.each do |p|
-                        - group_score = @group_score_type == 'group_max' ? entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.max : entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.sum
-                        %td.text-center.fw-bold
-                          = format_score(group_score) if group_score.to_f > 0
+                        - if group_associated_with_problem?(entry[:group].id, p.id)
+                          - group_score = @group_score_type == 'group_max' ? entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.max : entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.sum
+                          %td.text-center.fw-bold
+                            = format_score(group_score) if group_score.to_f > 0
+                        - else
+                          %td.text-center.score-cell.text-muted
+                            %span{style: "opacity: 0.4;"} —
                     - entry[:members].each do |m|
                       %tr
                         %td.text-center.text-muted.small= m[:rank]
@@ -97,16 +105,20 @@
                         - unless GraderConfiguration.disable_penalty?
                           %td.text-center.text-danger= format_score(m[:deducted_score]) if m[:deducted_score].to_f > 0
                         - @problems.each do |p|
-                          - score = @scores[m[:user].id][p.id] || 0
-                          - full_score = p.effective_full_score || 100
-                          - pct = (full_score > 0) ? (score / full_score.to_f).clamp(0, 1) : 0
-                          %td.text-center.score-cell{style: "background-color: color-mix(in srgb, var(--color-success-bg) #{pct * 100}%, transparent);"}
-                            - if score > 0
-                              %div.d-flex.align-items-center.justify-content-center.gap-1
-                                = format_score(score)
-                                - if p.bonus_first_blood.to_f != 0 && @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(m[:user].id))
-                                  - formatted_bonus = p.bonus_first_blood.to_f > 0 ? "+#{format_score(p.bonus_first_blood)}" : format_score(p.bonus_first_blood)
-                                  %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
+                          - if user_associated_with_problem?(m[:user].id, p.id)
+                            - score = @scores[m[:user].id][p.id] || 0
+                            - full_score = p.effective_full_score || 100
+                            - pct = (full_score > 0) ? (score / full_score.to_f).clamp(0, 1) : 0
+                            %td.text-center.score-cell{style: "background-color: color-mix(in srgb, var(--color-success-bg) #{pct * 100}%, transparent);"}
+                              - if score > 0
+                                %div.d-flex.align-items-center.justify-content-center.gap-1
+                                  = format_score(score)
+                                  - if p.bonus_first_blood.to_f != 0 && @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(m[:user].id))
+                                    - formatted_bonus = p.bonus_first_blood.to_f > 0 ? "+#{format_score(p.bonus_first_blood)}" : format_score(p.bonus_first_blood)
+                                    %span.mi.text-danger.md-12{title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
+                          - else
+                            %td.text-center.score-cell.text-muted
+                              %span{style: "opacity: 0.4;"} —
 
 :css
   .scoreboard-card {

@@ -20,10 +20,10 @@ class ContestsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "group editor can access contests index" do
+  test "group editor (non-admin/non-setter Mary) is redirected from contests index" do
     sign_in_as("mary", "mary")
     get contests_path
-    assert_response :success
+    assert_redirected_to list_main_path
   end
 
   # --- CRUD ---
@@ -62,16 +62,16 @@ class ContestsControllerTest < ActionDispatch::IntegrationTest
 
   # --- Cross-permission ---
 
-  test "group editor (mary) can view their contest" do
+  test "group editor (non-admin/non-setter Mary) is redirected from viewing a contest" do
     sign_in_as("mary", "mary")
     get contest_path(contests(:contest_a))
-    assert_response :success
+    assert_redirected_to list_main_path
   end
 
-  test "group editor (mary) cannot view a contest they don't own" do
-    sign_in_as("mary", "mary")
-    get contest_path(contests(:contest_b))
-    assert_response :redirect
+  test "problem setter can view contest" do
+    sign_in_as("setter", "setter")
+    get contest_path(contests(:contest_a))
+    assert_response :success
   end
 
   # --- Member actions ---

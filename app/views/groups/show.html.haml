@@ -128,19 +128,7 @@
                           or
                           = link_to 'Bulk Manage User', bulk_manage_user_admin_index_path, class: 'fw-bold text-dark'
                           page.
-                        %li.mb-1 Only enabled problems are shown to the enabled users of the group.
-                        %li
-                          %strong.text-dark User Roles:
-                          %ul.ps-3.mt-1.mb-0
-                            %li
-                              %span.badge.bg-info-subtle.text-info-emphasis.border.border-info-subtle User
-                              = "- Can only use available problems."
-                            %li.mt-1
-                              %span.badge.bg-warning-subtle.text-warning-emphasis.border.border-warning-subtle Reporter
-                              = "- Can view submissions of any users."
-                            %li.mt-1
-                              %span.badge.bg-success-subtle.text-success-emphasis.border.border-success-subtle Editor
-                              = "- Can edit any problems."
+                        %li Only enabled users can access problems that are enabled in this group.
             = render partial: 'group_users'
           -# ==========================================
           -# ---------- problem pane ------------------
@@ -174,6 +162,16 @@
                               =select_tag :problem_group_ids, options_from_collection_for_select(@current_user.groups_for_action(:edit),'id','name'), 
                                 class: 'select2', multiple: true, style: 'width: 100%',
                                 data: {placeholder: 'Add all problems from groups...'}
+                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm'
+
+                      .col-12
+                        =form_tag add_problem_by_tag_group_path(@group), class: 'tag-add-form',
+                          data: {turbo: true, action: 'turbo:submit-end->group#afterProblemsAdd'} do
+                          .d-flex.gap-2.align-items-center
+                            .flex-grow-1
+                              =select_tag :tag_ids, options_from_collection_for_select(Tag.order(:name), 'id', 'name'), 
+                                class: 'select2', multiple: true, style: 'width: 100%',
+                                data: {placeholder: 'Add all from tags...'}
                             =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm'
 
                 -# bulk actions dropdown
@@ -253,76 +251,31 @@
       columns: [ 
         {data: 'login', render: function(data,type,row,meta) { return `<a href="/user_admin/${row['user_id']}/stat" data-turbo="false" class="fw-bold text-decoration-none"> ${data}</a>` } },
         {data: 'full_name'},
-        {data: 'role'},
         {data: 'remark'},
         {data: 'user_id', render: cafe.dt.render.button(null, {element_type: 'switch', action: 'group#postUserAction', command: 'toggle', checked_data_field: 'enabled'}), className: 'text-center'},
         {
           data: null, 
           render: function(data, type, row, meta) {
             if (type !== 'display') return '';
-            let role_items = '';
-            if (row['role'] != 'editor') 
-              role_items += `<li>${cafe.dt.render.button('Set as Editor',{element_type: 'link', className: 'dropdown-item text-success', action: 'group#postUserAction', command: 'make_editor'})(row['user_id'],type,row,meta)}</li>`;
-            if (row['role'] != 'reporter') 
-              role_items += `<li>${cafe.dt.render.button('Set as Reporter',{element_type: 'link', className: 'dropdown-item text-warning', action: 'group#postUserAction', command: 'make_reporter'})(row['user_id'],type,row,meta)}</li>`;
-            if (row['role'] != 'user') 
-              role_items += `<li>${cafe.dt.render.button('Set as User',{element_type: 'link', className: 'dropdown-item text-info', action: 'group#postUserAction', command: 'make_user'})(row['user_id'],type,row,meta)}</li>`;
-
-            const remove_item = cafe.dt.render.button(`<span class="mi md-18">person_remove</span> Remove from Group`, {
+            const remove_btn = cafe.dt.render.button(`<span class="mi md-18">person_remove</span>`, {
               element_type: 'link', 
-              className: 'dropdown-item d-flex align-items-center gap-2 text-danger', 
+              className: 'btn btn-outline-danger border-0 py-1 px-2', 
               action: 'group#postUserAction', 
               command: 'remove', 
-              confirm: 'Really remove user from group?'
+              confirm: 'Really remove user from group?',
+              title: 'Remove from Group'
             })(row['user_id'], type, row, meta);
-
-            let dropdown = `<div class="dropdown d-inline-flex align-items-center">` +
-              `  <a type="button" class="btn btn-outline-secondary link-flex rounded-1 border-0 p-1 ms-1" data-bs-toggle="dropdown">` +
-              `    <span class="mi">more_horiz</span>` +
-              `  </a>` +
-              `  <ul class="dropdown-menu dropdown-menu-end border-0 shadow">` +
-              `    <li><h6 class="dropdown-header">Change Role</h6></li>` +
-              role_items +
-              `    <li><hr class="dropdown-divider"></li>` +
-              `    <li>${remove_item}</li>` +
-              `  </ul>` +
-              `</div>`;
-
-            return `<div class="d-flex gap-1 justify-content-end">${dropdown}</div>`;
+            return `<div class="d-flex gap-1 justify-content-end">${remove_btn}</div>`;
           },
           className: 'align-middle py-1 pr-2',
         }
       ],
-      columnDefs: [{visible: false, targets: user_role_column}, {orderable: false, targets: [4,5]} ],
+      columnDefs: [{orderable: false, targets: [3,4]}],
       destroy: true,
       paging: false,
-      orderFixed: [user_role_column,'asc'],
       order: [[0,'asc']],
       drawCallback: function (settings) {
         var api = this.api();
-        var rows = api.rows({ page: 'current' }).nodes();
-        var last = null;
-        api.column(user_role_column, { page: 'current' })
-          .data()
-          .each(function (group, i) {
-              if (last !== group) {
-
-                // set text for group row
-                if (group == 'editor') {
-                  role_group_text = '<tr class="table-success fw-bold text-uppercase small ls-1"><td colspan="6"> Editors (Can edit any problems) </td></tr>'
-                } else if (group == 'reporter') {
-                  role_group_text = '<tr class="table-warning fw-bold text-uppercase small ls-1"><td colspan="6"> Reporters (Can view submissions of any users) </td></tr>'
-                } else {
-                  role_group_text = '<tr class="table-info fw-bold text-uppercase small ls-1"><td colspan="6"> Users (Can only use available problems) </td></tr>'
-                }
-
-                //prepend group row
-                $(rows).eq(i).before(role_group_text);
-                last = group;
-              }
-          });
-        //since columns size changed, we call adjust
-        //but not .draw() !!! else, infinite recursion
         api.columns.adjust()
       },
     })
@@ -344,7 +297,21 @@
       columns: [
         {data: 'name', render: function(data,type,row,meta) { return `<a href="/problems/${row['id']}/edit" data-turbo="false" class="fw-bold text-decoration-none"> ${data}</a>` } },
         {data: 'full_name'},
-        {data: 'tags', render: cafe.dt.render_factory.badge()},
+        {
+          data: 'tags', 
+          render: function(data, type, row, meta) {
+            if (!data || !Array.isArray(data)) return '';
+            if (type == 'display' || type == 'filter') {
+              return data.map(t => {
+                const color = t.color || '#6C757D';
+                const name = cafe.escapeHtml(t.name);
+                const text_color = cafe.getContrastColor(color);
+                return `<span class="badge" style="background-color: ${color}; color: ${text_color};">${name}</span>`;
+              }).join(' ');
+            }
+            return data.map(t => t.name).join(' ');
+          }
+        },
         {data: 'date_added'},
         {data: 'available', render: cafe.dt.render.yes_no_pill(), className: 'text-center'},
         {data: 'problem_id', render: cafe.dt.render.button(null, {element_type: 'switch', action: 'group#postProblemAction', command: 'toggle', checked_data_field: 'enabled'}), className: 'text-center'},

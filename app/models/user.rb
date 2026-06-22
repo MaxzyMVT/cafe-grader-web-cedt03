@@ -162,36 +162,23 @@ class User < ApplicationRecord
     return Problem.none unless enabled?
 
     action = action.to_sym
+    return Problem.none if [:edit, :report].include?(action)
 
-    if GraderConfiguration.multicontests?
+    res = if GraderConfiguration.multicontests?
       # legacy mode, have not been implemented yet
-      return Problem.contests_problems_for_user(self.id).none
+      Problem.contests_problems_for_user(self.id).none
     elsif GraderConfiguration.contest_mode?
-      if [:edit, :report].include? action
-        return Problem.contests_editable_problems_for_user(self.id)
-      else
-        return Problem.contests_problems_for_user(self.id)
-      end
+      Problem.contests_problems_for_user(self.id)
     else
       # normal mode
       if GraderConfiguration.use_problem_group?
-        if action == :edit
-          return Problem.group_editable_by_user(self.id)
-        elsif action == :report
-          return Problem.group_reportable_by_user(self.id)
-        elsif action == :submit
-          return Problem.group_submittable_by_user(self.id)
-        else
-          raise ArgumentError.new('action must be one of :edit, :report, :submit')
-        end
+        Problem.group_submittable_by_user(self.id)
       else
-        if action == :submit
-          return Problem.available
-        else
-          return Problem.none
-        end
+        Problem.available
       end
     end
+
+    res.visible_to_user(self)
   end
 
   # ---- groups for the users for specific action ------
@@ -206,17 +193,10 @@ class User < ApplicationRecord
     return Group.none unless enabled?
 
     action = action.to_sym
+    return Group.none if [:edit, :report].include?(action)
 
     # normal mode
-    if action == :edit
-      return Group.editable_by_user(self.id)
-    elsif action == :report
-      return Group.reportable_by_user(self.id)
-    elsif action == :submit
-      return Group.submittable_by_user(self.id)
-    else
-      raise ArgumentError.new('action must be one of :edit, :report, :submit')
-    end
+    Group.submittable_by_user(self.id)
   end
 
   # ---- groups for the users for specific action ------

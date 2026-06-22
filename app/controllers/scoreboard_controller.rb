@@ -4,7 +4,27 @@ class ScoreboardController < ApplicationController
   def index
     # Fetch all enabled users, problems that are available/reportable
     # For now we fetch all problems for simplicity
-    @problems = Problem.available.default_order
+    @problems = Problem.available.visible_to_user(@current_user).default_order
+
+    # Precompute associations for problem-group-user visibility check in scoreboard cells
+    enabled_group_ids = Group.where(enabled: true).pluck(:id).to_set
+    
+    @problem_groups = Hash.new { |h, k| h[k] = Set.new }
+    @problems_with_groups = GroupProblem.pluck(:problem_id).to_set
+    GroupProblem.where(enabled: true).each do |gp|
+      if enabled_group_ids.include?(gp.group_id)
+        @problem_groups[gp.problem_id] << gp.group_id
+      end
+    end
+    
+    @user_groups = Hash.new { |h, k| h[k] = Set.new }
+    GroupUser.where(enabled: true).each do |gu|
+      if enabled_group_ids.include?(gu.group_id)
+        @user_groups[gu.user_id] << gu.group_id
+      end
+    end
+
+    @admin_setter_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id).to_set
 
     # Fetch users, but depending on group toggle, we might need groups
     disabled_group_user_ids = User.joins(:groups).where(groups: { enabled: false }).pluck(:id)

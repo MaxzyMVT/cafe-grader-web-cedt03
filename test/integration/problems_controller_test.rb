@@ -20,10 +20,10 @@ class ProblemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "group editor can access problems index" do
+  test "group editor (non-admin/non-setter Mary) is redirected from problems index" do
     sign_in_as("mary", "mary")
     get problems_path
-    assert_response :success
+    assert_redirected_to list_main_path
   end
 
   # --- Read actions ---
