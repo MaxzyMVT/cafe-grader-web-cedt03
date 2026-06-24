@@ -31,7 +31,11 @@ class MainController < ApplicationController
 
 
     @groups = [['All', -1]] + @current_user.groups.pluck(:name, :id)
-    @primary_tags = Tag.where(kind: 'topic').order(:number)
+    @primary_tags = Tag.where(kind: 'topic')
+                       .joins(:problems)
+                       .where(problems: { id: @problems })
+                       .distinct
+                       .order(:number)
   end
 
   def prob_group

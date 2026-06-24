@@ -73,4 +73,17 @@ class MainControllerTest < ActionDispatch::IntegrationTest
       url_for(controller: "main", action: "confirm_contest_start", only_path: true)
     end
   end
+
+  test "topic tags on list page only include tags from user's visible problems" do
+    sign_in_as("john", "hello")
+    get list_main_path
+    assert_response :success
+
+    visible_problems = controller.instance_variable_get(:@problems)
+    primary_tags = controller.instance_variable_get(:@primary_tags)
+
+    primary_tags.each do |tag|
+      assert visible_problems.joins(:tags).where(tags: { id: tag.id }).exists?
+    end
+  end
 end
