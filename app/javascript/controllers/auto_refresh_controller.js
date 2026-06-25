@@ -14,7 +14,7 @@ export default class extends Controller {
   refresh() {
     const frame = document.getElementById("scoreboard")
     if (frame) {
-      frame.reload()
+      frame.src = window.location.pathname + window.location.search
     } else {
       window.location.reload()
     }
