@@ -78,20 +78,21 @@
 
   .card.card-shadow
     .card-body
-      %table#main-table.table.table-hover.table-condense.align-middle.datatable
-        %thead
-          %tr
-            %th
-              .form-check
-                %input#select_all.form-check-input.form-check-thick{type: :checkbox}
-            %th Name
-            %th Full name
-            %th Difficulty
-            %th Permitted Languages
-            %th Tags
-            %th Group
-            %th Date added
-            %th Available
+      .table-responsive
+        %table#main-table.table.table-hover.table-condense.align-middle.datatable
+          %thead
+            %tr
+              %th.text-center
+                .form-check.d-inline-block
+                  %input#select_all.form-check-input.form-check-thick{type: :checkbox}
+              %th Name
+              %th Full name
+              %th Difficulty
+              %th Permitted Languages
+              %th Tags
+              %th Group
+              %th Date added
+              %th Available
 
 :javascript
 
@@ -126,7 +127,7 @@
 
     function check_box_render(data,type,row,meta) {
       if (type == 'display') {
-        return `<div class="form-check"><input class="form-check-input form-check-thick prob-select-check" type="checkbox" id="prob-${data}" name="prob-${data}"> </div>`
+        return `<div class="form-check d-inline-block"><input class="form-check-input form-check-thick prob-select-check" type="checkbox" id="prob-${data}" name="prob-${data}"> </div>`
       }
 
       return data;
@@ -170,14 +171,14 @@
         },
       },
       columns: [
-        {data: 'id', name: 'checkbox', render: check_box_render, className: 'd-flex justify-content-center'},
+        {data: 'id', name: 'checkbox', render: check_box_render, className: 'text-center'},
         {data: 'name', className: 'font-monospace'},
         {data: 'full_name', render: full_name_render},
         {data: 'difficulty', render: difficulty_render, className: 'text-start'},
-        {data: 'permitted_lang', render: permitted_langs_render},
+        {data: 'permitted_lang', render: permitted_langs_render, className: 'text-nowrap'},
         {data: 'tags', render: tags_render},
         {data: 'groups', render: cafe.dt.render_factory.badge()},
-        {data: 'date_added', render: cafe.dt.render.datetime("Y-MM-DD")},
+        {data: 'date_added', render: cafe.dt.render.datetime("Y-MM-DD"), className: 'text-nowrap'},
         {data: 'available', render: cafe.dt.render.yes_no_pill()},
       ],
       columnDefs: [{orderable: false, targets: [0]} ],
