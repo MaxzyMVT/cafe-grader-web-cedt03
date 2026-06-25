@@ -662,3 +662,28 @@ golden-btn + .golden-btn { margin-top: 1em; }
   border-color: var(--bs-warning) !important;
   color: var(--bs-dark) !important;
 }
+
+// Custom Scrollbars for all scrollable elements in the system
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bs-body-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--bs-tertiary-color);
+  border-radius: 4px;
+  border: 2px solid var(--bs-body-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bs-primary);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bs-tertiary-color) var(--bs-body-bg);
+}
