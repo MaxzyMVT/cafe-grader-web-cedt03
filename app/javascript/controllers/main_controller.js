@@ -17,6 +17,10 @@ export default class extends rowFieldToggle(Controller) {
     // Toggle active-topic class on the clicked badge
     clickedBadge.classList.toggle('active-topic');
 
+    this.filterTopics();
+  }
+
+  filterTopics() {
     const badges = this.element.querySelectorAll(".topic-badge");
     const activeBadges = this.element.querySelectorAll(".topic-badge.active-topic");
     const hasActive = activeBadges.length > 0;
@@ -36,14 +40,25 @@ export default class extends rowFieldToggle(Controller) {
       }
     });
 
-    // Generate the regex pattern to match any of the active badges
     const activeNames = Array.from(activeBadges).map(b => b.textContent.trim());
     if (activeNames.length === 0) {
       table.column(6).search('').draw();
     } else {
-      let pattern = activeNames.map(t => $.fn.dataTable.util.escapeRegex(t)).join('|');
-      table.column(6).search(pattern, true, false).draw();
+      const modeRadio = this.element.querySelector('input[name="topic_mode"]:checked');
+      const mode = modeRadio ? modeRadio.value : 'AND';
+
+      if (mode === 'AND') {
+        let pattern = '^' + activeNames.map(t => `(?=.*(?:^|,)${$.fn.dataTable.util.escapeRegex(t)}(?:,|$))`).join('');
+        table.column(6).search(pattern, true, false).draw();
+      } else {
+        let pattern = activeNames.map(t => $.fn.dataTable.util.escapeRegex(t)).join('|');
+        table.column(6).search(pattern, true, false).draw();
+      }
     }
+  }
+
+  changeTopicMode(event) {
+    this.filterTopics();
   }
 
 

@@ -5,9 +5,14 @@
     %h5.fw-bold Problems
     - if @primary_tags.count > 0
       .row.align-items-center.g-2.mb-2
-        .col-auto.d-flex.align-items-center
+        .col-auto.d-flex.align-items-center.gap-2
           Topic:
-          %span.mi.text-info.ms-1{style: 'font-size: 1.1rem; cursor: help;', data: { bs: { toggle: 'tooltip', title: 'Click a topic button to filter problems. Click again to clear.', placement: 'top' } } } help_outline
+          %span.mi.text-info{style: 'font-size: 1.1rem; cursor: help;', data: { bs: { toggle: 'tooltip', title: 'Click a topic button to filter problems. Click again to clear.', placement: 'top' } } } help_outline
+          .btn-group.btn-group-sm{role: 'group', aria: {label: 'Topic filter mode'}}
+            %input#mode-and.btn-check{type: 'radio', name: 'topic_mode', value: 'AND', checked: true, data: {action: 'change->main#changeTopicMode'}}
+            %label.btn.btn-outline-secondary.px-2.py-0{for: 'mode-and', style: 'font-size: 0.75rem;'} AND
+            %input#mode-or.btn-check{type: 'radio', name: 'topic_mode', value: 'OR', data: {action: 'change->main#changeTopicMode'}}
+            %label.btn.btn-outline-secondary.px-2.py-0{for: 'mode-or', style: 'font-size: 0.75rem;'} OR
         .col.d-flex.flex-wrap.align-items-center.gap-2
           - @primary_tags.each do |tag|
             - data_hash = { action: 'click->main#setActiveTopic',  bs: tag.description.present? ?  { toggle: 'tooltip', title: tag.description } : nil }
