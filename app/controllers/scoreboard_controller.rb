@@ -4,7 +4,27 @@ class ScoreboardController < ApplicationController
   def index
     # Fetch all enabled users, problems that are available/reportable
     # For now we fetch all problems for simplicity
-    @problems = Problem.available.default_order
+    @problems = Problem.available.visible_to_user(@current_user).default_order
+
+    # Precompute associations for problem-group-user visibility check in scoreboard cells
+    enabled_group_ids = Group.where(enabled: true).pluck(:id).to_set
+    
+    @problem_groups = Hash.new { |h, k| h[k] = Set.new }
+    @problems_with_groups = GroupProblem.pluck(:problem_id).to_set
+    GroupProblem.where(enabled: true).each do |gp|
+      if enabled_group_ids.include?(gp.group_id)
+        @problem_groups[gp.problem_id] << gp.group_id
+      end
+    end
+    
+    @user_groups = Hash.new { |h, k| h[k] = Set.new }
+    GroupUser.where(enabled: true).each do |gu|
+      if enabled_group_ids.include?(gu.group_id)
+        @user_groups[gu.user_id] << gu.group_id
+      end
+    end
+
+    @admin_setter_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id).to_set
 
     # Fetch users, but depending on group toggle, we might need groups
     disabled_group_user_ids = User.joins(:groups).where(groups: { enabled: false }).pluck(:id)
@@ -25,6 +45,35 @@ class ScoreboardController < ApplicationController
     @scores = Hash.new { |h,k| h[k] = {} }
     report_records.each do |record|
       @scores[record.user_id][record.problem_id] = record.max_score.to_f
+    end
+
+    # For 0-score problems, we check if there's any submission that passes all test cases (highest score = 0)
+    @zero_score_passes = Hash.new { |h, k| h[k] = {} }
+    zero_score_problems = @problems.select { |p| p.effective_full_score == 0 }
+    if zero_score_problems.any?
+      zero_subs = Submission.where(user: @users, problem: zero_score_problems, viva_archived_at: nil)
+      zero_subs.group_by { |s| [s.user_id, s.problem_id] }.each do |(user_id, problem_id), subs|
+        prob = zero_score_problems.find { |p| p.id == problem_id }
+        next unless prob
+        tc_count = prob.live_dataset&.testcases&.count || 0
+        has_pass = subs.any? do |s|
+          if s.status.to_s == 'done'
+            gc = s.grader_comment.to_s
+            if tc_count == 0
+              true
+            elsif gc.length == tc_count && gc.match?(/\A[PsS]+\z/)
+              true
+            else
+              false
+            end
+          else
+            false
+          end
+        end
+        if has_pass
+          @zero_score_passes[user_id][problem_id] = true
+        end
+      end
     end
     
     # Total deductions per user (all reveals for available problems)
@@ -67,10 +116,12 @@ class ScoreboardController < ApplicationController
         # Calculate bonus for this user
         bonus = 0
         unless GraderConfiguration.disable_bonus?
-          @problems.each do |p|
-            u_ids = @first_blood_users[p.id] || []
-            if u_ids.include?(u.id)
-              bonus += p.bonus_first_blood
+          if GraderConfiguration.show_first_bloods?
+            @problems.each do |p|
+              u_ids = @first_blood_users[p.id] || []
+              if u_ids.include?(u.id)
+                bonus += p.bonus_first_blood
+              end
             end
           end
         end
@@ -116,10 +167,12 @@ class ScoreboardController < ApplicationController
           # Calculate bonus for this user
           user_bonus = 0
           unless GraderConfiguration.disable_bonus?
-            @problems.each do |p|
-              u_ids = @first_blood_users[p.id] || []
-              if u_ids.include?(u.id)
-                user_bonus += p.bonus_first_blood
+            if GraderConfiguration.show_first_bloods?
+              @problems.each do |p|
+                u_ids = @first_blood_users[p.id] || []
+                if u_ids.include?(u.id)
+                  user_bonus += p.bonus_first_blood
+                end
               end
             end
           end

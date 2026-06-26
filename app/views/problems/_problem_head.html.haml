@@ -10,10 +10,26 @@
   .d-flex.gap-2.mb-3
     .badge.bg-info.text-dark.d-inline-flex.align-items-center.justify-content-center{style: 'min-width: 140px; height: 24px;'}
       Full Score: #{number_with_precision(problem.effective_full_score, precision: 2, strip_insignificant_zeros: true)}
-    - if problem.bonus_first_blood.to_f != 0
+    - if GraderConfiguration.show_first_bloods? && problem.bonus_first_blood.to_f != 0
       - n = problem.respond_to?(:first_n_bloods) ? problem.first_n_bloods : 0
       - if n > 0
-        .badge.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.justify-content-center{title: "First #{n} Bloods Bonus", style: 'min-width: 180px; height: 24px;'}
+        - blood_users = problem.first_n_blood_users(n)
+        - user_got_it = @current_user && blood_users.include?(@current_user)
+        - left = n - blood_users.size
+        - if user_got_it
+          - pct = 0
+          - outline_color = 'transparent'
+          - badge_class = 'bg-success-subtle text-success border border-success-subtle'
+        - elsif left > 0
+          - pct = (left.to_f / n.to_f * 100).round
+          - outline_color = 'var(--bs-danger)'
+          - badge_class = 'bg-danger-subtle text-danger border border-danger-subtle'
+        - else
+          - pct = 0
+          - outline_color = 'transparent'
+          - badge_class = 'bg-secondary-subtle text-secondary border border-secondary-subtle'
+        - formatted_bonus = problem.bonus_first_blood.to_f > 0 ? "+#{format_score(problem.bonus_first_blood)}" : format_score(problem.bonus_first_blood)
+        - achieved_text = user_got_it ? "#{formatted_bonus} ✓ (First Blood!)" : "Bonus: #{formatted_bonus} (First #{n}, #{left} Left)"
+        .badge.d-inline-flex.align-items-center.justify-content-center.progress-outline-badge{class: badge_class, title: user_got_it ? "First Blood achieved!" : "First #{n} Bloods Bonus", style: "min-width: 180px; height: 24px; --progress-pct: #{pct}; --progress-color: #{outline_color};"}
           %span.mi.md-14.me-1 bloodtype
-          - formatted_bonus = problem.bonus_first_blood.to_f > 0 ? "+#{format_score(problem.bonus_first_blood)}" : format_score(problem.bonus_first_blood)
-          Bonus: #{formatted_bonus} (First #{n})
+          = achieved_text

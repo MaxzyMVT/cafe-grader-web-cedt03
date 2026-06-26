@@ -17,7 +17,7 @@
         .card-body
           %h5.fw-bold.text-secondary.mb-3 Settings
           = f.input :author, wrapper: :horizontal_form
-          = f.input :group_id, collection: @current_user.groups_for_action(:edit), include_blank: (@current_user.admin? ? '-- No group (show too all) --' : false), wrapper: :horizontal_select
+          = f.input :group_id, collection: @current_user.groups_for_action(:edit), include_blank: '-- No group (publicly visible) --', wrapper: :horizontal_select
           
           %hr
           

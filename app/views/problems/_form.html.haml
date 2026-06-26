@@ -44,7 +44,7 @@
           %label.col-sm-3.col-form-label Date Added
           .col-sm-9
             %input.form-control{type: 'text', value: @problem.date_added&.strftime("%d/%b/%Y %H:%M:%S"), disabled: true}
-        = form.input :available, wrapper: :horizontal_boolean, label: 'Globally Available', tooltip: 'If "Globally available" is not set, the problem will remain hidden from all contestants, even if enabled in groups or contests.' , disabled: !(@current_user.admin? || @current_user.problem_setter?)
+        = form.input :available, wrapper: :horizontal_boolean, label: 'Globally Available', tooltip: 'Indicates whether this problem is active or inactive globally.' , disabled: !(@current_user.admin? || @current_user.problem_setter?)
         = form.input :view_testcase, wrapper: :horizontal_boolean, disabled: !(@current_user.admin? || @current_user.problem_setter?)
         = form.input :view_submission, wrapper: :horizontal_boolean, disabled: !(@current_user.admin? || @current_user.problem_setter?)
         -# Submission Limit

@@ -24,6 +24,9 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
+  # Use Apache's X-Sendfile to offload file serving
+  config.action_dispatch.x_sendfile_header = "X-Sendfile"
+
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   config.assume_ssl = false
 

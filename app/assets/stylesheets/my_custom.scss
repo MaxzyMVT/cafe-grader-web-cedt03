@@ -183,6 +183,11 @@ pre code {
   }
 }
 
+.card-text {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 
 
 // --------------- below here are legacy from aj.Jittat ---------------
@@ -635,4 +640,75 @@ golden-btn + .golden-btn { margin-top: 1em; }
 }
 [data-theme="dark"] .badge, [data-theme="premium"] .badge {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+// Custom styling for Topic Filter Mode button group to override theme-specific button styling
+.btn-group .btn-check + .btn-outline-secondary {
+  border-width: 1px !important;
+  font-weight: 500 !important;
+  opacity: 0.75;
+}
+
+.btn-group .btn-check:checked + .btn-outline-secondary {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="space_gooners"] .btn-group .btn-check:checked + .btn-outline-secondary {
+  background-color: var(--bs-warning) !important;
+  border-color: var(--bs-warning) !important;
+  color: var(--bs-dark) !important;
+}
+
+// Custom Scrollbars for all scrollable elements in the system
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bs-body-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--bs-tertiary-color);
+  border-radius: 4px;
+  border: 2px solid var(--bs-body-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bs-primary);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bs-tertiary-color) var(--bs-body-bg);
+}
+
+// Dynamic outline progress bar for badges — decreasing circle outline
+.progress-outline-badge {
+  position: relative;
+  box-shadow: none !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+.progress-outline-badge::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50rem; /* pill shape */
+  padding: 2px; /* outline thickness */
+  background: conic-gradient(var(--progress-color, transparent) calc(var(--progress-pct, 0) * 3.6deg), transparent 0deg);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }

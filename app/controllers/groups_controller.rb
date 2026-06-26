@@ -1,7 +1,7 @@
 class GroupsController < ApplicationController
   GroupMemberAction =             [:show, :edit, :update, :destroy,
                                    :show_users_query, :show_problems_query,
-                                   :add_user, :add_user_by_group, :add_problem, :add_problem_by_group,
+                                   :add_user, :add_user_by_group, :add_problem, :add_problem_by_group, :add_problem_by_tag,
                                    :toggle, :do_all_users, :do_user, :do_all_problems, :do_problem,
                                   ]
   before_action :stimulus_controller
@@ -189,6 +189,21 @@ class GroupsController < ApplicationController
       problem_ids = GroupProblem.where(group_id: params[:problem_group_ids]).where.not(problem_id: @group.problems.ids).pluck :problem_id
       @group.problems << Problem.where(id: problem_ids)
       @toast = {title: "Group #{@group.name}", body: "#{problem_ids.count} problems were added."}
+      render 'turbo_toast'
+    rescue => e
+      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Adding problems failed', body_msg: e.message}
+    end
+  end
+
+  def add_problem_by_tag
+    begin
+      if params[:tag_ids].blank?
+        @toast = {title: "Group #{@group.name}", body: "No tags selected.", type: :alert}
+      else
+        problem_ids = Problem.joins(:tags).where(tags: { id: params[:tag_ids] }).where.not(id: @group.problems.ids).pluck(:id).uniq
+        @group.problems << Problem.where(id: problem_ids)
+        @toast = {title: "Group #{@group.name}", body: "#{problem_ids.count} problem(s) were added."}
+      end
       render 'turbo_toast'
     rescue => e
       render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Adding problems failed', body_msg: e.message}

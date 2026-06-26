@@ -61,11 +61,16 @@ class ProblemsController < ApplicationController
       when 'attachment' then attachment.filename.to_s
       end
 
+    disposition = params[:disposition] || 'inline'
+    unless %w[inline attachment].include? disposition
+      disposition = 'inline'
+    end
+
     begin
       send_data attachment.download,
                 filename: filename,
                 type: attachment.content_type || 'application/octet-stream',
-                disposition: 'inline'
+                disposition: disposition
     rescue  ActiveStorage::FileNotFoundError
       @error_message = "File is not found in the server."
       render 'error'

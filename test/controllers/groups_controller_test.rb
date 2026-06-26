@@ -20,33 +20,45 @@ class GroupsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "group editor can access groups index" do
+  test "group editor (non-admin/non-setter Mary) is redirected from groups index" do
     sign_in_as("mary", "mary")
+    get groups_path
+    assert_redirected_to list_main_path
+  end
+
+  test "problem setter can access groups index" do
+    sign_in_as("setter", "setter")
     get groups_path
     assert_response :success
   end
 
   # --- Cross-group authorization ---
   #
-  # Mary is editor of group_a only (role 2). She should be able to view/edit
-  # group_a but not group_b.
+  # Mary is no longer group editor (role removed). She should be redirected from all groups.
+  # Setter is a problem setter and should be able to view/edit groups.
 
-  test "group editor can show their own editable group" do
+  test "group editor (non-admin/non-setter Mary) cannot show group" do
     sign_in_as("mary", "mary")
+    get group_path(groups(:group_a))
+    assert_redirected_to list_main_path
+  end
+
+  test "problem setter can show groups" do
+    sign_in_as("setter", "setter")
     get group_path(groups(:group_a))
     assert_response :success
   end
 
-  test "group editor cannot show a group they don't edit" do
+  test "group editor (non-admin/non-setter Mary) cannot edit group" do
     sign_in_as("mary", "mary")
-    get group_path(groups(:group_b))
-    assert_response :redirect
+    get edit_group_path(groups(:group_a))
+    assert_redirected_to list_main_path
   end
 
-  test "group editor cannot edit a group they don't own" do
-    sign_in_as("mary", "mary")
-    get edit_group_path(groups(:group_b))
-    assert_response :redirect
+  test "problem setter can edit groups" do
+    sign_in_as("setter", "setter")
+    get edit_group_path(groups(:group_a))
+    assert_response :success
   end
 
   # --- CRUD ---

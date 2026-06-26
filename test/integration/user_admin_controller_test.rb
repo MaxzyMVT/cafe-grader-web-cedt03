@@ -130,6 +130,20 @@ class UserAdminControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "admin can destroy user with submissions" do
+    sign_in_as("admin", "admin")
+    user = users(:john)
+    
+    # Create related records to make sure dependent destroy works properly
+    HeartBeat.create!(user: user, ip_address: "127.0.0.1")
+    Comment.create!(user: user, title: "Test Hint", commentable: problems(:prob_add), kind: :hint)
+
+    assert_difference "User.count", -1 do
+      delete user_admin_path(user)
+    end
+    assert_response :redirect
+  end
+
   test "admin can toggle activate" do
     sign_in_as("admin", "admin")
     user = users(:disabled_user)

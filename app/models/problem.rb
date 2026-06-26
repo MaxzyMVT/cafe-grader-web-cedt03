@@ -105,6 +105,25 @@ class Problem < ApplicationRecord
   # -- scope --
   scope :available, -> { where(available: true) }
 
+  scope :visible_to_user, ->(user) {
+    if GraderConfiguration.contest_mode? || user&.admin? || user&.problem_setter?
+      all
+    elsif user
+      where("NOT EXISTS (SELECT 1 FROM groups_problems WHERE groups_problems.problem_id = problems.id) OR EXISTS (
+        SELECT 1 FROM groups_problems gp
+        INNER JOIN `groups` g ON g.id = gp.group_id
+        INNER JOIN groups_users gu ON gu.group_id = g.id
+        WHERE gp.problem_id = problems.id
+          AND gp.enabled = true
+          AND g.enabled = true
+          AND gu.user_id = ?
+          AND gu.enabled = true
+      )", user.id)
+    else
+      where("NOT EXISTS (SELECT 1 FROM groups_problems WHERE groups_problems.problem_id = problems.id)")
+    end
+  }
+
   # These group_xxx scopes ALWAYS take groups into account
   # REGARDLESS of the group mode configuration
   # It also NEGLECT admin privileges, i.e., you won't get any special treatment if you are an admin
@@ -217,6 +236,7 @@ class Problem < ApplicationRecord
 
   # Returns true if this problem has a submission limit configured
   def submission_limit?
+    return false unless GraderConfiguration.show_submission_limits?
     max_submissions.present? && max_submissions > 0
   end
 
@@ -225,19 +245,33 @@ class Problem < ApplicationRecord
     submissions.where(user: user).count
   end
 
+  def extra_submission_limit_for(user, contest)
+    return 0 unless user && contest
+    cu = ContestUser.find_by(user_id: user.id, contest_id: contest.id)
+    cu ? (cu.extra_sub_limit || 0) : 0
+  end
+
+  def max_submissions_for(user, contest = nil)
+    limit = max_submissions || 0
+    if contest
+      limit += extra_submission_limit_for(user, contest)
+    end
+    limit
+  end
+
   # Returns how many submissions remain for the user, or nil if unlimited
-  def submissions_remaining_for(user)
+  def submissions_remaining_for(user, contest = nil)
     return nil if user&.admin? || user&.problem_setter?
     return nil unless submission_limit?
-    [max_submissions - submission_count_for(user), 0].max
+    [max_submissions_for(user, contest) - submission_count_for(user), 0].max
   end
 
   # Returns true if the user has reached the submission limit
   # Admins and problem setters are never subject to submission limits
-  def submission_limit_reached?(user)
+  def submission_limit_reached?(user, contest = nil)
     return false if user&.admin? || user&.problem_setter?
     return false unless submission_limit?
-    submission_count_for(user) >= max_submissions
+    submission_count_for(user) >= max_submissions_for(user, contest)
   end
 
   def viva_grounding_tags

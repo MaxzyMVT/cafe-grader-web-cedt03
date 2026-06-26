@@ -172,4 +172,14 @@ GraderConfiguration_28:
   value_type: boolean
   value: 'false'
 
+GraderConfiguration_29:
+  key: gimmicks.enable_first_bloods
+  value_type: boolean
+  value: 'true'
+
+GraderConfiguration_30:
+  key: gimmicks.enable_submission_limits
+  value_type: boolean
+  value: 'true'
+
 

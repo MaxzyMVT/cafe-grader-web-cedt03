@@ -77,7 +77,7 @@ class SubmissionsController < ApplicationController
 
     # @evaluations = @submission.evaluations.joins(:testcase).includes(:testcase).order(:group, :num)
     #  .select(:num, :group, :group_name, :weight, :time, :memory, :score, :testcase_id, :result_text, :result)
-    @testcases = @submission.problem.live_dataset.testcases.order(:group, :num)
+    @testcases = @submission.problem.live_dataset.testcases.display_order
     @evaluations_by_tcid = Evaluation.where(submission: @submission, testcase: @testcases.ids).index_by(&:testcase_id)
 
     # LLM models for help
@@ -144,7 +144,7 @@ class SubmissionsController < ApplicationController
   end
   # Turbo render evaluations as modal popup
   def evaluations
-    @testcases = @submission.problem.live_dataset.testcases.order(:group, :num)
+    @testcases = @submission.problem.live_dataset.testcases.display_order
     @evaluations_by_tcid = Evaluation.where(submission: @submission, testcase: @testcases.ids).index_by(&:testcase_id)
     render partial: 'msg_modal_show', locals: { do_popup: true, header_msg: 'Evaluation Details', body_msg: render_to_string(partial: 'evaluations', locals: {testcases: @testcases, evaluations_by_tcid: @evaluations_by_tcid}) }
   end

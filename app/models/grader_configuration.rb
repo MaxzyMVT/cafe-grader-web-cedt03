@@ -23,9 +23,11 @@ class GraderConfiguration < ApplicationRecord
   SYSTEM_USE_PROBLEM_GROUP = 'system.use_problem_group'
   SYSTEM_MINIMUM_LAST_LOGIN_TIME = 'system.min_last_login_time'
   SYSTEM_MESSAGE_ENABLED = 'system.message_enabled'
-  HINT_ENABLE_ALL_HINTS = 'point_hint.enable_all_hints'
-  SYSTEM_DISABLE_PENALTY = 'point_hint.disable_penalty'
-  SYSTEM_DISABLE_BONUS = 'point_hint.disable_bonus'
+  HINT_ENABLE_ALL_HINTS = 'gimmicks.enable_all_hints'
+  SYSTEM_DISABLE_PENALTY = 'gimmicks.disable_penalty'
+  SYSTEM_DISABLE_BONUS = 'gimmicks.disable_bonus'
+  GIMMICKS_ENABLE_FIRST_BLOODS = 'gimmicks.enable_first_bloods'
+  GIMMICKS_ENABLE_SUBMISSION_LIMITS = 'gimmicks.enable_submission_limits'
 
 
   # class_attribute :config_cache
@@ -156,6 +158,14 @@ class GraderConfiguration < ApplicationRecord
 
   def self.disable_bonus?
     get(SYSTEM_DISABLE_BONUS) == true
+  end
+
+  def self.show_first_bloods?
+    get(GIMMICKS_ENABLE_FIRST_BLOODS) == true
+  end
+
+  def self.show_submission_limits?
+    get(GIMMICKS_ENABLE_SUBMISSION_LIMITS) == true
   end
 
   def self.contest_time_limit

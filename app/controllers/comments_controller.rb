@@ -138,6 +138,7 @@ class CommentsController < ApplicationController
 
     @header_msg = "Hint: #{@hint.title}"
     @body_msg = (@hint.body || '-- blank --').html_safe
+    @submission_id = params[:submission_id]
     render :show
   end
 
@@ -150,6 +151,7 @@ class CommentsController < ApplicationController
     else
       @body_msg = (@comment.body.html_safe || '-- blank --')
     end
+    @submission_id = params[:submission_id]
     render :show
   end
 

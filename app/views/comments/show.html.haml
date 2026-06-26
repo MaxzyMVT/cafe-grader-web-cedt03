@@ -1,0 +1,13 @@
+.row.justify-content-center.my-4
+  .col-lg-8
+    .card.card-shadow.border-0
+      .card-header.bg-primary.text-white.p-3
+        %h4.fw-bold.mb-0= @header_msg
+      .card-body.p-4
+        .text-dark.mb-4
+          = markdown(@body_msg)
+        .d-flex.justify-content-end
+          - if @submission_id.present?
+            = link_to 'Back to the problem', edit_submission_path(@submission_id), class: 'btn btn-outline-secondary'
+          - else
+            = link_to 'Back to the problem', list_main_path, class: 'btn btn-outline-secondary'

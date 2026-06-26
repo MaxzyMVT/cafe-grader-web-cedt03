@@ -74,11 +74,13 @@ Rails.application.routes.draw do
       post 'do_all_users'
       post 'do_user'
       post 'extra_time_user'
+      post 'extra_sub_limit_user'
 
       # contests_problems
       post 'show_problems_query'
       post 'add_problem'
       post 'add_problem_by_group'
+      post 'add_problem_by_tag'
       post 'do_all_problems'
       post 'do_problem'
     end
@@ -195,6 +197,7 @@ Rails.application.routes.draw do
       post 'show_problems_query'
       post 'add_problem', to: 'groups#add_problem', as: 'add_problem'
       post 'add_problem_by_group'
+      post 'add_problem_by_tag'
       post 'do_all_problems'
       post 'do_problem'
     end
@@ -277,7 +280,7 @@ Rails.application.routes.draw do
     end
     collection do
       get 'prob/:problem_id', to: 'submissions#index', as: 'problem'
-      get 'direct_edit_problem/:problem_id(/:user_id)', to: 'submissions#direct_edit_problem', as: 'direct_edit_problem'
+      get 'edit/:problem_id(/:user_id)', to: 'submissions#direct_edit_problem', as: 'direct_edit_problem'
       get 'get_latest_submission_status/:uid/:pid', to: 'submissions#get_latest_submission_status', as: 'get_latest_submission_status'
     end
     resources :comments, only: [] do

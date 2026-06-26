@@ -148,8 +148,7 @@ class ApplicationController < ActionController::Base
   # check whether the user is an editor of any group
   def group_editor_authorization
     return true if @current_user.admin? || @current_user.problem_setter?
-    return true if @current_user.groups_for_action(:edit).any?
-    unauthorized_redirect(msg: "Permission Missing: You must have the <strong>Group Editor</strong> role to view this page.<br /> Please contact an editor of your group to request this role.")
+    unauthorized_redirect(msg: "Permission Missing: You must be an administrator or problem setter to view this page.")
   end
 
   # redirect when user does not have specific roles in any group

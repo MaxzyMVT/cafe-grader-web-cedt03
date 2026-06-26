@@ -196,6 +196,19 @@
     }
   }
 
+  .form-check-input {
+    background-color: #ffffff !important;
+    border-color: #0891b2 !important;
+    &:checked {
+      background-color: var(--bs-primary) !important;
+      border-color: var(--bs-primary) !important;
+    }
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(8, 145, 178, 0.25) !important;
+      border-color: var(--bs-primary) !important;
+    }
+  }
+
   // Tables
   .table {
     --bs-table-bg: transparent;
