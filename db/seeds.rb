@@ -32,7 +32,14 @@ CONFIGURATIONS =
       key: 'system.group_score_type',
       value_type: 'string',
       default_value: 'group_sum',
-      description: "Determines what will show on the main list page regarding the maximum score of the user's group."
+      description: "Determines how the maximum score of each user's group is calculated and show on scoreboard. group_sum means summing up all members' scores; group_max means the max of all members' scores and also show own group's maximum score on problem list."
+    },
+
+    {
+      key: 'system.scoreboard_view_level',
+      value_type: 'string',
+      default_value: 'user',
+      description: "Who can view the real-time scoreboard. 'all' = anyone (public); 'user' = logged-in users; 'admin' = admins/problem setters only."
     },
 
    {

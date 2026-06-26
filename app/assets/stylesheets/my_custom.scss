@@ -705,7 +705,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
   bottom: -2px;
   border-radius: 50rem; /* pill shape */
   padding: 2px; /* outline thickness */
-  background: conic-gradient(var(--progress-color, transparent) calc(var(--progress-pct, 0%) * 3.6deg / 1deg), transparent 0%);
+  background: conic-gradient(var(--progress-color, transparent) calc(var(--progress-pct, 0) * 3.6deg), transparent 0deg);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);

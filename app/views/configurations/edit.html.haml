@@ -5,8 +5,8 @@
       - choices = [['Standard', 'standard'], ['Contest', 'contest'], ['Individual Contest', 'indv-contest'], ['Analysis', 'analysis']]
     - elsif @config.key == 'system.group_score_type'
       - choices = [['Group Sum', 'group_sum'], ['Group Max', 'group_max']]
-    - elsif @config.key == 'scoreboard.view_level'
-      - choices = [['None', 'none'], ['Summary', 'summary'], ['Detail', 'detail']]
+    - elsif @config.key == 'system.scoreboard_view_level'
+      - choices = [['Anyone (public)', 'all'], ['Logged-in users', 'user'], ['Admins only', 'admin']]
     
     - if choices
       = f.input :value, collection: choices, include_blank: false, label: false, autofocus: true, input_html: { class: 'form-select form-select-sm' }, wrapper: false

@@ -17,9 +17,9 @@
         - user_got_it = @current_user && blood_users.include?(@current_user)
         - left = n - blood_users.size
         - if user_got_it
-          - pct = 100
-          - outline_color = 'var(--bs-success)'
-          - badge_class = 'bg-danger-subtle text-danger border border-danger-subtle'
+          - pct = 0
+          - outline_color = 'transparent'
+          - badge_class = 'bg-success-subtle text-success border border-success-subtle'
         - elsif left > 0
           - pct = (left.to_f / n.to_f * 100).round
           - outline_color = 'var(--bs-danger)'
@@ -29,6 +29,7 @@
           - outline_color = 'transparent'
           - badge_class = 'bg-secondary-subtle text-secondary border border-secondary-subtle'
         - formatted_bonus = problem.bonus_first_blood.to_f > 0 ? "+#{format_score(problem.bonus_first_blood)}" : format_score(problem.bonus_first_blood)
-        .badge.d-inline-flex.align-items-center.justify-content-center.progress-outline-badge{class: badge_class, title: "First #{n} Bloods Bonus", style: "min-width: 180px; height: 24px; --progress-pct: #{pct}%; --progress-color: #{outline_color};"}
+        - achieved_text = user_got_it ? "#{formatted_bonus} ✓ (First Blood!)" : "Bonus: #{formatted_bonus} (First #{n}, #{left} Left)"
+        .badge.d-inline-flex.align-items-center.justify-content-center.progress-outline-badge{class: badge_class, title: user_got_it ? "First Blood achieved!" : "First #{n} Bloods Bonus", style: "min-width: 180px; height: 24px; --progress-pct: #{pct}; --progress-color: #{outline_color};"}
           %span.mi.md-14.me-1 bloodtype
-          Bonus: #{formatted_bonus} (First #{n}, #{left} Left)
+          = achieved_text

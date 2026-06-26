@@ -38,7 +38,7 @@
       - badge_class = 'bg-secondary-subtle text-secondary border border-secondary-subtle'
     - formatted_bonus = problem.bonus_first_blood.to_f > 0 ? "+#{format_score(problem.bonus_first_blood)}" : format_score(problem.bonus_first_blood)
     - text = user_got_it ? "#{formatted_bonus} ✓" : ((left == n) ? "#{formatted_bonus} (x#{n})" : "#{formatted_bonus} (#{left}/#{n})")
-    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1.progress-outline-badge{class: badge_class, style: "--progress-pct: #{pct}%; --progress-color: #{outline_color};", title: user_got_it ? "First Blood achieved! Bonus: #{formatted_bonus}" : "First #{n} Bloods Bonus"}
+    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1.progress-outline-badge{class: badge_class, style: "--progress-pct: #{pct}; --progress-color: #{outline_color};", title: user_got_it ? "First Blood achieved! Bonus: #{formatted_bonus}" : "First #{n} Bloods Bonus"}
       %span.mi{style: 'font-size: 0.85rem;'} bloodtype
       = text
 
