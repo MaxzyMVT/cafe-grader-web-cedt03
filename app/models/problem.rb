@@ -236,6 +236,7 @@ class Problem < ApplicationRecord
 
   # Returns true if this problem has a submission limit configured
   def submission_limit?
+    return false unless GraderConfiguration.show_submission_limits?
     max_submissions.present? && max_submissions > 0
   end
 

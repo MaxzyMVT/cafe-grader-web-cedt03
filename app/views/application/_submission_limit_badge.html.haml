@@ -1,4 +1,4 @@
-- if problem.submission_limit? && user
+- if GraderConfiguration.show_submission_limits? && problem.submission_limit? && user
   - is_exempt = user.admin? || user.problem_setter?
   - limit_reached = !is_exempt && problem.submission_limit_reached?(user, @current_contest)
   - remaining = is_exempt ? nil : problem.submissions_remaining_for(user, @current_contest)
@@ -8,7 +8,9 @@
       %span.mi{style: 'font-size: 0.85rem;'} upload
       = "Submission limit: #{current_max} (Exempt)"
   - else
-    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info')}
+    - pct = (remaining.to_f / current_max.to_f * 100).round
+    - outline_color = limit_reached ? 'var(--bs-danger)' : 'var(--bs-info)'
+    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.progress-outline-badge{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info'), style: "--progress-pct: #{pct}%; --progress-color: #{outline_color};"}
       %span.mi{style: 'font-size: 0.85rem;'} upload
       - if limit_reached
         Submission limit reached (#{current_max}/#{current_max})

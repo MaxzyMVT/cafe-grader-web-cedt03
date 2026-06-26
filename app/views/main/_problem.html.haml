@@ -24,7 +24,12 @@
   - score = @prob_submissions[problem.id][:max_score] || 0
   - full_score = problem.effective_full_score
   - raw_sum_mode = problem.live_dataset&.st_raw_sum?
-  - cc = score.to_f.abs >= full_score.to_f.abs ? 'bg-success' : 'bg-warning text-dark'
+  - is_zero_full_score_pass = false
+  - if full_score == 0 && (last_sub = @prob_submissions[problem.id][:submission])
+    - tc_count = problem.live_dataset&.testcases&.count || 0
+    - if tc_count > 0 && last_sub.grader_comment.to_s.length == tc_count && last_sub.grader_comment.to_s.match?(/\A[PsS]+\z/)
+      - is_zero_full_score_pass = true
+  - cc = (score.to_f.abs >= full_score.to_f.abs || is_zero_full_score_pass) ? 'bg-success' : 'bg-warning text-dark'
   %td{style: "width: 10rem; min-width: 10rem; vertical-align: middle", 'data-order': score || 0}
     - unless false
       - text = []
@@ -41,7 +46,7 @@
       - abs_ai_cost = ai_cost.to_f.abs
       - abs_sum_cost = [abs_full_score, abs_hint_cost + abs_ai_cost].min
       - abs_adjusted_score = [abs_full_score - abs_sum_cost, abs_score].min
-      - pct_adj = abs_full_score > 0 ? (abs_adjusted_score / abs_full_score) * 100 : 0
+      - pct_adj = is_zero_full_score_pass ? 100 : (abs_full_score > 0 ? (abs_adjusted_score / abs_full_score) * 100 : 0)
       - abs_extra_points = [0, abs_score - abs_adjusted_score].max
       - pct_extra = abs_full_score > 0 ? (abs_extra_points / abs_full_score) * 100 : 0
       - abs_deduction_rem = [0, abs_sum_cost - abs_extra_points].max

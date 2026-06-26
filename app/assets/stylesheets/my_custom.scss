@@ -687,3 +687,28 @@ golden-btn + .golden-btn { margin-top: 1em; }
   scrollbar-width: thin;
   scrollbar-color: var(--bs-tertiary-color) var(--bs-body-bg);
 }
+
+// Dynamic outline progress bar for badges
+.progress-outline-badge {
+  position: relative;
+  box-shadow: none !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+.progress-outline-badge::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50rem; /* pill shape */
+  padding: 2px; /* outline thickness */
+  background: linear-gradient(to right, var(--progress-color, transparent) var(--progress-pct, 0%), transparent var(--progress-pct, 0%));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}

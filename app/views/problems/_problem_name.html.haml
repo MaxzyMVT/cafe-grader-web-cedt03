@@ -5,7 +5,7 @@
   %span.d-inline-flex.align-items-center.flex-wrap{style: 'color: var(--bs-orange); max-width: 100%;'}= render_star(problem.difficulty)
 .text-muted.font-monospace
   = "#{problem.name}".gsub("_","_&ZeroWidthSpace;").html_safe
-- if problem.submission_limit? && @current_user
+- if GraderConfiguration.show_submission_limits? && problem.submission_limit? && @current_user
   - is_exempt = @current_user.admin? || @current_user.problem_setter?
   - limit_reached = !is_exempt && problem.submission_limit_reached?(@current_user)
   - sub_count = problem.submission_count_for(@current_user)
@@ -15,16 +15,34 @@
       %span.mi{style: 'font-size: 0.85rem;'} upload
       = "#{sub_count}/#{problem.max_submissions} subs"
   - else
-    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info'), 'data-bs-toggle' => 'tooltip', title: (limit_reached ? 'Submission limit reached' : "#{remaining} submission#{'s' unless remaining == 1} remaining")}
+    - pct = (remaining.to_f / problem.max_submissions.to_f * 100).round
+    - outline_color = limit_reached ? 'var(--bs-danger)' : 'var(--bs-info)'
+    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1.progress-outline-badge{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info'), style: "--progress-pct: #{pct}%; --progress-color: #{outline_color};", 'data-bs-toggle' => 'tooltip', title: (limit_reached ? 'Submission limit reached' : "#{remaining} submission#{'s' unless remaining == 1} remaining")}
       %span.mi{style: 'font-size: 0.85rem;'} upload
       = "#{sub_count}/#{problem.max_submissions} subs"
-- if problem.bonus_first_blood.to_f != 0
+- if GraderConfiguration.show_first_bloods? && problem.bonus_first_blood.to_f != 0
   - n = problem.respond_to?(:first_n_bloods) ? problem.first_n_bloods : 0
   - if n > 0
-    %span.badge.rounded-pill.bg-danger-subtle.text-danger.d-inline-flex.align-items-center.gap-1.ms-1{title: "First #{n} Bloods Bonus"}
+    - blood_users = problem.first_n_blood_users(n)
+    - user_got_it = @current_user && blood_users.include?(@current_user)
+    - left = n - blood_users.size
+    - if user_got_it
+      - pct = 100
+      - outline_color = 'var(--bs-success)'
+      - badge_class = 'bg-danger-subtle text-danger border border-danger-subtle'
+    - elsif left > 0
+      - pct = (left.to_f / n.to_f * 100).round
+      - outline_color = 'var(--bs-danger)'
+      - badge_class = 'bg-danger-subtle text-danger border border-danger-subtle'
+    - else
+      - pct = 0
+      - outline_color = 'transparent'
+      - badge_class = 'bg-secondary-subtle text-secondary border border-secondary-subtle'
+    - formatted_bonus = problem.bonus_first_blood.to_f > 0 ? "+#{format_score(problem.bonus_first_blood)}" : format_score(problem.bonus_first_blood)
+    - text = (left == n) ? "#{formatted_bonus} (x#{n})" : "#{formatted_bonus} (#{left}/#{n})"
+    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.ms-1.progress-outline-badge{class: badge_class, style: "--progress-pct: #{pct}%; --progress-color: #{outline_color};", title: "First #{n} Bloods Bonus"}
       %span.mi{style: 'font-size: 0.85rem;'} bloodtype
-      - formatted_bonus = problem.bonus_first_blood.to_f > 0 ? "+#{format_score(problem.bonus_first_blood)}" : format_score(problem.bonus_first_blood)
-      = "#{formatted_bonus} (x#{n})"
+      = text
 
 -# link for download statement, attachment, testcases
 %div.d-inline-flex.align-items-center.align-middle.gap-1

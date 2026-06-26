@@ -44,6 +44,8 @@ class User < ApplicationRecord
   # comments
   has_many :comment_reveals, dependent: :destroy
   has_many :revealed_comments, through: :comment_reveals, source: :comment
+  has_many :comments, dependent: :destroy
+  has_many :heart_beats, dependent: :destroy
 
   scope :activated_users, -> { where activated: true }
 
@@ -82,6 +84,7 @@ class User < ApplicationRecord
   def bonus_score
     # Includes "N-th Blood" bonus
     # We find all problems where this user is one of the N-th blooders
+    return 0 unless GraderConfiguration.show_first_bloods?
     total_bonus = 0
     Problem.where.not(bonus_first_blood: [nil, 0]).find_each do |problem|
       n = problem.respond_to?(:first_n_bloods) ? problem.first_n_bloods : 0

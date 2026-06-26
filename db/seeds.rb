@@ -28,12 +28,12 @@ CONFIGURATIONS =
      description: 'Include admins in the public scoreboard'
    },
 
-   {
-     key: 'system.group_score_type',
-     value_type: 'string',
-     default_value: 'group_sum',
-     description: 'Group Scoreboard calculation mode: group_sum (sum of user scores) or group_max (max score per problem)'
-   },
+    {
+      key: 'system.group_score_type',
+      value_type: 'string',
+      default_value: 'group_sum',
+      description: "Determines what will show on the main list page regarding the maximum score of the user's group."
+    },
 
    {
      key: 'system.message_enabled',
@@ -42,26 +42,40 @@ CONFIGURATIONS =
      description: 'Whether users can send clarification requests (messages)'
    },
 
-   {
-     key: 'point_hint.enable_all_hints',
-     value_type: 'boolean',
-     default_value: 'false',
-     description: "If true, users can view all hints even if they haven't unlocked them with points."
-   },
+    {
+      key: 'gimmicks.enable_all_hints',
+      value_type: 'boolean',
+      default_value: 'false',
+      description: "If true, users can view all hints even if they haven't unlocked them with points."
+    },
 
-   {
-     key: 'point_hint.disable_penalty',
-     value_type: 'boolean',
-     default_value: 'false',
-     description: 'If true, the scoreboard will show scores without any deductions (penalties).'
-   },
+    {
+      key: 'gimmicks.disable_penalty',
+      value_type: 'boolean',
+      default_value: 'false',
+      description: 'If true, the scoreboard will show scores without any deductions (penalties).'
+    },
 
-   {
-     key: 'point_hint.disable_bonus',
-     value_type: 'boolean',
-     default_value: 'false',
-     description: 'If true, the scoreboard and header will not calculate or show bonus points.'
-   },
+    {
+      key: 'gimmicks.disable_bonus',
+      value_type: 'boolean',
+      default_value: 'false',
+      description: 'If true, the scoreboard and header will not calculate or show bonus points.'
+    },
+
+    {
+      key: 'gimmicks.enable_first_bloods',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'Enable/Disable First Bloods globally'
+    },
+
+    {
+      key: 'gimmicks.enable_submission_limits',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'Enable/Disable Submission Limits globally'
+    },
 
    {
      key: 'ui.front.title',
@@ -266,13 +280,13 @@ CONFIGURATIONS =
      description: "When true, a user can request LLM assist on each submission"
    },
 
-   #---------------------------- point_hint --------------------------------
-   {
-     key: 'point_hint.show_user_points',
-     value_type: 'boolean',
-     default_value: 'true',
-     description: 'If true, shows the total user points on the top menu bar.'
-   },
+    #---------------------------- gimmicks --------------------------------
+    {
+      key: 'gimmicks.show_user_points',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'If true, shows the total user points on the top menu bar.'
+    },
 
    #---------------------------- system (theme) --------------------------------
    {
