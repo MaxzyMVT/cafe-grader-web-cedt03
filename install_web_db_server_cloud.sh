@@ -155,7 +155,10 @@ echo "  database.yml patched with DB credentials."
 cp config/worker.yml.SAMPLE config/worker.yml
 sed -i "s|web:.*|web: http://localhost|" config/worker.yml
 sed -i "s|worker_id:.*|worker_id: 0|" config/worker.yml
-echo "  worker.yml patched (web: http://localhost, worker_id: 0)."
+# Web/DB server has no isolate binary — blank the path so the grader skips
+# isolation init cleanly (see app/engine/isolate_runner.rb setup_isolate guard).
+sed -i "s|isolate_path:.*|isolate_path: |" config/worker.yml
+echo "  worker.yml patched (web: http://localhost, worker_id: 0, isolate_path: disabled)."
 
 # Silence Dart Sass @import deprecation warnings from Bootstrap.
 cat > config/initializers/dartsass_silence_deprecations.rb <<'RUBYEOF'

@@ -4,8 +4,13 @@ module IsolateRunner
   MetaFilename = 'meta.json'
 
   def setup_isolate(box_id, cg = false)
-    @isolate_cmd = Rails.configuration.worker.isolate_path
+    @isolate_cmd = Rails.configuration.worker.isolate_path.to_s.strip
     @box_id = box_id
+
+    if @isolate_cmd.empty?
+      judge_log "ISOLATE setup skipped: isolate_path not configured (web/DB server)", Logger::DEBUG
+      return ['', '', OpenStruct.new(success?: true, exitstatus: 0)]
+    end
 
     cmd = "#{@isolate_cmd} --init #{'--cg' if cg} -b #{@box_id}"
     judge_log "ISOLATE setup command: #{cmd}", Logger::DEBUG
@@ -19,6 +24,10 @@ module IsolateRunner
   # uid is only available when the command is ran as root
   def run_isolate(prog, input: {}, output: {}, time_limit: 1, wall_limit: time_limit + 0.5, mem_limit: 1024,
                   isolate_args: [], meta: MetaFilename, cg: false, uid: false)
+    if @isolate_cmd.to_s.empty?
+      judge_log "ISOLATE run skipped: isolate_path not configured (web/DB server)", Logger::DEBUG
+      return ['', '', OpenStruct.new(success?: true, exitstatus: 0), {}]
+    end
     # mount directory for input /output
     dir_args = []
     output.each { |k, v| dir_args << ['-d', "#{k}=#{v}:rw"] } # these are mounted read/write
@@ -40,6 +49,10 @@ module IsolateRunner
   end
 
   def cleanup_isolate(cg = false)
+    if @isolate_cmd.to_s.empty?
+      judge_log "ISOLATE cleanup skipped: isolate_path not configured (web/DB server)", Logger::DEBUG
+      return true
+    end
     cmd = "#{@isolate_cmd} --cleanup -b #{@box_id} #{'--cg' if cg}"
     judge_log "ISOLATE cleanup command: #{cmd}", Logger::DEBUG
     system(cmd)
