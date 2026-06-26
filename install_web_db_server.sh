@@ -130,7 +130,8 @@ echo "  database.yml patched with DB credentials."
 # Always regenerate and patch worker.yml
 cp config/worker.yml.SAMPLE config/worker.yml
 sed -i "s|web:.*|web: http://localhost|" config/worker.yml
-echo "  worker.yml patched (web: http://localhost)."
+sed -i "s|worker_id:.*|worker_id: 0|" config/worker.yml
+echo "  worker.yml patched (web: http://localhost, worker_id: 0)."
 
 # Silence Dart Sass @import deprecation warnings from Bootstrap.
 cat > config/initializers/dartsass_silence_deprecations.rb <<'RUBYEOF'
