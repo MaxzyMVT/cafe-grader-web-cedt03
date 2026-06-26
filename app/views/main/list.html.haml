@@ -1,7 +1,7 @@
 - content_for :head do
   %meta{name: "turbo-cache-control", content: "no-cache"}
 
-.row
+.row{"data-controller" => "auto-refresh"}
   -# Left pane: (Contest Card, Submission Card and problem list)
   .col-lg-8
     - if (GraderConfiguration.contest_mode?)

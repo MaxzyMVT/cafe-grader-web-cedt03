@@ -8,11 +8,10 @@
       %span.mi{style: 'font-size: 0.85rem;'} upload
       = "Submission limit: #{current_max} (Exempt)"
   - else
-    - pct = (remaining.to_f / current_max.to_f * 100).round
-    - outline_color = limit_reached ? 'var(--bs-danger)' : 'var(--bs-info)'
-    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1.progress-outline-badge{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info'), style: "--progress-pct: #{pct}%; --progress-color: #{outline_color};"}
+    %span.badge.rounded-pill.d-inline-flex.align-items-center.gap-1{class: (limit_reached ? 'badge-limit-danger' : 'badge-limit-info')}
       %span.mi{style: 'font-size: 0.85rem;'} upload
       - if limit_reached
         Submission limit reached (#{current_max}/#{current_max})
       - else
         = "#{remaining} of #{current_max} submission#{'s' unless current_max == 1} remaining"
+

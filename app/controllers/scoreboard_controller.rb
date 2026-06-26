@@ -87,10 +87,12 @@ class ScoreboardController < ApplicationController
         # Calculate bonus for this user
         bonus = 0
         unless GraderConfiguration.disable_bonus?
-          @problems.each do |p|
-            u_ids = @first_blood_users[p.id] || []
-            if u_ids.include?(u.id)
-              bonus += p.bonus_first_blood
+          if GraderConfiguration.show_first_bloods?
+            @problems.each do |p|
+              u_ids = @first_blood_users[p.id] || []
+              if u_ids.include?(u.id)
+                bonus += p.bonus_first_blood
+              end
             end
           end
         end
@@ -136,10 +138,12 @@ class ScoreboardController < ApplicationController
           # Calculate bonus for this user
           user_bonus = 0
           unless GraderConfiguration.disable_bonus?
-            @problems.each do |p|
-              u_ids = @first_blood_users[p.id] || []
-              if u_ids.include?(u.id)
-                user_bonus += p.bonus_first_blood
+            if GraderConfiguration.show_first_bloods?
+              @problems.each do |p|
+                u_ids = @first_blood_users[p.id] || []
+                if u_ids.include?(u.id)
+                  user_bonus += p.bonus_first_blood
+                end
               end
             end
           end

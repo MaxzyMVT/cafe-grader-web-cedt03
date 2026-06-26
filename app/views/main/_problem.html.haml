@@ -26,9 +26,13 @@
   - raw_sum_mode = problem.live_dataset&.st_raw_sum?
   - is_zero_full_score_pass = false
   - if full_score == 0 && (last_sub = @prob_submissions[problem.id][:submission])
+    - gc = last_sub.grader_comment.to_s
     - tc_count = problem.live_dataset&.testcases&.count || 0
-    - if tc_count > 0 && last_sub.grader_comment.to_s.length == tc_count && last_sub.grader_comment.to_s.match?(/\A[PsS]+\z/)
-      - is_zero_full_score_pass = true
+    - if last_sub.status.to_s == 'done'
+      - if tc_count == 0
+        - is_zero_full_score_pass = true
+      - elsif gc.length == tc_count && gc.match?(/\A[PsS]+\z/)
+        - is_zero_full_score_pass = true
   - cc = (score.to_f.abs >= full_score.to_f.abs || is_zero_full_score_pass) ? 'bg-success' : 'bg-warning text-dark'
   %td{style: "width: 10rem; min-width: 10rem; vertical-align: middle", 'data-order': score || 0}
     - unless false

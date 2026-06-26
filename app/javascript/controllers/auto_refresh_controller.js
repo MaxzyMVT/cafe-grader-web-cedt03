@@ -10,12 +10,25 @@ export default class extends Controller {
     document.addEventListener("turbo:before-frame-render", this.scrollHandler)
     this.restoreHandler = this.restoreScroll.bind(this)
     document.addEventListener("turbo:frame-render", this.restoreHandler)
+
+    // Force reload when page is restored from browser bfcache (back/forward button)
+    // so that data (scores, group max, etc.) is always fresh
+    this.bfcacheHandler = this.handleBfcache.bind(this)
+    window.addEventListener("pageshow", this.bfcacheHandler)
   }
 
   disconnect() {
     clearInterval(this.interval)
     document.removeEventListener("turbo:before-frame-render", this.scrollHandler)
     document.removeEventListener("turbo:frame-render", this.restoreHandler)
+    window.removeEventListener("pageshow", this.bfcacheHandler)
+  }
+
+  handleBfcache(event) {
+    // event.persisted === true means page was served from bfcache
+    if (event.persisted) {
+      window.location.reload()
+    }
   }
 
   saveScroll(event) {
@@ -56,4 +69,3 @@ export default class extends Controller {
     }
   }
 }
-
