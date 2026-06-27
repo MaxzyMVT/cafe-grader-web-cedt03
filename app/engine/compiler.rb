@@ -60,8 +60,8 @@ class Compiler
   def compile(submission, dataset)
     @sub = submission
     @working_dataset = dataset
-    # bypass isolate for text and archive
-    if @sub.language&.name == 'text' || @sub.language&.name == 'archive'
+    # bypass isolate for text, archive, or output-only problems
+    if @sub.problem.output_only || @sub.language&.name == 'text' || @sub.language&.name == 'archive'
       prepare_submission_directory(@sub)
       @exec_file = @compile_path + @sub.problem.exec_filename(@sub.language)
       File.write(@exec_file, @sub.source)
