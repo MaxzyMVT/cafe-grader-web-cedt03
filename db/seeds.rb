@@ -32,14 +32,14 @@ CONFIGURATIONS =
       key: 'system.group_score_type',
       value_type: 'string',
       default_value: 'group_sum',
-      description: "Determines how the maximum score of each user's group is calculated and show on scoreboard. group_sum means summing up all members' scores; group_max means the max of all members' scores and also show own group's maximum score on problem list."
+      description: "Determines how the maximum score of each user's group is calculated and shown on scoreboard."
     },
 
     {
       key: 'system.scoreboard_view_level',
       value_type: 'string',
       default_value: 'user',
-      description: "Who can view the real-time scoreboard. 'all' = anyone (public); 'user' = logged-in users; 'admin' = admins/problem setters only."
+      description: "Who can view the real-time scoreboard."
     },
 
    {
@@ -123,12 +123,12 @@ CONFIGURATIONS =
      description: 'Time limit in format hh:mm, or "unlimited" for contests with no time limits.  This config is CACHED.  Restart the server before the change can take effect.'
    },
 
-   {
-     key: 'system.mode',
-     value_type: 'string',
-     default_value: 'standard',
-     description: 'Current modes are "standard", "contest", "indv-contest", and "analysis".'
-   },
+    {
+      key: 'system.mode',
+      value_type: 'string',
+      default_value: 'standard',
+      description: "Determines the operation mode of the system."
+    },
 
 
    {

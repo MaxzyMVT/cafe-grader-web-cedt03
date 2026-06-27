@@ -41,13 +41,8 @@
             - @configurations.each do |conf|
               - next if conf.key[0...(conf.key.index('.'))] != group
               .config-item{data: {key: conf.key, search: "#{conf.key} #{conf.description}".downcase}}
-                .config-main
-                  .config-info
-                    %span.config-key= conf.key
-                    .config-description= conf.description
-                    %span.badge.bg-body-tertiary.text-secondary=conf.value_type.upcase
-                  .config-value-wrapper
-                    = render partial: 'config', locals: {conf: conf}
+                = render partial: 'config', locals: {conf: conf}
+
 
 :javascript
   function filterConfigs() {
@@ -79,3 +74,42 @@
       }
     });
   }
+
+  window.CONFIG_DESCRIPTIONS = {
+    'system.mode': {
+      'base': 'Determines the operation mode of the system.',
+      'choices': {
+        'standard': 'Standard mode (individual tasks and submission view)',
+        'contest': 'Contest mode (time-bound contest dashboard, restrict task visibility)',
+        'indv-contest': 'Individual Contest mode (timer starts individually per user on their first view)',
+        'analysis': 'Analysis mode (viewing other users\' code is allowed for learning/review)'
+      }
+    },
+    'system.group_score_type': {
+      'base': 'Determines how the maximum score of each user\'s group is calculated and shown on scoreboard.',
+      'choices': {
+        'group_sum': 'Group Sum (summing up all members\' scores)',
+        'group_max': 'Group Max (the max of all members\' scores for each problem, showing own group\'s max score on problem list)'
+      }
+    },
+    'system.scoreboard_view_level': {
+      'base': 'Who can view the real-time scoreboard.',
+      'choices': {
+        'all': 'Anyone (public) can view the scoreboard',
+        'user': 'Only logged-in users can view the scoreboard',
+        'admin': 'Only admins and problem setters can view the scoreboard'
+      }
+    }
+  };
+
+  function updateConfigDescription(key, val) {
+    const cfg = window.CONFIG_DESCRIPTIONS[key];
+    if (!cfg) return;
+    const elementId = 'desc-' + key.replace(/\./g, '-');
+    const elem = document.getElementById(elementId);
+    if (elem) {
+      const choiceText = cfg.choices[val] || val;
+      elem.textContent = cfg.base + ' Currently: ' + choiceText;
+    }
+  }
+

@@ -1,11 +1,21 @@
-- if conf.value_type.downcase == 'boolean'
-  .form-check.form-switch
-    %a{href: toggle_grader_configuration_path(conf), 'data-turbo': "true", 'data-turbo-method': :patch}
-      %input.form-check-input{id: dom_id(conf,"config"), type: :checkbox, checked: conf.value.downcase == 'true'}
-- else
-  = turbo_frame_tag dom_id(conf,"config"), class: 'w-100 d-flex justify-content-end align-items-center' do
-    %span.config-value-text= conf.value.presence || '-'
-    = link_to edit_grader_configuration_path(conf), class: 'edit-link', data: {turbo: "true"} do
-      %span.mi.md-18 edit
-    = link_to audit_logs_path(auditable_type: 'GraderConfiguration', auditable_id: conf.id), class: 'edit-link', title: 'Change history' do
-      %span.mi.md-18 history
+= turbo_frame_tag dom_id(conf,"config"), class: 'w-100' do
+  .config-main
+    .config-info
+      %span.config-key= conf.key
+      .config-description{id: "desc-#{conf.key.gsub('.', '-')}"}
+        - if ConfigurationsHelper::DYNAMIC_DESCRIPTIONS[conf.key]
+          = dynamic_description_for(conf.key, conf.value)
+        - else
+          = conf.description
+      %span.badge.bg-body-tertiary.text-secondary=conf.value_type.upcase
+    .config-value-wrapper
+      - if conf.value_type.downcase == 'boolean'
+        .form-check.form-switch
+          %a{href: toggle_grader_configuration_path(conf), 'data-turbo': "true", 'data-turbo-method': :patch}
+            %input.form-check-input{id: dom_id(conf,"config_switch"), type: :checkbox, checked: conf.value.downcase == 'true'}
+      - else
+        %span.config-value-text= conf.value.presence || '-'
+        = link_to edit_grader_configuration_path(conf), class: 'edit-link', data: {turbo: "true"} do
+          %span.mi.md-18 edit
+        = link_to audit_logs_path(auditable_type: 'GraderConfiguration', auditable_id: conf.id), class: 'edit-link', title: 'Change history' do
+          %span.mi.md-18 history

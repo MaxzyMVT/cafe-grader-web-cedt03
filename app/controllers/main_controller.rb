@@ -207,10 +207,10 @@ class MainController < ApplicationController
       tc_count = prob.live_dataset&.testcases&.count || 0
       full_pass_candidates = candidates.select do |s|
         if s.status.to_s == 'done'
-          gc = s.grader_comment.to_s
+          clean_gc = s.grader_comment.to_s.gsub(/[\[\]\s]/, '')
           if tc_count == 0
             true
-          elsif gc.length == tc_count && gc.match?(/\A[PsS]+\z/)
+          elsif clean_gc.match?(/\A[PS]+\z/)
             true
           else
             false
