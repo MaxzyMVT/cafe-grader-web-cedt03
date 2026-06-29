@@ -26,7 +26,7 @@ export default class extends rowFieldToggle(Controller) {
 
   setUsersCommand(event) {
     const command = this.usersCommandTarget
-    command.value = event.target.dataset.value
+    command.value = event.currentTarget.dataset.value
   }
 
   postUserAction(event) {
@@ -34,10 +34,10 @@ export default class extends rowFieldToggle(Controller) {
     const form = this.userFormTarget
     const user_id = this.userFormUserIDTarget
     const command = this.userFormCommandTarget
-    command.value = event.target.dataset.command
-    user_id.value = event.target.dataset.rowId
-    if ('formConfirm' in event.target.dataset) {
-      form.dataset.turboConfirm = event.target.dataset.formConfirm
+    command.value = event.currentTarget.dataset.command
+    user_id.value = event.currentTarget.dataset.rowId
+    if ('formConfirm' in event.currentTarget.dataset) {
+      form.dataset.turboConfirm = event.currentTarget.dataset.formConfirm
     } else {
       form.removeAttribute('data-turbo-confirm')
     }
@@ -61,7 +61,7 @@ export default class extends rowFieldToggle(Controller) {
 
   setProblemsCommand(event) {
     const command = this.problemsCommandTarget
-    command.value = event.target.dataset.value
+    command.value = event.currentTarget.dataset.value
   }
 
   postProblemAction(event) {
@@ -69,10 +69,10 @@ export default class extends rowFieldToggle(Controller) {
     const form = this.problemFormTarget
     const problem_id = this.problemFormProblemIDTarget
     const command = this.problemFormCommandTarget
-    command.value = event.target.dataset.command
-    problem_id.value = event.target.dataset.rowId
-    if ('formConfirm' in event.target.dataset) {
-      form.dataset.turboConfirm = event.target.dataset.formConfirm
+    command.value = event.currentTarget.dataset.command
+    problem_id.value = event.currentTarget.dataset.rowId
+    if ('formConfirm' in event.currentTarget.dataset) {
+      form.dataset.turboConfirm = event.currentTarget.dataset.formConfirm
     } else {
       form.removeAttribute('data-turbo-confirm')
     }
