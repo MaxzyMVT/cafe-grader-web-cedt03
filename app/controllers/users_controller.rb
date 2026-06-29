@@ -61,6 +61,21 @@ class UsersController < ApplicationController
     end
   end
 
+  def rename_group
+    group = Group.find(params[:group_id])
+    groups_user = group.groups_users.find_by(user_id: @current_user.id, enabled: true)
+    if group.enabled? && group.allow_user_change_name? && groups_user
+      if group.update(name: params[:new_name])
+        flash[:notice] = "Group name updated to '#{params[:new_name]}'."
+      else
+        flash[:alert] = "Failed to update group name: #{group.errors.full_messages.to_sentence}"
+      end
+    else
+      flash[:alert] = "You are not authorized to rename this group."
+    end
+    redirect_to profile_users_path
+  end
+
   def new
     @user = User.new
     render action: 'new'  end

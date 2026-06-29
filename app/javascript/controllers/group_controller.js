@@ -3,9 +3,9 @@ import { rowFieldToggle } from "mixins/row_field_toggle";
 
 export default class extends rowFieldToggle(Controller) {
 
-  static targets = ["usersCommand", "userForm", "userFormUserID", "userFormCommand" ,
+    static targets = ["usersCommand", "userForm", "userFormUserID", "userFormCommand" ,
                     "problemsCommand", "problemForm", "problemFormProblemID", "problemFormCommand" ,
-                    "toggleForm",
+                    "toggleForm", "toggleMemberRenameForm"
                    ]
 
   connect() {
@@ -21,6 +21,13 @@ export default class extends rowFieldToggle(Controller) {
     event.target.disabled = true
     const recId = event.target.dataset.rowId
     const form = this.toggleFormTarget
+    this.submitToggleForm(form,recId)
+  }
+
+  toggleMemberRename(event) {
+    event.target.disabled = true
+    const recId = event.target.dataset.rowId
+    const form = this.toggleMemberRenameFormTarget
     this.submitToggleForm(form,recId)
   }
 

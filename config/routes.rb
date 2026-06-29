@@ -185,6 +185,7 @@ Rails.application.routes.draw do
     member do
       # groups
       post 'toggle'
+      post 'toggle_member_rename'
 
       # groups_users
       post 'show_users_query'
@@ -232,6 +233,7 @@ Rails.application.routes.draw do
       post 'chg_passwd'
       post 'chg_default_language'
       patch 'update_self'
+      post 'rename_group'
     end
   end
 

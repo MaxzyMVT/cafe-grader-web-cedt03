@@ -2,7 +2,7 @@ class GroupsController < ApplicationController
   GroupMemberAction =             [:show, :edit, :update, :destroy,
                                    :show_users_query, :show_problems_query,
                                    :add_user, :add_user_by_group, :add_problem, :add_problem_by_group, :add_problem_by_tag,
-                                   :toggle, :do_all_users, :do_user, :do_all_problems, :do_problem,
+                                   :toggle, :toggle_member_rename, :do_all_users, :do_user, :do_all_problems, :do_problem,
                                   ]
   before_action :stimulus_controller
   before_action :set_group, only: GroupMemberAction
@@ -78,6 +78,12 @@ class GroupsController < ApplicationController
     @group.update(enabled:  !@group.enabled?)
     @toast = {title: "Group #{@group.name}", body: "Enabled updated"}
     render 'toggle'
+  end
+
+  def toggle_member_rename
+    @group.update(allow_user_change_name: !@group.allow_user_change_name?)
+    @toast = {title: "Group #{@group.name}", body: "Members can rename group updated"}
+    render 'toggle_member_rename'
   end
 
 
@@ -237,9 +243,9 @@ class GroupsController < ApplicationController
     # Only allow a trusted parameter "white list" through.
     def group_params
       if @current_user.admin? || @current_user.problem_setter?
-        params.require(:group).permit(:name, :description, :enabled)
+        params.require(:group).permit(:name, :description, :enabled, :allow_user_change_name)
       else
-        params.require(:group).permit(:name, :description)
+        params.require(:group).permit(:name, :description, :allow_user_change_name)
       end
     end
 end

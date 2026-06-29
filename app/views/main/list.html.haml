@@ -7,6 +7,14 @@
     - if GraderConfiguration.show_submitbox_to?(@user)
       .mb-4
         = render 'submission_box'
+    - enabled_groups = @current_user.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).order(:name).distinct
+    - if enabled_groups.any?
+      .mb-4
+        .alert.alert-info.d-flex.align-items-center.shadow-sm.mb-0
+          %span.mi.me-2 group
+          %span
+            You are in the Group:
+            != enabled_groups.pluck(:name).map { |name| "<strong>#{h(name)}</strong>" }.to_sentence
     - if GraderConfiguration.show_tasks_to?(@user)
       .mb-4
         = render partial: 'problem_list', locals: {problems: @problems, groups: @groups}

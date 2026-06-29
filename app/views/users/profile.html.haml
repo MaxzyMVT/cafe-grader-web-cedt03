@@ -55,3 +55,44 @@
             - else
               .card-footer.bg-transparent.text-center.py-1.border-0
                 %small.text-muted Select
+
+- enabled_groups = @current_user.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).distinct
+- if enabled_groups.any?
+  .row.mt-5
+    .col-md-6
+      %h4.fw-bold.text-secondary.mb-3 Your Groups
+      .card.shadow-sm
+        %ul.list-group.list-group-flush
+          - enabled_groups.each do |group|
+            %li.list-group-item.d-flex.align-items-center.justify-content-between.p-3
+              .d-flex.align-items-center
+                %span.mi.me-2.text-secondary group
+                %span{id: "group-name-text-#{group.id}", class: 'fw-bold text-dark'}= group.name
+                - if group.allow_user_change_name?
+                  %button.btn.btn-sm.btn-link.p-0.ms-2{type: 'button', onclick: "toggleGroupRenameForm(#{group.id})", title: 'Rename Group'}
+                    %span.mi.md-18 edit
+              - if group.allow_user_change_name?
+                = form_with url: rename_group_users_path, method: :post, class: 'd-none gap-2 align-items-center mb-0', id: "group-rename-form-#{group.id}" do |f|
+                  = hidden_field_tag :group_id, group.id
+                  = text_field_tag :new_name, group.name, class: 'form-control form-control-sm', required: true, style: 'width: 200px;'
+                  %button.btn.btn-sm.btn-primary{type: 'submit'} Save
+                  %button.btn.btn-sm.btn-outline-secondary{type: 'button', onclick: "toggleGroupRenameForm(#{group.id})"} Cancel
+
+:javascript
+  function toggleGroupRenameForm(groupId) {
+    const textSpan = document.getElementById(`group-name-text-${groupId}`);
+    const form = document.getElementById(`group-rename-form-${groupId}`);
+    const editBtn = textSpan.nextElementSibling;
+    
+    if (form && form.classList.contains('d-none')) {
+      form.classList.remove('d-none');
+      form.classList.add('d-flex');
+      textSpan.classList.add('d-none');
+      if (editBtn) editBtn.classList.add('d-none');
+    } else if (form) {
+      form.classList.remove('d-flex');
+      form.classList.add('d-none');
+      textSpan.classList.remove('d-none');
+      if (editBtn) editBtn.classList.remove('d-none');
+    }
+  }

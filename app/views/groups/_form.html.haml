@@ -5,3 +5,4 @@
   = f.input :enabled, disabled: @current_user.admin? == false
 - else
   = f.input :enabled, label: 'Enabled (group editor cannot modify Enabled field)', disabled: true
+= f.input :allow_user_change_name, label: 'Allow members to change group name'

@@ -153,7 +153,7 @@ class ScoreboardController < ApplicationController
       @groups = Group.where(enabled: true)
       @group_score_type = GraderConfiguration['system.group_score_type'] || 'group_sum'
       @leaderboard = @groups.map do |g|
-        group_users = g.users.where(enabled: true).where.not(id: disabled_group_user_ids + setter_admin_ids)
+        group_users = g.users.where(enabled: true, groups_users: { enabled: true }).where.not(id: disabled_group_user_ids + setter_admin_ids)
         group_total = 0
         group_deducted = 0
         group_bonus = 0

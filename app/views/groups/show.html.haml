@@ -26,7 +26,25 @@
           .row.gy-3
             = key_pair(obj: @group, field: :name, label: 'Name', icon: :label)
             = key_pair(obj: @group, field: :description, width: 4, label: 'Description', icon: :description)
-            = key_pair(obj: @group, field: :enabled, as: :yes_no, label: 'Enabled', icon: :visibility)
+            .col-md-4.mb-3
+              .text-secondary.small.d-flex.align-items-center.mb-1
+                = mdi(:visibility, 'me-1')
+                %span Enabled
+              .d-flex.align-items-center.gap-2.fw-bold.text-dark
+                %span#group-enabled-badge{class: @group.enabled? ? 'badge bg-success' : 'badge bg-secondary'}
+                  = @group.enabled? ? 'Yes' : 'No'
+                - if @current_user.admin? || @current_user.problem_setter?
+                  .form-check.form-switch.mb-0
+                    %input#group-enabled-switch.form-check-input{checked: @group.enabled, type: "checkbox", data: {action: 'group#toggle', 'row-id': @group.id}}
+            .col-md-4.mb-3
+              .text-secondary.small.d-flex.align-items-center.mb-1
+                = mdi(:edit, 'me-1')
+                %span Members can rename group
+              .d-flex.align-items-center.gap-2.fw-bold.text-dark
+                %span#group-member-rename-badge{class: @group.allow_user_change_name? ? 'badge bg-success' : 'badge bg-secondary'}
+                  = @group.allow_user_change_name? ? 'Yes' : 'No'
+                .form-check.form-switch.mb-0
+                  %input#group-member-rename-switch.form-check-input{checked: @group.allow_user_change_name, type: "checkbox", data: {action: 'group#toggleMemberRename', 'row-id': @group.id}}
 
     .col-md-6
       = render partial: 'group_help'
@@ -207,6 +225,14 @@
                   data: {turbo: true, action: 'turbo:submit-end->group#afterProblemAction'}} do |f|
                   = f.hidden_field :problem_id, 'data-group-target': 'problemFormProblemID'
                   = f.hidden_field :command, 'data-group-target': 'problemFormCommand'
+
+                -# hidden form for group toggle
+                = form_with url: toggle_group_path(-123), html: {data: {turbo: true, 'group-target': 'toggleForm', action: 'turbo:submit-end->group#resetToggleForm'}} do
+                  /
+
+                -# hidden form for group member rename toggle
+                = form_with url: toggle_member_rename_group_path(-123), html: {data: {turbo: true, 'group-target': 'toggleMemberRenameForm', action: 'turbo:submit-end->group#resetToggleForm'}} do
+                  /
 
               .col-md-6
                 -# help for group problem
