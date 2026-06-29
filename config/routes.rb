@@ -182,6 +182,10 @@ Rails.application.routes.draw do
   end
 
   resources :groups do
+    collection do
+      match 'bulk_manage', via: [:get, :post]
+      post 'bulk_manage_query'
+    end
     member do
       # groups
       post 'toggle'

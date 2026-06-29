@@ -20,6 +20,36 @@ class GroupsController < ApplicationController
     @groups = @current_user.groups_for_action(:edit)
   end
 
+  def bulk_manage
+    @groups = @current_user.groups_for_action(:edit).order(:name)
+  end
+
+  def bulk_manage_query
+    @groups = @current_user.groups_for_action(:edit).order(:name)
+    render 'bulk_manage_query'
+  end
+
+  def do_bulk_manage
+    @result = []
+    @error = []
+    groups = get_groups_from_params.where(id: @current_user.groups_for_action(:edit).ids)
+
+    @toast = {title: "Bulk Manage #{groups.count} #{'group'.pluralize(groups.count)}"}
+    
+    if params[:change_enable] == '1'
+      groups.update_all(enabled: params[:enable] == 'yes')
+      @result << "Set \"Enabled\" to <strong>#{params[:enable]}</strong>"
+    end
+
+    if params[:change_allow_user_change_name] == '1'
+      groups.update_all(allow_user_change_name: params[:allow_user_change_name] == 'yes')
+      @result << "Set \"Allow member change name\" to <strong>#{params[:allow_user_change_name]}</strong>"
+    end
+
+    @toast[:body] = "<ul> #{@result.map { |x| "<li>#{x}</li>" }.join}  </ul>".html_safe
+    render 'turbo_toast'
+  end
+
   # GET /groups/1
   def show
   end
@@ -247,5 +277,10 @@ class GroupsController < ApplicationController
       else
         params.require(:group).permit(:name, :description, :allow_user_change_name)
       end
+    end
+
+    def get_groups_from_params
+      ids = params.keys.select { |k| k.start_with? 'group-' }.map { |k| k.split('-')[1].to_i }
+      return Group.where(id: ids)
     end
 end

@@ -104,4 +104,11 @@ export default class extends rowFieldToggle(Controller) {
 
   }
 
+  bulkManageSubmitEnd(event) {
+    this.genericSubmitEnd(event,'#main-table')
+    if (event.detail.fetchResponse.response.ok) {
+      document.querySelectorAll('.manage-action').forEach(cb => cb.checked = false);
+    }
+  }
+
 }
