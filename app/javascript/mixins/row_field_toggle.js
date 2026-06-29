@@ -4,15 +4,23 @@ export const rowFieldToggle = (superclass) => class extends superclass {
   // it changed the action url to match the id and submit the form
   // it is assumed that the placeholder id of the form's action url is -123
   submitToggleForm(form,id) {
-    form.dataset.orig_action = form.action
-    form.action = form.action.replace(-123,id)
+    if (!form.dataset.orig_action) {
+      form.dataset.orig_action = form.action
+    }
+    form.action = form.dataset.orig_action.replace(-123,id)
     form.requestSubmit()
   }
 
   // reset the form back to the original action url
   resetToggleForm(event) {
     const form = event.target
-    form.action = form.dataset.orig_action
+    if (form.dataset.orig_action) {
+      form.action = form.dataset.orig_action
+    }
+    // Re-enable any checkbox togglers that were disabled during submission
+    document.querySelectorAll('input[type="checkbox"].form-check-input:disabled').forEach(cb => {
+      cb.disabled = false
+    })
     if (form.dataset.tableReloadId) {
       $(`#${form.dataset.tableReloadId}`).DataTable().ajax.reload()
     }
