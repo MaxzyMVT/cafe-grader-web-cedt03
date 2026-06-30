@@ -155,7 +155,7 @@ class ReportController < ApplicationController
 
 
     @submissions.limit(100_000)
-    @submissions = @submissions.select('submissions.id,points,ip_address,submitted_at,grader_comment')
+    @submissions = @submissions.select('submissions.id,points,ip_address,submitted_at,grader_comment,max_runtime,peak_memory,effective_code_length')
       .select('users.login, users.full_name as user_full_name, users.id as user_id')
       .select('problems.full_name, problems.name, problems.id as problem_id')
       .select('languages.pretty_name')

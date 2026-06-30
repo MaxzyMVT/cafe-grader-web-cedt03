@@ -81,6 +81,9 @@
         {title: 'Result', data: 'grader_comment', className: 'grader-comment'},
         {title: 'Score', data: 'points', className: 'text-end'},
         {title: 'IP', data: 'ip_address', className: 'grader-comment'},
+        {title: 'Runtime (ms)', data: 'max_runtime', className: 'text-end'},
+        {title: 'Memory (KB)', data: 'peak_memory', className: 'text-end'},
+        {title: 'Length (bytes)', data: 'effective_code_length', className: 'text-end'},
       ],
       ajax: {
         url: '#{submission_query_report_path}',
