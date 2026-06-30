@@ -20,9 +20,9 @@
         %tr
           %th Name
           %th Full Name
-          %th.text-end Submissions
-          %th.text-end Solved / Attempted
-          %th.text-end Solve Rate
+          %th Submissions
+          %th Solved / Attempted
+          %th Solve Rate
 
 :javascript
   window.addEventListener("load", function() {
@@ -43,7 +43,7 @@
       if (type === 'display') {
         if (row.attempted === 0) return '<span class="text-muted">\u2014</span>'
         let bar_class = data >= 50 ? 'bg-success' : 'bg-warning'
-        return `<div class="d-flex align-items-center justify-content-end gap-2"><div class="progress" style="width:60px;height:6px"><div class="progress-bar ${bar_class}" style="width:${data}%" role="progressbar"></div></div><span style="min-width:3.5em;text-align:right">${data}%</span></div>`
+        return `<div class="d-flex align-items-center justify-content-center gap-2"><div class="progress" style="width:60px;height:6px"><div class="progress-bar ${bar_class}" style="width:${data}%" role="progressbar"></div></div><span style="min-width:3.5em;text-align:center">${data}%</span></div>`
       }
       return data
     }
@@ -61,9 +61,9 @@
       columns: [
         { data: 'name', render: name_render },
         { data: 'full_name' },
-        { data: 'sub_count', className: 'text-end' },
-        { data: 'solved', render: solve_render, className: 'text-end' },
-        { data: 'rate', render: rate_render, className: 'text-end' },
+        { data: 'sub_count', className: 'text-center' },
+        { data: 'solved', render: solve_render, className: 'text-center' },
+        { data: 'rate', render: rate_render, className: 'text-center' },
       ],
       order: [[2, 'desc']],
     });

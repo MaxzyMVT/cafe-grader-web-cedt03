@@ -720,3 +720,25 @@ html::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:hover {
   mask-composite: exclude;
   pointer-events: none;
 }
+
+// Override DataTables header sorting alignment and icon placement globally
+table.dataTable thead {
+  th, td {
+    text-align: left !important;
+  }
+}
+
+table.dataTable thead th div.dt-column-header,
+table.dataTable thead td div.dt-column-header {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+/* Add spacing for sorting icons so they don't fall off the right edge */
+table.dataTable thead th span.dt-column-order,
+table.dataTable thead td span.dt-column-order {
+  margin-right: 8px !important;
+  margin-left: 8px !important;
+}
