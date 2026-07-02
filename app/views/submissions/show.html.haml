@@ -24,14 +24,14 @@
             .col-4.text-end.text-secondary
               User
             .col
-              - if @current_user.admin? ||@current_user == @submission.user
-                - if @submission.user
+              - if @submission.user
+                - if @current_user.admin?
                   = link_to "#{@submission.user.login}", stat_user_admin_path(@submission.user)
-                  = @submission.user.full_name
                 - else
-                  = "(n/a)"
+                  = @submission.user.login
+                = @submission.user.full_name
               - else
-                = '-- REDACTED --'
+                = "(n/a)"
           .row.mb-2
             .col-4.text-end.text-secondary
               Problem

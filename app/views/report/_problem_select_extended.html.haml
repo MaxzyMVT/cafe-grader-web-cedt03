@@ -6,13 +6,20 @@
     .row.mb-3
       .col-12
         .form-check.form-check-inline
-          = radio_button_tag :'probs[use]', :all, params.dig(:probs, :use) != 'ids', class: 'form-check-input', id: 'probs_use_all', data: { action: "change->report-filter#modeChanged" }
+          - is_all_checked = params.dig(:probs, :use).blank? || params.dig(:probs, :use) == 'all'
+          = radio_button_tag :'probs[use]', :all, is_all_checked, class: 'form-check-input', id: 'probs_use_all', data: { action: "change->report-filter#modeChanged" }
           = label_tag :probs_use_all, "All Problems", class: 'form-check-label fw-bold'
         .form-check.form-check-inline
           = radio_button_tag :'probs[use]', :ids, params.dig(:probs, :use) == 'ids', class: 'form-check-input', id: 'probs_use_ids', data: { action: "change->report-filter#modeChanged" }
           = label_tag :probs_use_ids, "Specific Problems", class: 'form-check-label fw-bold'
+        .form-check.form-check-inline
+          = radio_button_tag :'probs[use]', :groups, params.dig(:probs, :use) == 'groups', class: 'form-check-input', id: 'probs_use_groups', data: { action: "change->report-filter#modeChanged" }
+          = label_tag :probs_use_groups, "Problems in Groups", class: 'form-check-label fw-bold'
+        .form-check.form-check-inline
+          = radio_button_tag :'probs[use]', :tags, params.dig(:probs, :use) == 'tags', class: 'form-check-input', id: 'probs_use_tags', data: { action: "change->report-filter#modeChanged" }
+          = label_tag :probs_use_tags, "Problems with Tags", class: 'form-check-label fw-bold'
 
-    -# Checklist — visibility handled by Stimulus
+    -# Checklist — Specific Problems
     .problem-checklist-container{data: { 'report-filter-target': 'checklistContainer' }}
       .d-flex.gap-2.mb-3.align-items-center
         .input-group.input-group-sm.flex-grow-1
@@ -31,3 +38,43 @@
             = label_tag "prob_check_#{p.id}", class: 'form-check-label w-100', style: 'cursor:pointer;' do
               %span.fw-semibold.text-dark= p.name
               %span.text-muted.ms-1= p.full_name
+
+    -# Checklist — Groups
+    .groups-checklist-container{data: { 'report-filter-target': 'groupsContainer' }}
+      .d-flex.gap-2.mb-3.align-items-center
+        .input-group.input-group-sm.flex-grow-1
+          %span.input-group-text
+            %i.mi.mi-search.md-18
+          %input#group_search.form-control{type: 'text', placeholder: 'Search groups...', onkeyup: "let q=this.value.toLowerCase(); document.querySelectorAll('.group-check-item').forEach(i => { let n=i.dataset.name.toLowerCase(); i.classList.toggle('d-none', !n.includes(q)) })"}
+        %button.btn.btn-sm.btn-outline-secondary{type: 'button', data: { action: 'click->report-filter#clearGroups' }}
+          %i.mi.mi-backspace.me-1
+          Clear All
+
+      .border.rounded.bg-white{style: 'max-height: 400px; overflow-y: auto;'}
+        - selected_group_ids = Array(params.dig(:probs, :group_ids)).map(&:to_s)
+        - @groups.each do |g|
+          .form-check.py-2.border-bottom.group-check-item{data: { name: g.name }, style: 'padding-left: 2.5rem;'}
+            = check_box_tag "probs[group_ids][]", g.id, selected_group_ids.include?(g.id.to_s), class: 'form-check-input', id: "group_check_#{g.id}", data: { 'report-filter-target': 'groupCheckbox' }
+            = label_tag "group_check_#{g.id}", class: 'form-check-label w-100', style: 'cursor:pointer;' do
+              %span.fw-semibold.text-dark= g.name
+              %span.text-muted.ms-1= g.description
+
+    -# Checklist — Tags
+    .tags-checklist-container{data: { 'report-filter-target': 'tagsContainer' }}
+      .d-flex.gap-2.mb-3.align-items-center
+        .input-group.input-group-sm.flex-grow-1
+          %span.input-group-text
+            %i.mi.mi-search.md-18
+          %input#tag_search.form-control{type: 'text', placeholder: 'Search tags...', onkeyup: "let q=this.value.toLowerCase(); document.querySelectorAll('.tag-check-item').forEach(i => { let n=i.dataset.name.toLowerCase(); i.classList.toggle('d-none', !n.includes(q)) })"}
+        %button.btn.btn-sm.btn-outline-secondary{type: 'button', data: { action: 'click->report-filter#clearTags' }}
+          %i.mi.mi-backspace.me-1
+          Clear All
+
+      .border.rounded.bg-white{style: 'max-height: 400px; overflow-y: auto;'}
+        - selected_tag_ids = Array(params.dig(:probs, :tag_ids)).map(&:to_s)
+        - @tags.each do |t|
+          .form-check.py-2.border-bottom.tag-check-item{data: { name: t.name }, style: 'padding-left: 2.5rem;'}
+            = check_box_tag "probs[tag_ids][]", t.id, selected_tag_ids.include?(t.id.to_s), class: 'form-check-input', id: "tag_check_#{t.id}", data: { 'report-filter-target': 'tagCheckbox' }
+            = label_tag "tag_check_#{t.id}", class: 'form-check-label w-100', style: 'cursor:pointer;' do
+              %span.fw-semibold.text-dark= t.name
+              %span.text-muted.ms-1= t.description

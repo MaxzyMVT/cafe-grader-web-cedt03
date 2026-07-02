@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["checklistContainer", "checkbox"]
+  static targets = ["checklistContainer", "checkbox", "groupsContainer", "groupCheckbox", "tagsContainer", "tagCheckbox"]
 
   connect() {
     this.updateVisibility()
@@ -13,15 +13,37 @@ export default class extends Controller {
   }
 
   updateVisibility() {
-    if (!this.hasChecklistContainerTarget) return
-    
     const mode = this.element.querySelector('input[name="probs[use]"]:checked')?.value
-    this.checklistContainerTarget.classList.toggle('d-none', mode !== 'ids')
+    if (this.hasChecklistContainerTarget) {
+      this.checklistContainerTarget.classList.toggle('d-none', mode !== 'ids')
+    }
+    if (this.hasGroupsContainerTarget) {
+      this.groupsContainerTarget.classList.toggle('d-none', mode !== 'groups')
+    }
+    if (this.hasTagsContainerTarget) {
+      this.tagsContainerTarget.classList.toggle('d-none', mode !== 'tags')
+    }
   }
 
   clearAll(event) {
     event.preventDefault()
     this.checkboxTargets.forEach(cb => {
+      cb.checked = false
+      cb.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+  }
+
+  clearGroups(event) {
+    event.preventDefault()
+    this.groupCheckboxTargets.forEach(cb => {
+      cb.checked = false
+      cb.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+  }
+
+  clearTags(event) {
+    event.preventDefault()
+    this.tagCheckboxTargets.forEach(cb => {
       cb.checked = false
       cb.dispatchEvent(new Event('change', { bubbles: true }))
     })

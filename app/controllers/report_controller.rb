@@ -237,18 +237,19 @@ class ReportController < ApplicationController
   # end
 
   def extended_stat
-    # Allow admins and users with report access
-    # Parameters for filtering
+    @limit = 1000
     @problems_all = @current_user.problems_for_action(:report).default_order
+    @groups = Group.all
+    @tags = Tag.all
     
     # if we have problems from selected_problems before_action, use them
     # If the user explicitly selected 'Specific Problems' (ids) mode but selected nothing,
     # calculate with nothing. Otherwise, default to ALL reportable problems.
     if params[:probs].present?
-      if params.dig(:probs, :use) == 'ids'
-        selected_prob_ids = @problems.ids
-      else
+      if params.dig(:probs, :use) == 'all'
         selected_prob_ids = @problems_all.ids
+      else
+        selected_prob_ids = @problems.ids
       end
     else
       selected_prob_ids = @problems_all.ids
@@ -287,12 +288,12 @@ class ReportController < ApplicationController
 
     # Helper scope for passed submissions (score >= full_score)
     # Using COALESCE for full_score to handle cases where it's not set
-    passed_scope = subs_scope.where("submissions.points >= COALESCE(problems.full_score, 100)")
+    passed_scope = subs_scope.where(status: :done).where("submissions.grader_comment REGEXP '^[\\\\[\\\\sPS\\\\]]*$'")
 
     # 1. Most Effort (Most submissions)
     if params[:group_mode] == '1'
       effort_scope = subs_scope.joins(user: :groups).group('groups.id')
-      effort_counts = effort_scope.order('count_all DESC').limit(10).count
+      effort_counts = effort_scope.order('count_all DESC').limit(@limit).count
       if effort_counts.any?
         threshold = effort_counts.values.last
         @most_effort = effort_scope.having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
@@ -301,7 +302,7 @@ class ReportController < ApplicationController
       end
       @most_effort_groups = Group.where(id: @most_effort.keys).index_by(&:id)
     else
-      effort_counts = subs_scope.group(:user_id).order('count_all DESC').limit(10).count
+      effort_counts = subs_scope.group(:user_id).order('count_all DESC').limit(@limit).count
       if effort_counts.any?
         threshold = effort_counts.values.last
         @most_effort = subs_scope.group(:user_id).having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
@@ -312,10 +313,10 @@ class ReportController < ApplicationController
     end
 
     # 2. Latest Passed Submission
-    @latest_passed = passed_scope.order(submitted_at: :desc).limit(10).includes(:user, :problem, :language)
+    @latest_passed = passed_scope.order(submitted_at: :desc).limit(@limit).includes(:user, :problem, :language)
 
     # 3. Latest Submission
-    @latest_sub = subs_scope.order(submitted_at: :desc).limit(10).includes(:user, :problem, :language)
+    @latest_sub = subs_scope.order(submitted_at: :desc).limit(@limit).includes(:user, :problem, :language)
 
     # 4. First Bloods
     # Submissions that were the first to get >= full_score for each problem
@@ -334,7 +335,7 @@ class ReportController < ApplicationController
 
     if params[:group_mode] == '1'
       fb_base = fb_base.joins(user: :groups).group('groups.id')
-      fb_top = fb_base.order(Arel.sql('count(*) DESC')).limit(10).count
+      fb_top = fb_base.order(Arel.sql('count(*) DESC')).limit(@limit).count
       if fb_top.any?
         threshold = fb_top.values.last
         @first_bloods = fb_base.having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
@@ -344,7 +345,7 @@ class ReportController < ApplicationController
       @first_bloods_groups = Group.where(id: @first_bloods.keys).index_by(&:id)
     else
       fb_base = fb_base.group(:user_id)
-      fb_top = fb_base.order(Arel.sql('count(*) DESC')).limit(10).count
+      fb_top = fb_base.order(Arel.sql('count(*) DESC')).limit(@limit).count
       if fb_top.any?
         threshold = fb_top.values.last
         @first_bloods = fb_base.having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
@@ -377,7 +378,7 @@ class ReportController < ApplicationController
 
     sorted_chars_ids = chars_stats.keys.sort_by { |id| s = chars_stats[id]; [-s.solved_count, s.total_chars] }
     if sorted_chars_ids.any?
-      last_stat = chars_stats[sorted_chars_ids.first(10).last]
+      last_stat = chars_stats[sorted_chars_ids.first(@limit).last]
       @least_chars = chars_stats.values.select { |s| s.solved_count > last_stat.solved_count || (s.solved_count == last_stat.solved_count && s.total_chars <= last_stat.total_chars) }
         .sort_by { |s| [-s.solved_count, s.total_chars] }
         .map { |s| [s.id, {solved: s.solved_count, value: s.total_chars}] }.to_h
@@ -405,7 +406,7 @@ class ReportController < ApplicationController
 
     sorted_time_ids = time_stats.keys.sort_by { |id| s = time_stats[id]; [-s.solved_count, s.total_time] }
     if sorted_time_ids.any?
-      last_stat = time_stats[sorted_time_ids.first(10).last]
+      last_stat = time_stats[sorted_time_ids.first(@limit).last]
       @fastest_runtime = time_stats.values.select { |s| s.solved_count > last_stat.solved_count || (s.solved_count == last_stat.solved_count && s.total_time <= last_stat.total_time) }
         .sort_by { |s| [-s.solved_count, s.total_time] }
         .map { |s| [s.id, {solved: s.solved_count, value: s.total_time}] }.to_h
@@ -433,7 +434,7 @@ class ReportController < ApplicationController
 
     sorted_mem_ids = mem_stats.keys.sort_by { |id| s = mem_stats[id]; [-s.solved_count, s.total_mem] }
     if sorted_mem_ids.any?
-      last_stat = mem_stats[sorted_mem_ids.first(10).last]
+      last_stat = mem_stats[sorted_mem_ids.first(@limit).last]
       @least_memory = mem_stats.values.select { |s| s.solved_count > last_stat.solved_count || (s.solved_count == last_stat.solved_count && s.total_mem <= last_stat.total_mem) }
         .sort_by { |s| [-s.solved_count, s.total_mem] }
         .map { |s| [s.id, {solved: s.solved_count, value: s.total_mem}] }.to_h
@@ -442,22 +443,63 @@ class ReportController < ApplicationController
     end
 
     # 8. Score Growth
-    if @since_time && @until_time
-      since_scores = get_total_scores_at(@since_time, exclude_user_ids.uniq, selected_prob_ids, params[:group_mode] == '1')
-      until_scores = get_total_scores_at(@until_time, exclude_user_ids.uniq, selected_prob_ids, params[:group_mode] == '1')
+    since_scores = @since_time ? get_total_scores_at(@since_time, exclude_user_ids.uniq, selected_prob_ids, params[:group_mode] == '1') : {}
+    until_scores = get_total_scores_at(@until_time, exclude_user_ids.uniq, selected_prob_ids, params[:group_mode] == '1')
 
-      @score_growth = {}
-      until_scores.each do |id, score|
-        growth = score - (since_scores[id] || 0)
-        @score_growth[id] = growth if growth > 0.01 # filter out tiny growth from floats
-      end
+    @score_growth = {}
+    until_scores.each do |id, score_data|
+      since_data = since_scores[id] || { raw: 0.0, deducted: 0.0, bonus: 0.0, total: 0.0 }
+      growth = score_data[:total] - since_data[:total]
+      raw_growth = score_data[:raw] - since_data[:raw]
+      bonus_growth = score_data[:bonus] - since_data[:bonus]
+      deducted_growth = score_data[:deducted] - since_data[:deducted]
 
-      @score_growth = @score_growth.sort_by { |_, v| -v }.take(10).to_h
-      if params[:group_mode] == '1'
-        @score_growth_groups = Group.where(id: @score_growth.keys).index_by(&:id)
-      else
-        @score_growth_users = User.where(id: @score_growth.keys).index_by(&:id)
+      if growth > 0.01
+        @score_growth[id] = {
+          growth: growth,
+          raw_growth: raw_growth,
+          bonus_growth: bonus_growth,
+          deducted_growth: deducted_growth
+        }
       end
+    end
+
+    # Fetch completion times for sorting ties (earliest to reach final score)
+    max_pts_sub = Submission.where(problem_id: selected_prob_ids)
+    max_pts_sub = max_pts_sub.where("submitted_at <= ?", @until_time) if @until_time
+    max_pts_sub = max_pts_sub.group(:user_id, :problem_id).select('user_id, problem_id, MAX(points) as max_pts')
+
+    first_bests = Submission.joins("INNER JOIN (#{max_pts_sub.to_sql}) mp ON submissions.user_id = mp.user_id AND submissions.problem_id = mp.problem_id AND submissions.points = mp.max_pts")
+    first_bests = first_bests.where("submissions.submitted_at <= ?", @until_time) if @until_time
+    first_bests = first_bests.group(:user_id, :problem_id).select('submissions.user_id, MIN(submissions.submitted_at) as first_best_time')
+
+    user_completion_times = Submission.from("(#{first_bests.to_sql}) fb")
+      .group('fb.user_id')
+      .select('fb.user_id, MAX(fb.first_best_time) as last_completed_time')
+      .each_with_object({}) { |r, h| h[r.user_id] = r.last_completed_time }
+
+    if params[:group_mode] == '1'
+      group_completion_times = {}
+      Group.joins(:groups_users).pluck('groups.id, groups_users.user_id').each do |group_id, user_id|
+        t = user_completion_times[user_id]
+        if t
+          group_completion_times[group_id] = group_completion_times[group_id] ? [group_completion_times[group_id], t].max : t
+        end
+      end
+      completion_times = group_completion_times
+    else
+      completion_times = user_completion_times
+    end
+
+    @score_growth = @score_growth.sort_by do |id, data|
+      time = completion_times[id] || Time.zone.now
+      [-data[:growth], time.to_i, id]
+    end.to_h
+
+    if params[:group_mode] == '1'
+      @score_growth_groups = Group.where(id: @score_growth.keys).index_by(&:id)
+    else
+      @score_growth_users = User.where(id: @score_growth.keys).index_by(&:id)
     end
   end
 
@@ -831,49 +873,80 @@ ORDER BY submitted_at
       @problem = Problem.find(params[:id])
     end
 
-    # Helper to get final scores (with deductions) at a given time
     def get_total_scores_at(time, admin_ids, prob_ids, group_mode = false)
       # 1. Max points per user/problem
-      max_pts = Submission.where("submitted_at <= ?", time)
-        .where(problem_id: prob_ids)
-        .group(:user_id, :problem_id)
+      max_pts = Submission.where(problem_id: prob_ids)
+      max_pts = max_pts.where("submitted_at <= ?", time) if time
+      max_pts = max_pts.group(:user_id, :problem_id)
         .select('user_id, problem_id, MAX(points) as max_pts')
 
       # 2. LLM costs per user/problem
       llm_costs = Comment.joins("INNER JOIN submissions ON comments.commentable_id = submissions.id AND comments.commentable_type = 'Submission'")
-        .where("submissions.submitted_at <= ?", time)
-        .where("submissions.problem_id": prob_ids)
+      llm_costs = llm_costs.where("submissions.submitted_at <= ?", time) if time
+      llm_costs = llm_costs.where("submissions.problem_id": prob_ids)
         .where(kind: 'llm_assist')
         .group('submissions.user_id, submissions.problem_id')
         .select('submissions.user_id, submissions.problem_id, SUM(comments.cost) as llm_cost')
 
       # 3. Hint costs per user/problem
       hint_costs = Comment.joins(:comment_reveals)
-        .where("comment_reveals.created_at <= ?", time)
-        .where(commentable_type: 'Problem')
+      hint_costs = hint_costs.where("comment_reveals.created_at <= ?", time) if time
+      hint_costs = hint_costs.where(commentable_type: 'Problem')
         .where(commentable_id: prob_ids)
         .group('comment_reveals.user_id, comments.commentable_id')
         .select('comment_reveals.user_id, comments.commentable_id as problem_id, SUM(comments.cost) as hint_cost')
 
+      # First Blood bonus calculation at `time`
+      bonus_scores = Hash.new(0.0)
+      bonus_problems = Problem.where(id: prob_ids).where.not(bonus_first_blood: [nil, 0])
+      bonus_problems.each do |p|
+        n = p.respond_to?(:first_n_bloods) ? p.first_n_bloods : 0
+        next if n <= 0
+        subs = p.submissions.tag_default
+          .where("submissions.points >= ?", p.full_score || 100)
+          .where.not(user_id: admin_ids)
+        subs = subs.where("submissions.submitted_at <= ?", time) if time
+        blood_user_ids = subs.order(submitted_at: :asc, id: :asc).limit(n).pluck(:user_id).uniq
+        blood_user_ids.each do |uid|
+          bonus_scores[uid] += p.bonus_first_blood.to_f
+        end
+      end
+
       if group_mode
-        Group.joins(:users).joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
+        group_bonus_scores = Hash.new(0.0)
+        Group.joins(:groups_users).pluck('groups.id, groups_users.user_id').each do |group_id, user_id|
+          group_bonus_scores[group_id] += bonus_scores[user_id]
+        end
+        bonus_scores = group_bonus_scores
+
+        raw_and_deductions = Group.joins(:users).joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
           .joins("INNER JOIN problems ON problems.id = mp.problem_id")
           .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
           .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
           .where.not(users: {id: admin_ids})
           .group('groups.id')
-          .select('groups.id', 'SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
-          .each_with_object({}) { |g, h| h[g.id] = g.total_score.to_f }
+          .select('groups.id', 'SUM(COALESCE(mp.max_pts, 0)) as raw_score', 'SUM(COALESCE(lc.llm_cost, 0) + COALESCE(hc.hint_cost, 0)) as deducted_score')
+          .each_with_object({}) { |g, h| h[g.id] = { raw: g.raw_score.to_f, deducted: g.deducted_score.to_f } }
       else
-        User.where.not(id: admin_ids)
+        raw_and_deductions = User.where.not(id: admin_ids)
           .joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
           .joins("INNER JOIN problems ON problems.id = mp.problem_id")
           .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
           .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
           .group('users.id')
-          .select('users.id', 'SUM(LEAST(COALESCE(mp.max_pts, 0), GREATEST(0, COALESCE(problems.full_score, 100) - COALESCE(lc.llm_cost, 0) - COALESCE(hc.hint_cost, 0)))) as total_score')
-          .each_with_object({}) { |u, h| h[u.id] = u.total_score.to_f }
+          .select('users.id', 'SUM(COALESCE(mp.max_pts, 0)) as raw_score', 'SUM(COALESCE(lc.llm_cost, 0) + COALESCE(hc.hint_cost, 0)) as deducted_score')
+          .each_with_object({}) { |u, h| h[u.id] = { raw: u.raw_score.to_f, deducted: u.deducted_score.to_f } }
       end
+
+      result = {}
+      all_ids = (raw_and_deductions.keys + bonus_scores.keys).uniq
+      all_ids.each do |id|
+        rd = raw_and_deductions[id] || { raw: 0.0, deducted: 0.0 }
+        bonus = bonus_scores[id] || 0.0
+        total = [0.0, rd[:raw] - rd[:deducted] + bonus].max
+        result[id] = { raw: rd[:raw], deducted: rd[:deducted], bonus: bonus, total: total }
+      end
+      result
     end
 
     def restrict_setter_reports

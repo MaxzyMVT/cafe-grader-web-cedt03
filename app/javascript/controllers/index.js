@@ -12,3 +12,6 @@ lazyLoadControllersFrom("controllers", application)
 
 import ReportFilterController from "controllers/report_filter_controller"
 application.register("report-filter", ReportFilterController)
+
+import CardPaginationController from "controllers/card_pagination_controller"
+application.register("card-pagination", CardPaginationController)
