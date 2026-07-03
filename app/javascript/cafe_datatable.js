@@ -52,7 +52,7 @@ function dt_button_renderer(label,{element_type = 'button',
       return `<div class="d-flex justify-content-center align-items-center">
         <div class="form-check form-switch">
           <input type="checkbox" class="form-check-input" data-row-id="${data}"
-          ${dataAction} ${dataCommand} ${dataConfirm} ${checked_text} ${dataField}>
+          ${dataAction} ${dataCommand} ${dataConfirm} ${checked_text} ${dataField} autocomplete="off">
         </div>
         </div>
       `

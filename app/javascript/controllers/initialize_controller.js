@@ -7,6 +7,20 @@ export default class extends Controller {
     // This 'connect' method runs when the controller is attached to an element.
     // For this global override, you'd attach it to <body> or <html>.
     this.setupTurboConfirm();
+    this.setupCheckboxCacheSync();
+  }
+
+  setupCheckboxCacheSync() {
+    // Sync checked attributes before Turbo caches the page so back/forward navigation displays correct switch states.
+    document.addEventListener("turbo:before-cache", () => {
+      document.querySelectorAll("input[type='checkbox']").forEach(cb => {
+        if (cb.checked) {
+          cb.setAttribute("checked", "checked");
+        } else {
+          cb.removeAttribute("checked");
+        }
+      });
+    });
   }
 
   // this setup the Turbo confirmation to use Bootstrap Modal

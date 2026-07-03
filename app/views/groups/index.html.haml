@@ -27,10 +27,10 @@
             %td= group.description
             %td
               .form-check.form-switch
-                %input.form-check-input{id: "group-#{group.id}-enabled-switch", checked: group.enabled, type: "checkbox", data: {action: 'group#toggle', 'row-id': group.id}}
+                %input.form-check-input{id: "group-#{group.id}-enabled-switch", checked: group.enabled, type: "checkbox", autocomplete: "off", data: {action: 'group#toggle', 'row-id': group.id}}
             %td
               .form-check.form-switch
-                %input.form-check-input{id: "group-#{group.id}-member-rename-switch", checked: group.allow_user_change_name, type: "checkbox", data: {action: 'group#toggleMemberRename', 'row-id': group.id}}
+                %input.form-check-input{id: "group-#{group.id}-member-rename-switch", checked: group.allow_user_change_name, type: "checkbox", autocomplete: "off", data: {action: 'group#toggleMemberRename', 'row-id': group.id}}
             %td.text-end.align-middle.py-0
               .d-inline-flex.align-items-center.gap-3
                 = link_to mdi('settings','md-24') + ' Manage', group, class: 'btn btn-flex btn-outline-primary border-0'
