@@ -157,7 +157,7 @@ class User < ApplicationRecord
   # is treated as a normal user
   #
   # valid action are :submit, :report, or :edit
-  def problems_for_action(action, respect_admin: true)
+  def problems_for_action(action, respect_admin: true, contest: nil)
     return Problem.all if (admin? || problem_setter?) && respect_admin
     return Problem.none unless enabled?
 
@@ -166,9 +166,9 @@ class User < ApplicationRecord
 
     res = if GraderConfiguration.multicontests?
       # legacy mode, have not been implemented yet
-      Problem.contests_problems_for_user(self.id).none
+      Problem.contests_problems_for_user(self.id, contest: contest).none
     elsif GraderConfiguration.contest_mode?
-      Problem.contests_problems_for_user(self.id)
+      Problem.contests_problems_for_user(self.id, contest: contest)
     else
       # normal mode
       if GraderConfiguration.use_problem_group?

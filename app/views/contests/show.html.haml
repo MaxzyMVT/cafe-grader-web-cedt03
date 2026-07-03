@@ -263,7 +263,7 @@
                             page.
                           %li.mb-1
                             A problem is only shown to users if it's 
-                            %strong.text-dark globally available 
+                            %strong.text-dark available 
                             and 
                             %strong.text-dark enabled 
                             in the contest.
@@ -279,13 +279,36 @@
                             arrows to sort the display order of problems for the contest users.
               .row
                 .col-12
+                  .d-flex.justify-content-start.align-items-center.mb-3
+                    .dropdown
+                      %button.btn.btn-outline-secondary.dropdown-toggle.shadow-sm.d-inline-flex.align-items-center.gap-1{type: 'button', 'data-bs-toggle': 'dropdown'}
+                        %span.mi.md-18 settings_suggest
+                        Bulk Actions
+                      %ul.dropdown-menu.dropdown-menu-end.border-0.shadow-sm
+                        %li
+                          = button_to do_all_problems_contest_path(@contest), class: 'dropdown-item d-flex align-items-center gap-2', value: 'enable', name: 'command',
+                            form: {data: {turbo: true}} do
+                            %span.mi.md-18.text-success check_circle
+                            Enable All
+                        %li
+                          = button_to do_all_problems_contest_path(@contest), class: 'dropdown-item d-flex align-items-center gap-2', value: 'disable', name: 'command',
+                            form: {data: {turbo: true}} do
+                            %span.mi.md-18.text-secondary block
+                            Disable All
+                        %li
+                          %hr.dropdown-divider
+                        %li
+                          = button_to do_all_problems_contest_path(@contest), class: 'dropdown-item d-flex align-items-center gap-2 text-danger', value: 'remove', name: 'command',
+                            form: {data: {turbo: true, 'turbo-confirm': 'Really remove all problems from the contest?'}} do
+                            %span.mi.md-18 library_books
+                            Remove All
                   %table#problem_table.table.datatable.table-hover{ data: { controller: 'row-reorder', 'row-reorder-url-value': do_problem_contest_path(@contest), 'row-reorder-record-param-name-value': 'problem_id', 'row-reorder-additional-params-value': { command: 'reorder' }.to_json } }
                     %thead
                       %tr
                         %th Number
                         %th Name
                         %th Full name
-                        %th.text-center Global Available
+                        %th.text-center Available
                         %th.text-center Enable
                         %th.text-center Allow LLM
                         %th.text-end Actions

@@ -181,7 +181,7 @@ class MainController < ApplicationController
 
   def prepare_list_information
     # list of problems for this user, considering the current mode
-    @problems = @current_user.problems_for_action(:submit, respect_admin: false).with_attached_statement.with_attached_attachment.includes(:public_tags).default_order
+    @problems = @current_user.problems_for_action(:submit, respect_admin: false, contest: @current_contest).with_attached_statement.with_attached_attachment.includes(:public_tags).default_order
 
     # calculate range of time (in contest mode)
     submissions = Submission.where(user: @current_user, problem: @problems)

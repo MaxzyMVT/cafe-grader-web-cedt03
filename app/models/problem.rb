@@ -169,9 +169,9 @@ class Problem < ApplicationRecord
   # Please use User.problems_for_action if you want config and admin to be taken into account
   #
   # This returns all Problem that is submittable by the user in a contest
-  scope :contests_problems_for_user, ->(user_id) {
+  scope :contests_problems_for_user, ->(user_id, contest: nil) {
     now = Time.zone.now
-    joins(contests_problems: {contest: :contests_users})
+    q = joins(contests_problems: {contest: :contests_users})
       .where(available: true)                   # available problems only
       .where('contests.enabled': true)          # contests is enabled
       .where('contests_users.user_id': user_id) # user is in the contest
@@ -179,7 +179,8 @@ class Problem < ApplicationRecord
       .where('contests_problems.enabled': true) # problem is enabled
       .where('ADDTIME(contests.start,-contests_users.start_offset_second) <= ?', now)
       .where('ADDTIME(contests.stop,contests_users.extra_time_second) >= ?', now)
-      .group('problems.id')
+    q = q.where('contests.id': contest.id) if contest
+    q.group('problems.id')
   }
 
   # return all problem that the user has "editing" rights in a contest

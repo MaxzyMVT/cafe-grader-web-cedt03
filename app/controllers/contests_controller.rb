@@ -311,6 +311,9 @@ class ContestsController < ApplicationController
       gp.update(enabled: !gp.enabled?)
     when 'toggle_llm'
       gp.update(allow_llm: !gp.allow_llm?)
+    when 'toggle_available'
+      @problem.update(available: !@problem.available)
+      @toast[:body] = "Problem #{@problem.name} availability was updated."
     when 'moveup', 'movedown'
       old_number = gp.number
       delta = params[:command] == 'moveup' ? -1.2 : 1.2

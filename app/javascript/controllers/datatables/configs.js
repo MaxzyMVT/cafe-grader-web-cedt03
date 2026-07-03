@@ -179,7 +179,7 @@ export const configs = {
           return data;
         }
       },
-      { data: 'available', render: cafe.dt.render.yes_no_pill(), className: 'text-center' },
+      { data: 'problem_id', render: cafe.dt.render.button(null, { element_type: 'switch', action: 'contest#postProblemAction', command: 'toggle_available', checked_data_field: 'available' }) },
       { data: 'problem_id', render: cafe.dt.render.button(null, { element_type: 'switch', action: 'contest#postProblemAction', command: 'toggle', checked_data_field: 'enabled' }) },
       { data: 'problem_id', render: cafe.dt.render.button(null, { element_type: 'switch', action: 'contest#postProblemAction', command: 'toggle_llm', checked_data_field: 'allow_llm' }) },
       { data: null, render: renderers.problemActionRenderer, className: 'py-1' }
