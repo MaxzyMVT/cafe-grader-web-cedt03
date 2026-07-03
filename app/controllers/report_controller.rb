@@ -454,7 +454,8 @@ class ReportController < ApplicationController
       bonus_growth = score_data[:bonus] - since_data[:bonus]
       deducted_growth = score_data[:deducted] - since_data[:deducted]
 
-      if growth > 0.01
+      # "but still not show sum '0' scorers (negative is meant to show)"
+      if growth.abs > 0.01
         @score_growth[id] = {
           growth: growth,
           raw_growth: raw_growth,
@@ -464,42 +465,70 @@ class ReportController < ApplicationController
       end
     end
 
-    # Fetch completion times for sorting ties (earliest to reach final score)
+    # Fetch completion times and passed counts for sorting ties
     max_pts_sub = Submission.where(problem_id: selected_prob_ids)
     max_pts_sub = max_pts_sub.where("submitted_at <= ?", @until_time) if @until_time
     max_pts_sub = max_pts_sub.group(:user_id, :problem_id).select('user_id, problem_id, MAX(points) as max_pts')
 
     first_bests = Submission.joins("INNER JOIN (#{max_pts_sub.to_sql}) mp ON submissions.user_id = mp.user_id AND submissions.problem_id = mp.problem_id AND submissions.points = mp.max_pts")
     first_bests = first_bests.where("submissions.submitted_at <= ?", @until_time) if @until_time
-    first_bests = first_bests.group(:user_id, :problem_id).select('submissions.user_id, MIN(submissions.submitted_at) as first_best_time')
+    first_bests = first_bests.group(:user_id, :problem_id).select('submissions.user_id, submissions.problem_id, MIN(submissions.submitted_at) as first_best_time')
 
     user_completion_times = Submission.from("(#{first_bests.to_sql}) fb")
       .group('fb.user_id')
       .select('fb.user_id, MAX(fb.first_best_time) as last_completed_time')
       .each_with_object({}) { |r, h| h[r.user_id] = r.last_completed_time }
 
+    # Passed counts query
+    best_subs = Submission.joins("INNER JOIN (#{first_bests.to_sql}) fb ON submissions.user_id = fb.user_id AND submissions.problem_id = fb.problem_id AND submissions.submitted_at = fb.first_best_time")
+      .select('submissions.user_id, submissions.grader_comment, submissions.points, submissions.problem_id')
+      
+    user_passed_counts = Hash.new(0)
+    best_subs.each do |sub|
+      comment = sub.grader_comment.to_s.gsub(/[\[\]\s]/, '')
+      if !comment.blank? && comment.match?(/\A[PS]*\z/)
+        user_passed_counts[sub.user_id] += 1
+      end
+    end
+
     if params[:group_mode] == '1'
       group_completion_times = {}
+      group_passed_counts = Hash.new(0)
       Group.joins(:groups_users).pluck('groups.id, groups_users.user_id').each do |group_id, user_id|
         t = user_completion_times[user_id]
         if t
           group_completion_times[group_id] = group_completion_times[group_id] ? [group_completion_times[group_id], t].max : t
         end
+        group_passed_counts[group_id] += user_passed_counts[user_id] || 0
       end
       completion_times = group_completion_times
+      passed_counts = group_passed_counts
+      
+      @score_growth_groups = Group.where(id: @score_growth.keys).index_by(&:id)
+      @score_growth_names = @score_growth_groups.transform_values { |g| g.name }
     else
       completion_times = user_completion_times
+      passed_counts = user_passed_counts
+      
+      @score_growth_users = User.where(id: @score_growth.keys).index_by(&:id)
+      @score_growth_names = @score_growth_users.transform_values { |u| u.full_name }
     end
 
     @score_growth = @score_growth.sort_by do |id, data|
-      time = completion_times[id] || Time.zone.now
-      [-data[:growth], time.to_i, id]
+      time = completion_times[id] || Time.zone.at(2147483647)
+      pass = passed_counts[id] || 0
+      name = @score_growth_names[id].to_s.downcase
+      [-data[:growth], time.to_i, -pass, name]
     end.to_h
 
-    if params[:group_mode] == '1'
-      @score_growth_groups = Group.where(id: @score_growth.keys).index_by(&:id)
-    else
-      @score_growth_users = User.where(id: @score_growth.keys).index_by(&:id)
+    # Expose helper details for frontend to read on DOM load
+    @score_growth_details = {}
+    @score_growth.each_key do |id|
+      @score_growth_details[id] = {
+        time: (completion_times[id] || Time.zone.at(2147483647)).to_i,
+        pass: passed_counts[id] || 0,
+        name: @score_growth_names[id].to_s
+      }
     end
   end
 

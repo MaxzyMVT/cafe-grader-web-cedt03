@@ -105,6 +105,31 @@ class ScoreboardController < ApplicationController
       end
     end
 
+    prob_ids = @problems.map(&:id)
+    # Fetch completion times and passed counts for sorting ties (earliest to reach final score)
+    max_pts_sub = Submission.where(problem_id: prob_ids)
+    max_pts_sub = max_pts_sub.group(:user_id, :problem_id).select('user_id, problem_id, MAX(points) as max_pts')
+
+    first_bests = Submission.joins("INNER JOIN (#{max_pts_sub.to_sql}) mp ON submissions.user_id = mp.user_id AND submissions.problem_id = mp.problem_id AND submissions.points = mp.max_pts")
+    first_bests = first_bests.group(:user_id, :problem_id).select('submissions.user_id, submissions.problem_id, MIN(submissions.submitted_at) as first_best_time')
+
+    user_completion_times = Submission.from("(#{first_bests.to_sql}) fb")
+      .group('fb.user_id')
+      .select('fb.user_id, MAX(fb.first_best_time) as last_completed_time')
+      .each_with_object({}) { |r, h| h[r.user_id] = r.last_completed_time }
+
+    # Passed counts query
+    best_subs = Submission.joins("INNER JOIN (#{first_bests.to_sql}) fb ON submissions.user_id = fb.user_id AND submissions.problem_id = fb.problem_id AND submissions.submitted_at = fb.first_best_time")
+      .select('submissions.user_id, submissions.grader_comment, submissions.points, submissions.problem_id')
+      
+    passed_counts = Hash.new(0)
+    best_subs.each do |sub|
+      comment = sub.grader_comment.to_s.gsub(/[\[\]\s]/, '')
+      if !comment.blank? && comment.match?(/\A[PS]*\z/)
+        passed_counts[sub.user_id] += 1
+      end
+    end
+
     if @mode == 'individual'
       @leaderboard = @users.map do |u|
         raw_sum = 0
@@ -128,8 +153,13 @@ class ScoreboardController < ApplicationController
 
         { user: u, total_score: [0.0, raw_sum - deducted + bonus].max, deducted_score: deducted, bonus_score: bonus }
       end
-      # Sort by total_score desc, then by name
-      @leaderboard.sort_by! { |entry| [-entry[:total_score], entry[:user].full_name.to_s.downcase] }
+      # Sort by total_score desc, then by completion time asc, then by passed count desc, then by name
+      @leaderboard.sort_by! do |entry|
+        uid = entry[:user].id
+        comp_time = user_completion_times[uid] || Time.zone.at(2147483647)
+        pass_count = passed_counts[uid] || 0
+        [-entry[:total_score], comp_time.to_i, -pass_count, entry[:user].full_name.to_s.downcase]
+      end
       
       # Assign dense ranks
       current_rank = 1
@@ -191,11 +221,21 @@ class ScoreboardController < ApplicationController
           group_total = [0.0, group_raw_total - group_deducted + group_bonus].max
         end
 
-        group_members.sort_by! { |m| [-m[:total_score], m[:user].full_name.to_s.downcase] }
+        group_members.sort_by! do |m|
+          uid = m[:user].id
+          comp_time = user_completion_times[uid] || Time.zone.at(2147483647)
+          pass_count = passed_counts[uid] || 0
+          [-m[:total_score], comp_time.to_i, -pass_count, m[:user].full_name.to_s.downcase]
+        end
         
         { group: g, total_score: group_total, deducted_score: group_deducted, bonus_score: group_bonus, members: group_members }
       end
-      @leaderboard.sort_by! { |entry| [-entry[:total_score], entry[:group].name.to_s.downcase] }
+      @leaderboard.sort_by! do |entry|
+        group_member_uids = entry[:group].users.where(enabled: true, groups_users: { enabled: true }).pluck(:id)
+        group_comp_time = group_member_uids.map { |uid| user_completion_times[uid] }.compact.max || Time.zone.at(2147483647)
+        group_pass_count = group_member_uids.sum { |uid| passed_counts[uid] || 0 }
+        [-entry[:total_score], group_comp_time.to_i, -group_pass_count, entry[:group].name.to_s.downcase]
+      end
       
       current_rank = 1
       previous_score = nil
