@@ -197,7 +197,7 @@ Cheers!
         finalized: Read Only
   errors:
     messages:
-      name_format: contains invalid characters. Only letters, numbers, <code>( )</code>, <code>[ ]</code>, <code>-</code> and <code>_</code> are allowed.
+      name_format: contains invalid characters. Only letters, numbers, spaces, <code>( )</code>, <code>[ ]</code>, <code>-</code> and <code>_</code> are allowed.
 
 
 
