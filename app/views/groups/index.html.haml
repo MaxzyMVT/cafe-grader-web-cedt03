@@ -1,4 +1,4 @@
-.row.my-2
+.row.my-2{data: {controller: 'group'}}
   .col-md-5.mb-3
     .d-flex.flex-column.gap-1.mb-3
       %small.text-secondary.text-uppercase.fw-bold.ls-1 Access Control
@@ -18,6 +18,7 @@
           %th Name
           %th Description
           %th Enabled?
+          %th Members can rename group
           %th
       %tbody
         - @groups.each do |group|
@@ -27,6 +28,9 @@
             %td
               .form-check.form-switch
                 %input.form-check-input{id: "group-#{group.id}-enabled-switch", checked: group.enabled, type: "checkbox", data: {action: 'group#toggle', 'row-id': group.id}}
+            %td
+              .form-check.form-switch
+                %input.form-check-input{id: "group-#{group.id}-member-rename-switch", checked: group.allow_user_change_name, type: "checkbox", data: {action: 'group#toggleMemberRename', 'row-id': group.id}}
             %td.text-end.align-middle.py-0
               .d-inline-flex.align-items-center.gap-3
                 = link_to mdi('settings','md-24') + ' Manage', group, class: 'btn btn-flex btn-outline-primary border-0'
@@ -34,6 +38,9 @@
 
 -# hidden form for group toggle
 = form_with url: toggle_group_path(-123), html: {data: {turbo: true, 'group-target': 'toggleForm', action: 'turbo:submit-end->group#resetToggleForm'}} do
+  /
+
+= form_with url: toggle_member_rename_group_path(-123), html: {data: {turbo: true, 'group-target': 'toggleMemberRenameForm', action: 'turbo:submit-end->group#resetToggleForm'}} do
   /
 
 :javascript
@@ -45,7 +52,7 @@
         topStart: 'info',
         topEnd: 'search',
       },
-      columnDefs: [{orderable: false, targets: [2,3]} ],
+      columnDefs: [{orderable: false, targets: [2,3,4]} ],
     }
 
     table = $('#group-table').DataTable(table_config)

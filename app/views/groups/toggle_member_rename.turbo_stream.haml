@@ -5,6 +5,11 @@
       showSwitch.checked = #{@group.allow_user_change_name?};
       showSwitch.disabled = false;
     }
+    const indexSwitch = document.getElementById("group-#{@group.id}-member-rename-switch");
+    if (indexSwitch) {
+      indexSwitch.checked = #{@group.allow_user_change_name?};
+      indexSwitch.disabled = false;
+    }
     const showBadge = document.getElementById('group-member-rename-badge');
     if (showBadge) {
       showBadge.className = #{@group.allow_user_change_name?} ? 'badge bg-success' : 'badge bg-secondary';
