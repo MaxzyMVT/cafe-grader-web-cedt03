@@ -243,22 +243,26 @@ class User < ApplicationRecord
   end
 
   # return contests of this user that is both enabled and the current time
-  # is during the contest
+  # is during the contest (including pre-contest and post-contest buffer times)
   def active_contests
     if GraderConfiguration.contest_mode?
-      return contests.where(enabled: true).where('start <= ? and stop >= ?', Time.zone.now, Time.zone.now)
+      contests.where(enabled: true).select do |contest|
+        pre_start = contest.start - (contest.pre_contest_seconds || 0).seconds
+        post_stop = contest.stop + (contest.post_contest_seconds || 0).seconds
+        Time.zone.now >= pre_start && Time.zone.now <= post_stop
+      end
     else
-      return Contest.none
+      return []
     end
   end
 
-  # return datetime range of active contests
+  # return datetime range of active contests (including pre-contest and post-contest buffer times)
   def active_contests_range
     start = Date.new(9999, 1, 1).to_time
     stop = Date.new(1, 1, 1).to_time
     active_contests.each do |contest|
-      start = [start, contest.start].min
-      stop = [stop, contest.stop].max
+      start = [start, contest.start - (contest.pre_contest_seconds || 0).seconds].min
+      stop = [stop, contest.stop + (contest.post_contest_seconds || 0).seconds].max
     end
     return start..stop
   end

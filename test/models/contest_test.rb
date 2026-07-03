@@ -80,6 +80,29 @@ class ContestTest < ActiveSupport::TestCase
 
     # contest_c ended 1 day ago
     assert_equal :ended, contests(:contest_c).contest_status
+
+    # Test pre/post contest seconds
+    contest = contests(:contest_a)
+    contest.start = 10.minutes.from_now
+    contest.stop = 20.minutes.from_now
+    
+    # Case 1: no buffer (returns :later since now is before start)
+    contest.pre_contest_seconds = 0
+    assert_equal :later, contest.contest_status
+    
+    # Case 2: inside pre contest buffer
+    contest.pre_contest_seconds = 15 * 60 # 15 minutes
+    assert_equal :pre, contest.contest_status
+
+    # Case 3: inside post contest buffer
+    contest.start = 20.minutes.ago
+    contest.stop = 10.minutes.ago
+    contest.post_contest_seconds = 15 * 60 # 15 minutes
+    assert_equal :post, contest.contest_status
+
+    # Case 4: after post contest buffer
+    contest.post_contest_seconds = 5 * 60 # 5 minutes (ended 10 mins ago)
+    assert_equal :ended, contest.contest_status
   end
 
   test "get_next_name generates unique name" do

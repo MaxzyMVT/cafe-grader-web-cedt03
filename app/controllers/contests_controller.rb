@@ -584,7 +584,7 @@ class ContestsController < ApplicationController
       if @contest && @contest.finalized?
         params.require(:contest).permit(:finalized)
       else
-        params.require(:contest).permit(:name, :description, :enabled, :lock, :start, :stop, :finalized)
+        params.require(:contest).permit(:name, :description, :enabled, :lock, :start, :stop, :finalized, :pre_contest_seconds, :post_contest_seconds)
       end
     end
 

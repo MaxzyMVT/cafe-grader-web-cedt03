@@ -122,8 +122,13 @@ class Contest < ApplicationRecord
   # return :later, :pre, :during, :post, :ended
   def contest_status
     current_time = Time.zone.now
-    return :ended if current_time > self.stop
-    return :later if current_time < self.start
+    pre_start = self.start - (self.pre_contest_seconds || 0).seconds
+    post_stop = self.stop + (self.post_contest_seconds || 0).seconds
+
+    return :ended if current_time > post_stop
+    return :later if current_time < pre_start
+    return :pre if current_time < self.start
+    return :post if current_time > self.stop
     return :during
   end
 
