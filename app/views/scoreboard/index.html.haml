@@ -38,9 +38,9 @@
                   %th.text-center{style: "min-width: 60px;"} Rank
                   %th{style: "min-width: 200px;"} Name
                   %th.text-center{style: "min-width: 80px;"} Sum
-                  - unless GraderConfiguration.disable_bonus?
+                  - if GraderConfiguration.enable_bonus?
                     %th.text-center{style: "min-width: 80px;"} Bonus
-                  - unless GraderConfiguration.disable_penalty?
+                  - if GraderConfiguration.enable_penalty?
                     %th.text-center{style: "min-width: 80px;"} Deducted
                   - @problems.each do |p|
                     %th.text-center.problem-header{title: p.full_name}
@@ -65,9 +65,9 @@
                           %br
                           %small.text-muted (You)
                       %td.text-center.fw-bold= format_score(entry[:total_score])
-                      - unless GraderConfiguration.disable_bonus?
+                      - if GraderConfiguration.enable_bonus?
                         %td.text-center.text-success= format_score(entry[:bonus_score]) if entry[:bonus_score].to_f > 0
-                      - unless GraderConfiguration.disable_penalty?
+                      - if GraderConfiguration.enable_penalty?
                         %td.text-center.text-danger= format_score(entry[:deducted_score]) if entry[:deducted_score].to_f > 0
                       - @problems.each do |p|
                         - if user_associated_with_problem?(entry[:user].id, p.id)
@@ -91,9 +91,9 @@
                       %td.text-center.fw-bold= entry[:rank]
                       %td.fw-bold= entry[:group].name
                       %td.text-center.fw-bold= format_score(entry[:total_score])
-                      - unless GraderConfiguration.disable_bonus?
+                      - if GraderConfiguration.enable_bonus?
                         %td.text-center.text-success.fw-bold= format_score(entry[:bonus_score]) if entry[:bonus_score].to_f > 0
-                      - unless GraderConfiguration.disable_penalty?
+                      - if GraderConfiguration.enable_penalty?
                         %td.text-center.text-danger= format_score(entry[:deducted_score]) if entry[:deducted_score].to_f > 0
                       - @problems.each do |p|
                         - if group_associated_with_problem?(entry[:group].id, p.id)
@@ -115,9 +115,9 @@
                                 %br
                                 %small.text-muted (You)
                         %td.text-center= format_score(m[:total_score])
-                        - unless GraderConfiguration.disable_bonus?
+                        - if GraderConfiguration.enable_bonus?
                           %td.text-center.text-success= format_score(m[:bonus_score]) if m[:bonus_score].to_f > 0
-                        - unless GraderConfiguration.disable_penalty?
+                        - if GraderConfiguration.enable_penalty?
                           %td.text-center.text-danger= format_score(m[:deducted_score]) if m[:deducted_score].to_f > 0
                         - @problems.each do |p|
                           - if user_associated_with_problem?(m[:user].id, p.id)

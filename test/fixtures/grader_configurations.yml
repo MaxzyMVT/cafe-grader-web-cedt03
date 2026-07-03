@@ -182,4 +182,14 @@ GraderConfiguration_30:
   value_type: boolean
   value: 'true'
 
+GraderConfiguration_31:
+  key: gimmicks.enable_bonus
+  value_type: boolean
+  value: 'true'
+
+GraderConfiguration_32:
+  key: gimmicks.enable_penalty
+  value_type: boolean
+  value: 'true'
+
 

@@ -135,11 +135,11 @@ class ScoreboardController < ApplicationController
         @problems.each do |p|
           raw_sum += @scores[u.id][p.id] || 0
         end
-        deducted = GraderConfiguration.disable_penalty? ? 0 : (@user_deductions[u.id] || 0)
+        deducted = GraderConfiguration.enable_penalty? ? (@user_deductions[u.id] || 0) : 0
         
         # Calculate bonus for this user
         bonus = 0
-        unless GraderConfiguration.disable_bonus?
+        if GraderConfiguration.enable_bonus?
           if GraderConfiguration.show_first_bloods?
             @problems.each do |p|
               u_ids = @first_blood_users[p.id] || []
@@ -190,11 +190,11 @@ class ScoreboardController < ApplicationController
           @problems.each do |p|
             user_raw_total += @scores[u.id][p.id] || 0
           end
-          user_deducted = GraderConfiguration.disable_penalty? ? 0 : (@user_deductions[u.id] || 0)
+          user_deducted = GraderConfiguration.enable_penalty? ? (@user_deductions[u.id] || 0) : 0
           
           # Calculate bonus for this user
           user_bonus = 0
-          unless GraderConfiguration.disable_bonus?
+          if GraderConfiguration.enable_bonus?
             if GraderConfiguration.show_first_bloods?
               @problems.each do |p|
                 u_ids = @first_blood_users[p.id] || []

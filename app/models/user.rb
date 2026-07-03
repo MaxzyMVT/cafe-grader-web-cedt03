@@ -128,8 +128,8 @@ class User < ApplicationRecord
 
     total_deductions = problem_hint_deductions + submission_deductions
     
-    deductions = GraderConfiguration.disable_penalty? ? 0.0 : total_deductions
-    bonus = GraderConfiguration.disable_bonus? ? 0.0 : bonus_score
+    deductions = GraderConfiguration.enable_penalty? ? total_deductions : 0.0
+    bonus = GraderConfiguration.enable_bonus? ? bonus_score : 0.0
 
     [0.0, (raw_problem_scores - deductions + bonus).to_f].max
   end
