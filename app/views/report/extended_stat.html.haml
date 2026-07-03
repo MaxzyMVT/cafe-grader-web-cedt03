@@ -70,14 +70,23 @@
               Loading list...
 
       .col-md-6.col-lg-4
-        .card.card-shadow.h-100
-          .card-header.bg-info.text-white.fw-bold 
-            %i.mi.mi-trending-up.me-2
-            Score Growth
-          .card-body.p-0{data: { controller: 'card-pagination' }, style: 'max-height: 480px; overflow-y: auto; overscroll-behavior: contain;'}
-            %ul.list-group.list-group-flush
+        .card.card-shadow.h-100{data: { controller: 'card-pagination' }}
+          .card-header.bg-info.text-white.fw-bold.d-flex.align-items-center.gap-2
+            .d-flex.align-items-center
+              %i.mi.mi-trending-up.me-2
+              Score Growth
+            .btn-group.ms-auto{role: 'group'}
+              %input#growth-raw.btn-check{type: 'checkbox', checked: true, data: { 'card-pagination-target': 'rawCheckbox', action: 'change->card-pagination#recalculate' }}
+              %label.btn.btn-outline-secondary.btn-sm.py-0.px-2{for: 'growth-raw', style: 'font-size: 0.75rem;'} Raw
+              %input#growth-bonus.btn-check{type: 'checkbox', checked: true, data: { 'card-pagination-target': 'bonusCheckbox', action: 'change->card-pagination#recalculate' }}
+              %label.btn.btn-outline-secondary.btn-sm.py-0.px-2{for: 'growth-bonus', style: 'font-size: 0.75rem;'} Bonus
+              %input#growth-deducted.btn-check{type: 'checkbox', checked: true, data: { 'card-pagination-target': 'deductedCheckbox', action: 'change->card-pagination#recalculate' }}
+              %label.btn.btn-outline-secondary.btn-sm.py-0.px-2{for: 'growth-deducted', style: 'font-size: 0.75rem;'} Penalty
+          .card-body.p-0{data: { 'card-pagination-target': 'scrollContainer' }, style: 'max-height: 480px; overflow-y: auto; overscroll-behavior: contain;'}
+            %ul.list-group.list-group-flush{data: { 'card-pagination-target': 'listContainer' }}
               - @score_growth.each_with_index do |(id, data), i|
-                %li.list-group-item.d-flex.align-items-center.gap-2{data: { 'card-pagination-target': 'item' }}
+                - details = @score_growth_details[id] || {}
+                %li.list-group-item.d-flex.align-items-center.gap-2{data: { 'card-pagination-target': 'item', raw: data[:raw_growth].to_f, bonus: data[:bonus_growth].to_f, deducted: data[:deducted_growth].to_f, time: details[:time], pass: details[:pass], name: details[:name] }}
                   %span.badge.bg-light.text-dark{style: 'min-width: 2rem;'}= i + 1
                   .flex-grow-1.text-truncate
                     - if params[:group_mode] == '1'
