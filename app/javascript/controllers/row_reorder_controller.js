@@ -44,9 +44,12 @@ export default class extends Controller {
     const targetRow = event.target.closest("tr");
     if (targetRow && targetRow !== draggedRow && targetRow.parentNode === draggedRow.parentNode) {
       const parent = targetRow.parentNode;
-      const rect = targetRow.getBoundingClientRect();
-      const next = (event.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-      parent.insertBefore(draggedRow, next ? targetRow.nextSibling : targetRow);
+      const position = draggedRow.compareDocumentPosition(targetRow);
+      if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+        parent.insertBefore(draggedRow, targetRow.nextSibling);
+      } else if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+        parent.insertBefore(draggedRow, targetRow);
+      }
     }
   }
 
