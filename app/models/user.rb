@@ -159,7 +159,7 @@ class User < ApplicationRecord
   # valid action are :submit, :report, or :edit
   def problems_for_action(action, respect_admin: true, contest: nil)
     return Problem.all if (admin? || problem_setter?) && respect_admin
-    return Problem.none unless enabled?
+    return Problem.none unless enabled? || (admin? || problem_setter?)
 
     action = action.to_sym
     return Problem.none if [:edit, :report].include?(action)
