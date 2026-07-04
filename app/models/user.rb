@@ -168,7 +168,20 @@ class User < ApplicationRecord
       # legacy mode, have not been implemented yet
       Problem.contests_problems_for_user(self.id, contest: contest).none
     elsif GraderConfiguration.contest_mode?
-      Problem.contests_problems_for_user(self.id, contest: contest)
+      if (admin? || problem_setter?)
+        if contest
+          Problem.joins(:contests_problems)
+                 .where(available: true)
+                 .where(contests_problems: { contest_id: contest.id, enabled: true })
+        else
+          Problem.joins(contests_problems: :contest)
+                 .where(available: true)
+                 .where(contests_problems: { enabled: true })
+                 .where(contests: { enabled: true })
+        end
+      else
+        Problem.contests_problems_for_user(self.id, contest: contest)
+      end
     else
       # normal mode
       if GraderConfiguration.use_problem_group?
