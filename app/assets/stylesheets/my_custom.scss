@@ -577,20 +577,20 @@ golden-btn + .golden-btn { margin-top: 1em; }
     thead th {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 100;
       background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-light-bg, #f8f9fa)) !important;
 
       &:nth-child(1) {
         left: 0;
-        z-index: 12;
+        z-index: 120;
       }
       &:nth-child(2) {
         left: 60px;
-        z-index: 12;
+        z-index: 120;
       }
       &:nth-child(3) {
         left: 260px;
-        z-index: 12;
+        z-index: 120;
         border-right: 2px solid var(--bs-border-color, #dee2e6) !important;
       }
     }
