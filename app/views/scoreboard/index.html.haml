@@ -137,10 +137,12 @@
                               %span{style: "opacity: 0.4;"} —
 
 :css
-  .scoreboard-card {
+  .scoreboard-card, .scoreboard-card:hover {
     mask-image: none !important;
     -webkit-mask-image: none !important;
     isolation: auto !important;
+    transform: none !important;
+    box-shadow: none !important;
   }
   .scoreboard-table, .scoreboard-table tr, .scoreboard-table td, .scoreboard-table th {
     transition: none !important;

@@ -556,10 +556,12 @@ golden-btn + .golden-btn { margin-top: 1em; }
 // Scoreboard card: disable expensive compositing layers from premium theme's .card
 // (mask-image + isolation create per-cell compositing cost on hover;
 //  overflow:hidden already handles border-radius clipping like on /main/list)
-.scoreboard-card {
+.scoreboard-card, .scoreboard-card:hover {
   isolation: auto !important;
   -webkit-mask-image: none !important;
   mask-image: none !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 // Scoreboard sticky columns styling
