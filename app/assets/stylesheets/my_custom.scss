@@ -785,3 +785,13 @@ table.dataTable thead td span.dt-column-order {
     display: inline-block;
   }
 }
+
+/* Theme-specific hyperlink coloring */
+a:not(.btn):not(.nav-link):not(.dropdown-item):not(.badge):not(.nav-tabs .nav-link):not(.page-link) {
+  color: var(--bs-link-color) !important;
+  transition: color 0.15s ease-in-out;
+
+  &:hover {
+    color: var(--bs-link-hover-color) !important;
+  }
+}
