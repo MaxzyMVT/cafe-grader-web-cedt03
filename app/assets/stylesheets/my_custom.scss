@@ -797,7 +797,26 @@ a:not(.btn):not(.nav-link):not(.dropdown-item):not(.badge):not(.nav-tabs .nav-li
 }
 
 /* Theme-specific inner component surface styling (e.g. child replies, inner cards) */
-.card.bg-light {
+body:not([data-theme]) .card .card,
+body[data-theme=""] .card .card,
+[data-theme] .card .card,
+body:not([data-theme]) .card.bg-light,
+body[data-theme=""] .card.bg-light,
+[data-theme] .card.bg-light {
   background-color: var(--color-inner-surface, #f8f9fa) !important;
   border: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.12)) !important;
+}
+
+/* ASCII-safe escape sequences for DataTables sort icons to prevent charset encoding issues */
+table.dataTable thead th.dt-orderable-asc span.dt-column-order:before,
+table.dataTable thead th.dt-ordering-asc span.dt-column-order:before,
+table.dataTable thead td.dt-orderable-asc span.dt-column-order:before,
+table.dataTable thead td.dt-ordering-asc span.dt-column-order:before {
+  content: "\25b2" !important;
+}
+table.dataTable thead th.dt-orderable-desc span.dt-column-order:after,
+table.dataTable thead th.dt-ordering-desc span.dt-column-order:after,
+table.dataTable thead td.dt-orderable-desc span.dt-column-order:after,
+table.dataTable thead td.dt-ordering-desc span.dt-column-order:after {
+  content: "\25bc" !important;
 }
