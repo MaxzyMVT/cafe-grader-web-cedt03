@@ -117,7 +117,9 @@ class ReportControllerTest < ActionDispatch::IntegrationTest
       points: 100,
       submitted_at: Time.zone.parse("2026-05-20 10:00:00"),
       language: languages(:Language_c),
-      number: 1
+      number: 1,
+      status: :done,
+      grader_comment: '[P]'
     )
 
     # Sub 2: James submits and gets 100 at 10:05 (later passing)
@@ -127,7 +129,9 @@ class ReportControllerTest < ActionDispatch::IntegrationTest
       points: 100,
       submitted_at: Time.zone.parse("2026-05-20 10:05:00"),
       language: languages(:Language_c),
-      number: 1
+      number: 1,
+      status: :done,
+      grader_comment: '[P]'
     )
 
     sign_in_as("admin", "admin")

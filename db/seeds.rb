@@ -57,17 +57,17 @@ CONFIGURATIONS =
     },
 
     {
-      key: 'gimmicks.disable_penalty',
+      key: 'gimmicks.enable_penalty',
       value_type: 'boolean',
-      default_value: 'false',
-      description: 'If true, the scoreboard will show scores without any deductions (penalties).'
+      default_value: 'true',
+      description: 'If true, the scoreboard will show scores with deductions (penalties).'
     },
 
     {
-      key: 'gimmicks.disable_bonus',
+      key: 'gimmicks.enable_bonus',
       value_type: 'boolean',
-      default_value: 'false',
-      description: 'If true, the scoreboard and header will not calculate or show bonus points.'
+      default_value: 'true',
+      description: 'If true, the scoreboard and header will calculate and show bonus points.'
     },
 
     {

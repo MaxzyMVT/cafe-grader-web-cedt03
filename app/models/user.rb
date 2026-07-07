@@ -128,8 +128,8 @@ class User < ApplicationRecord
 
     total_deductions = problem_hint_deductions + submission_deductions
     
-    deductions = GraderConfiguration.disable_penalty? ? 0.0 : total_deductions
-    bonus = GraderConfiguration.disable_bonus? ? 0.0 : bonus_score
+    deductions = GraderConfiguration.enable_penalty? ? total_deductions : 0.0
+    bonus = GraderConfiguration.enable_bonus? ? bonus_score : 0.0
 
     [0.0, (raw_problem_scores - deductions + bonus).to_f].max
   end
@@ -159,7 +159,7 @@ class User < ApplicationRecord
   # valid action are :submit, :report, or :edit
   def problems_for_action(action, respect_admin: true, contest: nil)
     return Problem.all if (admin? || problem_setter?) && respect_admin
-    return Problem.none unless enabled?
+    return Problem.none unless enabled? || (admin? || problem_setter?)
 
     action = action.to_sym
     return Problem.none if [:edit, :report].include?(action)
@@ -168,7 +168,20 @@ class User < ApplicationRecord
       # legacy mode, have not been implemented yet
       Problem.contests_problems_for_user(self.id, contest: contest).none
     elsif GraderConfiguration.contest_mode?
-      Problem.contests_problems_for_user(self.id, contest: contest)
+      if (admin? || problem_setter?)
+        if contest
+          Problem.joins(:contests_problems)
+                 .where(available: true)
+                 .where(contests_problems: { contest_id: contest.id, enabled: true })
+        else
+          Problem.joins(contests_problems: :contest)
+                 .where(available: true)
+                 .where(contests_problems: { enabled: true })
+                 .where(contests: { enabled: true })
+        end
+      else
+        Problem.contests_problems_for_user(self.id, contest: contest)
+      end
     else
       # normal mode
       if GraderConfiguration.use_problem_group?

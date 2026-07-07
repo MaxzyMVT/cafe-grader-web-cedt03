@@ -14,7 +14,7 @@ class GroupTest < ActiveSupport::TestCase
   end
 
   test "name must be unique" do
-    group = Group.new(name: "Group A")
+    group = Group.new(name: "GroupA")
     assert_not group.valid?
     assert group.errors[:name].any?
   end

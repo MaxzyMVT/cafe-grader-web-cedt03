@@ -24,8 +24,8 @@ class GraderConfiguration < ApplicationRecord
   SYSTEM_MINIMUM_LAST_LOGIN_TIME = 'system.min_last_login_time'
   SYSTEM_MESSAGE_ENABLED = 'system.message_enabled'
   HINT_ENABLE_ALL_HINTS = 'gimmicks.enable_all_hints'
-  SYSTEM_DISABLE_PENALTY = 'gimmicks.disable_penalty'
-  SYSTEM_DISABLE_BONUS = 'gimmicks.disable_bonus'
+  SYSTEM_ENABLE_PENALTY = 'gimmicks.enable_penalty'
+  SYSTEM_ENABLE_BONUS = 'gimmicks.enable_bonus'
   GIMMICKS_ENABLE_FIRST_BLOODS = 'gimmicks.enable_first_bloods'
   GIMMICKS_ENABLE_SUBMISSION_LIMITS = 'gimmicks.enable_submission_limits'
 
@@ -152,12 +152,12 @@ class GraderConfiguration < ApplicationRecord
     get(HINT_ENABLE_ALL_HINTS) == true
   end
 
-  def self.disable_penalty?
-    get(SYSTEM_DISABLE_PENALTY) == true
+  def self.enable_penalty?
+    get(SYSTEM_ENABLE_PENALTY) == true
   end
 
-  def self.disable_bonus?
-    get(SYSTEM_DISABLE_BONUS) == true
+  def self.enable_bonus?
+    get(SYSTEM_ENABLE_BONUS) == true
   end
 
   def self.show_first_bloods?

@@ -556,10 +556,12 @@ golden-btn + .golden-btn { margin-top: 1em; }
 // Scoreboard card: disable expensive compositing layers from premium theme's .card
 // (mask-image + isolation create per-cell compositing cost on hover;
 //  overflow:hidden already handles border-radius clipping like on /main/list)
-.scoreboard-card {
+.scoreboard-card, .scoreboard-card:hover {
   isolation: auto !important;
   -webkit-mask-image: none !important;
   mask-image: none !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 // Scoreboard sticky columns styling
@@ -577,20 +579,20 @@ golden-btn + .golden-btn { margin-top: 1em; }
     thead th {
       position: sticky;
       top: 0;
-      z-index: 10;
+      z-index: 100;
       background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-light-bg, #f8f9fa)) !important;
 
       &:nth-child(1) {
         left: 0;
-        z-index: 12;
+        z-index: 120;
       }
       &:nth-child(2) {
         left: 60px;
-        z-index: 12;
+        z-index: 120;
       }
       &:nth-child(3) {
         left: 260px;
-        z-index: 12;
+        z-index: 120;
         border-right: 2px solid var(--bs-border-color, #dee2e6) !important;
       }
     }
@@ -741,4 +743,55 @@ table.dataTable thead th span.dt-column-order,
 table.dataTable thead td span.dt-column-order {
   margin-right: 8px !important;
   margin-left: 8px !important;
+}
+
+/* Styled tables in markdown output */
+.announcement, .announcement-body, .markdown-content, [class*="markdown"] {
+  table {
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    color: inherit;
+    border-collapse: collapse;
+    
+    th, td {
+      padding: 0.5rem 0.75rem;
+      vertical-align: top;
+      border: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.15));
+    }
+    
+    th {
+      font-weight: bold;
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+    
+    tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+  }
+
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: inline-block;
+  }
+}
+
+/* Responsive images in cards, announcements, and markdown wrappers */
+.card-text, .card-body, .announcements-feed {
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: inline-block;
+  }
+}
+
+/* Theme-specific hyperlink coloring */
+a:not(.btn):not(.nav-link):not(.dropdown-item):not(.badge):not(.nav-tabs .nav-link):not(.page-link):not(.navbar-brand) {
+  color: var(--bs-link-color);
+  transition: color 0.15s ease-in-out;
+
+  &:hover {
+    color: var(--bs-link-hover-color);
+  }
 }
