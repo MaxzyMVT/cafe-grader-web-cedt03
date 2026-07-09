@@ -68,6 +68,7 @@ gem "rdiscount"  # markdown
 gem "redcarpet"  # new markdown
 gem "kramdown"
 gem "rainbow"
+gem "csv"
 
 gem "whenever", require: false
 

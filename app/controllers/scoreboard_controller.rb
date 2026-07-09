@@ -264,7 +264,14 @@ class ScoreboardController < ApplicationController
       end
     end
 
-    render layout: 'application'
+    respond_to do |format|
+      format.html { render layout: 'application' }
+      format.csv {
+        send_data generate_scoreboard_csv,
+                  filename: "scoreboard_#{@mode}_#{Time.current.strftime('%Y%m%d_%H%M%S')}.csv",
+                  type: 'text/csv; charset=utf-8'
+      }
+    end
   end
 
   private
@@ -285,6 +292,80 @@ class ScoreboardController < ApplicationController
       check_valid_login
       unless @current_user.admin? || @current_user.problem_setter?
         redirect_to root_path, alert: 'Only admins can access the scoreboard.'
+      end
+    end
+  end
+
+  def generate_scoreboard_csv
+    require 'csv'
+    CSV.generate(headers: true) do |csv|
+      # Headers
+      headers = ["Rank", "Name", "Sum"]
+      headers << "Bonus" if GraderConfiguration.enable_bonus?
+      headers << "Deducted" if GraderConfiguration.enable_penalty?
+      @problems.each do |p|
+        headers << "#{p.name} (#{p.effective_full_score || 100})"
+      end
+      csv << headers
+
+      if @mode == 'individual'
+        @leaderboard.each do |entry|
+          row = [
+            entry[:rank],
+            entry[:user].full_name,
+            entry[:total_score]
+          ]
+          row << (entry[:bonus_score].to_f > 0 ? entry[:bonus_score] : nil) if GraderConfiguration.enable_bonus?
+          row << (entry[:deducted_score].to_f > 0 ? entry[:deducted_score] : nil) if GraderConfiguration.enable_penalty?
+          
+          @problems.each do |p|
+            if helpers.user_associated_with_problem?(entry[:user].id, p.id)
+              row << (@scores[entry[:user].id][p.id] || 0)
+            else
+              row << "—"
+            end
+          end
+          csv << row
+        end
+      else
+        # Group mode
+        @leaderboard.each do |entry|
+          row = [
+            entry[:rank],
+            "[Group] #{entry[:group].name}",
+            entry[:total_score]
+          ]
+          row << (entry[:bonus_score].to_f > 0 ? entry[:bonus_score] : nil) if GraderConfiguration.enable_bonus?
+          row << (entry[:deducted_score].to_f > 0 ? entry[:deducted_score] : nil) if GraderConfiguration.enable_penalty?
+          
+          @problems.each do |p|
+            if helpers.group_associated_with_problem?(entry[:group].id, p.id)
+              group_score = @group_score_type == 'group_max' ? entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.max : entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.sum
+              row << group_score
+            else
+              row << "—"
+            end
+          end
+          csv << row
+
+          entry[:members].each do |m|
+            member_row = [
+              m[:rank],
+              "  - #{m[:user].full_name}",
+              m[:total_score]
+            ]
+            member_row << (m[:bonus_score].to_f > 0 ? m[:bonus_score] : nil) if GraderConfiguration.enable_bonus?
+            member_row << (m[:deducted_score].to_f > 0 ? m[:deducted_score] : nil) if GraderConfiguration.enable_penalty?
+            @problems.each do |p|
+              if helpers.user_associated_with_problem?(m[:user].id, p.id)
+                member_row << (@scores[m[:user].id][p.id] || 0)
+              else
+                member_row << "—"
+              end
+            end
+            csv << member_row
+          end
+        end
       end
     end
   end

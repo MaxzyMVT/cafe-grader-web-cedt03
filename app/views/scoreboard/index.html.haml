@@ -18,6 +18,10 @@
         %select.form-select.form-select-sm{name: "sort", onchange: "this.form.requestSubmit()", style: "width: auto;"}
           %option{value: "rank", selected: params[:sort] != 'name'} Sort by Rank
           %option{value: "name", selected: params[:sort] == 'name'} Sort by Name
+      
+      = link_to scoreboard_path(format: :csv, mode: @mode, sort: params[:sort]), class: 'btn btn-sm btn-outline-success d-inline-flex align-items-center gap-2 shadow-sm border-1', title: 'Export Scoreboard as CSV', data: { turbo: false } do
+        %span Export
+        %span.mi{style: 'font-size: 1.1rem;'} download
 
   = turbo_frame_tag "scoreboard" do
     - if @mode == 'group'
