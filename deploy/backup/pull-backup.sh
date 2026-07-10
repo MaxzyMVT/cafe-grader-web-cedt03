@@ -99,6 +99,30 @@ fetch() {  # fetch <host> <localdir> <file>...
   "${SSH[@]}" "$SSH_USER@$h" "rm -f $*" >/dev/null 2>&1 || true
 }
 
+# --- Check space before taking backup to prevent hitting 100% capacity -----------
+# Estimate backup size: database size (rough estimate ~100MB) + /storage directory size
+STORAGE_SIZE_KB=0
+if [ -d "/home/grader_admin/cafe_grader/web/storage" ]; then
+  STORAGE_SIZE_KB=$(du -s /home/grader_admin/cafe_grader/web/storage | awk '{print $1}')
+fi
+# Conservative estimated backup size in KB (compressed to ~50% average)
+ESTIMATED_BACKUP_KB=$(( (STORAGE_SIZE_KB + 204800) / 2 ))
+# Available space on backup drive in KB
+AVAILABLE_KB=$(df "$DEST_DIR" | tail -1 | awk '{print $4}')
+
+# If available space is less than estimated backup size + 2GB safety margin, trigger early cleanup
+SAFETY_MARGIN_KB=2097152
+REQUIRED_KB=$(( ESTIMATED_BACKUP_KB + SAFETY_MARGIN_KB ))
+
+if [ "$AVAILABLE_KB" -lt "$REQUIRED_KB" ]; then
+  echo "WARNING: Low disk space detected ($((AVAILABLE_KB/1024)) MB available). Running pre-backup cleanup..."
+  DIR=$(dirname "$0")
+  if [ -f "$DIR/cleanup-backups.sh" ]; then
+    # Dynamically prune backups down to 1 day early to free up space
+    bash "$DIR/cleanup-backups.sh" "$DEST_DIR" 1
+  fi
+fi
+
 # ============================== WEB + DB =====================================
 echo "==> web+db : $WEB_DB_HOST"
 read -r -d '' WEB_SCRIPT <<'REMOTE' || true
@@ -164,8 +188,20 @@ done
 
 # ============================== RETENTION ====================================
 if [ -d "$DEST_DIR" ]; then
-  find "$DEST_DIR" -type f -name '*.gz' -mtime "+$KEEP_DAYS" -print -delete 2>/dev/null \
-    | sed 's/^/    prune /' || true
+  # Run the updated cleanup script to purge old backups and manage space
+  DIR=$(dirname "$0")
+  if [ -f "$DIR/cleanup-backups.sh" ]; then
+    bash "$DIR/cleanup-backups.sh" "$DEST_DIR" "$KEEP_DAYS"
+  else
+    find "$DEST_DIR" -type f -name '*.gz' -mtime "+$KEEP_DAYS" -print -delete 2>/dev/null \
+      | sed 's/^/    prune /' || true
+  fi
+fi
+
+# Clean up remote temporary backups on WEB_DB_HOST
+if [ -n "$WEB_DB_HOST" ]; then
+  echo "==> Cleaning old /tmp/cafebk backups on remote host: $WEB_DB_HOST"
+  run_remote "$WEB_DB_HOST" "find /tmp/cafebk -type f -mtime +1 -name '*.gz' -delete 2>/dev/null || true" "$WEB_ENV"
 fi
 
 echo

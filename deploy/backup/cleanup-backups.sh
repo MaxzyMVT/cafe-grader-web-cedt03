@@ -41,4 +41,30 @@ find "$TARGET_DIR" -type f \( -name "db_*.gz" -o -name "files_*.gz" -o -name "wo
   fi
 done
 
+# Cleanup local /tmp/cafebk files older than 1 day
+if [ -d "/tmp/cafebk" ]; then
+  echo "=== Cleaning up /tmp/cafebk files older than 1 day ==="
+  find /tmp/cafebk -type f -mtime +1 -name '*.gz' -delete 2>/dev/null || true
+fi
+
+# Disk Space Safeguard: If disk usage is above 90%, remove backups older than 1 day immediately
+DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | sed 's/%//')
+if [ "$DISK_USAGE" -gt 90 ]; then
+  echo "WARNING: Disk space is extremely low (${DISK_USAGE}% used). Emergency pruning backups to 1 day."
+  EMERGENCY_CUTOFF_SEC=$(date -d "1 days ago" +%s)
+  find "$TARGET_DIR" -type f \( -name "db_*.gz" -o -name "files_*.gz" -o -name "worker_*.gz" -o -name "judge_*.gz" \) | while read -r file; do
+    filename=$(basename "$file")
+    if [[ "$filename" =~ ([0-9]{4}-[0-9]{2}-[0-9]{2}) ]]; then
+      file_date="${BASH_REMATCH[1]}"
+      file_sec=$(date -d "$file_date" +%s 2>/dev/null || continue)
+      if [ "$file_sec" -lt "$EMERGENCY_CUTOFF_SEC" ]; then
+        echo "  Emergency Deleting: $file"
+        rm -f "$file"
+      fi
+    fi
+  done
+  # Also clear all /tmp/cafebk files to free up space
+  rm -f /tmp/cafebk/*.gz 2>/dev/null || true
+fi
+
 echo "=== Cleanup completed ==="
