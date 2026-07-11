@@ -33,11 +33,13 @@ class SubmissionsController < ApplicationController
       if @current_user.admin? || @current_user.problem_setter?
         @submissions = Submission.where(problem: @problem).includes(:user, :language).order(id: :desc)
       elsif GraderConfiguration['system.group_score_type'] == 'group_max'
-        user_group_ids = @current_user.groups.where(enabled: true).pluck(:id)
+        user_group_ids = @current_user.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).pluck(:id)
         setter_admin_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
-        group_user_ids = User.joins(:groups)
+        group_user_ids = User.joins(groups_users: :group)
                              .where(groups: { id: user_group_ids })
-                             .where(enabled: true)
+                             .where(groups: { enabled: true })
+                             .where(groups_users: { enabled: true })
+                             .where(users: { enabled: true })
                              .where.not(id: setter_admin_ids)
                              .pluck(:id).uniq
         group_user_ids = (group_user_ids + [@current_user.id]).uniq

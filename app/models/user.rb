@@ -507,29 +507,17 @@ class User < ApplicationRecord
     # admin always has right
     return true if admin? || problem_setter?
 
-    # For group mode, reporters can always view the submission of the problem
-    return true if problems_for_action(:report).include? submission.problem
-
-    # At this step, we knows that the user does not have special privileges to the problem
-
-    # problem available is required
-    return false unless problems_for_action(:submit).include? submission.problem
-
-    # a user can view their own submissions
-    return true if submission.user == self
-
-    # In group_max mode, a user can view submissions of other members in their group(s)
-    if GraderConfiguration['system.group_score_type'] == 'group_max'
-      if (self.groups & submission.user.groups).any?
+    if submission.user_id == self.id
+      return true
+    elsif GraderConfiguration['system.group_score_type'] == 'group_max'
+      self_group_ids = self.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).pluck(:id)
+      owner_group_ids = submission.user.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).pluck(:id)
+      if (self_group_ids & owner_group_ids).any?
         return true
       end
     end
 
-    # check global disable
-    return false unless GraderConfiguration["right.user_view_submission"]
-
-    # finally, the view_submission of the problem must be true
-    return submission.problem.view_submission
+    return false
   end
 
   def can_view_testcase?(problem)
