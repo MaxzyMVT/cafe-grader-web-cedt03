@@ -91,7 +91,8 @@ class Problem < ApplicationRecord
     exclude_ids = (exclude_ids + User.where(enabled: false).pluck(:id)).uniq
     
     results = submissions.tag_default.joins(:user)
-                .where(points: full_score)
+                .where(points: full_score, status: 'done')
+                .where("submissions.grader_comment REGEXP '^[PS\\\\[\\\\][:space:]]*$'")
                 .where.not(user_id: exclude_ids)
                 .group(:user_id)
                 .select('user_id, MIN(submissions.id) as first_sub_id, MIN(submitted_at) as first_time')
