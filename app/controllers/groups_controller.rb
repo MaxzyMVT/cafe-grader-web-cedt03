@@ -21,7 +21,11 @@ class GroupsController < ApplicationController
   end
 
   def bulk_manage
-    @groups = @current_user.groups_for_action(:edit).order(:name)
+    if request.post?
+      do_bulk_manage
+    else
+      @groups = @current_user.groups_for_action(:edit).order(:name)
+    end
   end
 
   def bulk_manage_query
