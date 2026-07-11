@@ -137,6 +137,7 @@ class ReportController < ApplicationController
     when 'group'
       @logins = @logins.joins(user: :groups).where(user: {groups: {id: params[:groups]}}) if params[:groups]
     end
+    @logins = @logins.limit(100_000)
   end
 
   def submission
@@ -154,7 +155,7 @@ class ReportController < ApplicationController
     @submissions = @submissions.where(problem: @problems)
 
 
-    @submissions.limit(100_000)
+    @submissions = @submissions.limit(100_000)
     @submissions = @submissions.select('submissions.id,points,ip_address,submitted_at,grader_comment,max_runtime,peak_memory,effective_code_length')
       .select('users.login, users.full_name as user_full_name, users.id as user_id')
       .select('problems.full_name, problems.name, problems.id as problem_id')
@@ -189,6 +190,7 @@ class ReportController < ApplicationController
       .where('created_at > ?', first_submission_datetime)
       .where('class_name LIKE "Llm::%"')
       .order(created_at: :desc)
+      .limit(20_000)
 
     # We need to eager load the submission, else this will be N+1 queries
     # First, we need all gid of the submission
@@ -573,7 +575,7 @@ class ReportController < ApplicationController
     exclude_ids = User.joins(:roles).where(roles: { name: roles_to_exclude }).pluck(:id)
     exclude_ids += User.where(enabled: false).pluck(:id)
     exclude_ids = exclude_ids.uniq
-    Submission.where(problem_id: @problem.id).where.not(user_id: exclude_ids).includes(:language).each do |sub|
+    Submission.where(problem_id: @problem.id).where.not(user_id: exclude_ids).includes(:language, :user).find_each do |sub|
       # histogram
 
       next unless sub.points

@@ -263,10 +263,19 @@ class Grader
   end
 
   def self.cleanup_judge(ago_min = 60*24)
-    # delete old submission dir that is older than 12 hour
+    # delete old submission dir, default: anything older than 24 hours (ago_min = 60*24)
     isolate_sub_path = Pathname.new(Rails.configuration.worker[:directory][:judge_path]) + Grader::JudgeSubmissionPath
     cmd = "find #{isolate_sub_path} -maxdepth 1 -mmin +#{ago_min} -exec rm -rf {} \\;"
-    puts "executing #{cmd}"
-    spawn(cmd)
+    JudgeLogger.logger.info("cleanup_judge: executing #{cmd}")
+    # system (not spawn) so cron waits for completion and we can check/log the exit status --
+    # a silently-failing or fire-and-forget cleanup here previously let isolate_submission grow
+    # unbounded for weeks with the cron log showing no error at all
+    success = system(cmd)
+    if success
+      JudgeLogger.logger.info("cleanup_judge: completed successfully")
+    else
+      JudgeLogger.logger.error("cleanup_judge: FAILED (exit status #{$?&.exitstatus.inspect}) - cmd: #{cmd}")
+    end
+    success
   end
 end

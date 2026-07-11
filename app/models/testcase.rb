@@ -14,6 +14,8 @@ class Testcase < ApplicationRecord
   has_one_attached :ans_file
 
   scope :display_order, ->  { order(:group, :num, :id) }
+  # excludes legacy LONGTEXT input/sol columns (dead since grading moved to inp_file/ans_file attachments)
+  scope :without_legacy_blobs, -> { select(column_names - %w[input sol]) }
 
   def get_name_for_dir
     return code_name unless code_name.blank?

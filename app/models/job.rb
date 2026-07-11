@@ -39,7 +39,7 @@ class Job < ApplicationRecord
   def self.add_evaluation_jobs(submission, dataset, parent_job_id = nil, priority = 0)
     raise GraderError.new("Sub ##{submission.id} cannot find dataset #{dataset.id}",
                           submission_id: submission.id) unless dataset
-    dataset.testcases.each do |testcase|
+    dataset.testcases.without_legacy_blobs.each do |testcase|
       Job.create(parent_job_id: parent_job_id,
                  job_type: :evaluate,
                  arg: submission.id,

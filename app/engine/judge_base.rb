@@ -228,7 +228,7 @@ module JudgeBase
 
     # download any testcases
     if type == :testcases
-      dataset.testcases.each do |tc|
+      dataset.testcases.without_legacy_blobs.each do |tc|
         prepare_testcase_directory(nil, tc) # prepare only problem testcase path, not sub's testcase path
 
         # download testcase
@@ -311,7 +311,7 @@ module JudgeBase
         # Verify that testcase files actually exist on disk
         testcases_exist = true
         if wp.testcases_status == 'ready'
-          dataset.testcases.each do |tc|
+          dataset.testcases.without_legacy_blobs.each do |tc|
             prepare_testcase_directory(nil, tc)
             unless @input_file.exist? && @ans_file.exist?
               testcases_exist = false
@@ -349,7 +349,7 @@ module JudgeBase
   def run_initializer(dataset)
     # build all testcases files into a json
     tc_hash = {testcases: Hash.new { |h, k| h[k] = {} } }
-    dataset.testcases.each do |tc|
+    dataset.testcases.without_legacy_blobs.each do |tc|
       prepare_testcase_directory(nil, tc)
       tc_hash[:testcases][tc.id][:inp_file] = @input_file
       tc_hash[:testcases][tc.id][:ans_file] = @ans_file
