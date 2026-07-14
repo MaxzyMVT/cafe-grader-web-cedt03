@@ -5,7 +5,7 @@
 = form_with id: 'max-score-filter-form', url: max_score_table_report_path, data: {turbo: true, controller: 'init-ui-component'} do |f|
   .row
     .col-lg-4
-      = render partial: 'problem_select'
+      = render partial: 'problem_select', locals: {all: true}
     .col-lg-4
       = render partial: 'submission_range'
     .col-lg-4
