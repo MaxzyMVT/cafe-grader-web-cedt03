@@ -133,7 +133,7 @@ Common isolate errors and their fixes:
 
 | Error | Cause | Fix |
 |---|---|---|
-| `User isolate not found in /etc/subuid` | `isolate` system user or subuid entry missing | See Step 4 of installation guide |
+| `User isolate not found in /etc/subuid` | `isolate` system user or subuid entry missing | See the isolate/subuid notes in the [installation guide](cafe_grader_installation.md) |
 | `Cannot open /run/isolate/cgroup` | `isolate.service` not running | `sudo systemctl start isolate.service` |
 | `cgroup: cannot set memory limit` | Kernel not booted with `cgroup_enable=memory` | Check GRUB config and reboot |
 

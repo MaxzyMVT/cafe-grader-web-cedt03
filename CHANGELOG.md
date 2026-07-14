@@ -10,6 +10,36 @@ When a release is cut: rename it to `[X.Y.Z] — YYYY-MM-DD`, bump
 
 ## [Unreleased]
 
+### Fixed
+
+- **Cloud/WSL installers produced an unbootable install** — the cloud install
+  scripts and `setup_local_wsl.sh` copied `credentials.yml.SAMPLE` alongside a
+  fresh random `master.key`, a mismatched pair that crashed `db:setup` and every
+  boot with `ActiveSupport::MessageEncryptor::InvalidMessage`. They now generate a
+  matched pair via `credentials:edit`, like the non-cloud scripts always did.
+- **Separate worker servers collided** — worker installers never set `worker_id`,
+  so every worker node registered as `worker_id=1`, sharing `GraderProcess` rows and
+  thrashing the watchdog. `install_worker_server.sh` now takes a validated, unique
+  `WORKER_ID` argument (`bash install_worker_server.sh <WEB_DB_IP> <ID>`).
+
+### Added
+
+- **Advisory RAM-headroom check** in the grading installers — warns when physical
+  RAM is below `WORKER_COUNT × 1 GB + system overhead`, since isolate runs with swap
+  disabled (no OOM cushion).
+- **`.gitattributes`** pins `*.sh`/`*.SAMPLE` to LF so shell scripts never reach a
+  Linux deploy box with CRLF line endings.
+
+### Changed
+
+- **Installer scripts consolidated** — the 6 install scripts (~2900 lines, ~90%
+  duplicated) became 3 role scripts + a shared `deploy/lib/common.sh` (~800 lines).
+  Cloud variants folded into a `--cloud` flag; `install_*_cloud.sh` removed. Web/DB
+  and grading installers now explicitly `systemctl enable apache2 mysql`. Backup
+  script defaults aligned to the installer layout (`grader_user`,
+  `/home/grader/cafe_grader/web`). Installation/setup docs trimmed to point at the
+  scripts as the source of truth.
+
 ## [4.4.2] — 2026-07-01
 
 ### Fixed
