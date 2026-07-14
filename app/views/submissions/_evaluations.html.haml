@@ -111,13 +111,14 @@
         .col.text-center
           %strong
             - gname = groups[idx].blank? ? "Group #{group_ids[idx]}" : "Group \"#{groups[idx]}\""
-            - stext = dataset&.st_group_max? ? "Max Score" : "Min Score"
-            - if raw_sum_mode
-              - pts = number_with_precision (group_points || 0), precision: 2, strip_insignificant_zeros: true
-            - elsif dataset&.st_group_max?
-              - pts = number_with_precision (group_points || 0) * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
+            - if dataset&.st_sum? || dataset&.st_raw_sum?
+              = gname
             - else
-              - pts = number_with_precision (group_score || 0) * group_weight * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
-            #{gname} #{stext}: #{pts}
+              - stext = dataset&.st_group_max? ? "Max Score" : "Min Score"
+              - if dataset&.st_group_max?
+                - pts = number_with_precision (group_points || 0) * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
+              - else
+                - pts = number_with_precision (group_score || 0) * group_weight * full_score / total_weight.to_f, precision: 2, strip_insignificant_zeros: true
+              = "#{gname} #{stext}: #{pts}"
     :plain
       </div>

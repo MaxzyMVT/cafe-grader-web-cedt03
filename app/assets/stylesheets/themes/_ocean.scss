@@ -151,6 +151,8 @@
     backdrop-filter: blur(10px);
     .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
+  --nav-drawer-bg: #0a4d5e;
+  --nav-drawer-border: rgba(255,255,255,0.1);
 
   // Headings
   h1 { color: #0e7490 !important; }

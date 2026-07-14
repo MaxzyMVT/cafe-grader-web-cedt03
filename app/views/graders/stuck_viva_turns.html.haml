@@ -1,0 +1,66 @@
+= render 'application/breadcrumb', steps: [{label: 'Grader Processes', path: grader_processes_path, icon: resource_icon_name(Grader)}, {label: 'Stuck Viva Turns'}]
+
+.d-flex.justify-content-between.align-items-center.mb-3
+  .d-flex.align-items-center.gap-2
+    %h2.fw-bold.text-dark.mb-0.font-monospace Stuck Viva Turns
+    %span.badge.bg-warning-subtle.text-warning-emphasis.border.border-warning-subtle.rounded-pill.fw-medium
+      %small= pluralize(@turns.size, 'turn')
+  .d-flex.gap-2
+    = link_to mdi(:arrow_back, 'me-1') + 'Back to Monitor', grader_processes_path, class: 'btn btn-outline-secondary btn-flex'
+
+.card.shadow-sm.mb-4
+  .card-body
+    .d-flex.align-items-start.mb-3
+      .bg-warning-subtle.text-warning-emphasis.rounded-3.d-flex.align-items-center.justify-content-center.me-3{style: "width: 48px; height: 48px; flex-shrink: 0;"}
+        %span.mi.md-36.fill schedule_send
+      .flex-grow-1
+        %h5.fw-bold.text-dark.mb-0 Viva turns blocking active sessions
+        .text-secondary.small
+          Either marked
+          %code :error
+          (Retry available) or
+          %code :processing
+          for over
+          = VivaTurn::STALE_AFTER.inspect
+          (sweeper hasn't caught it yet). Click a row to open the viva.
+
+    - if @turns.any?
+      .table-responsive
+        %table.table.table-hover.table-condense.align-middle.mb-0
+          %thead
+            %tr.text-secondary.small
+              %th Submission
+              %th User
+              %th Problem
+              %th Turn
+              %th Status
+              %th Updated
+              %th.text-end Actions
+          %tbody
+            - @turns.each do |turn|
+              - sub = turn.submission
+              %tr
+                %td= link_to "##{sub.id}", viva_submission_path(sub), class: 'fw-medium text-primary text-decoration-none'
+                %td= sub.user&.login
+                %td= sub.problem&.name
+                %td.font-monospace.small= "##{turn.id} (seq #{turn.sequence})"
+                %td
+                  - badge_class = case turn.status
+                    - when 'processing' then 'text-bg-info'
+                    - when 'error' then 'text-bg-danger'
+                    - else 'text-bg-secondary'
+                  %span.badge{class: badge_class}= turn.status
+                %td.text-secondary.small= time_ago_in_words(turn.updated_at) + " ago"
+                %td.text-end
+                  - if turn.status == 'error'
+                    = button_to retry_stuck_viva_turn_grader_processes_path(turn_id: turn.id), class: 'btn btn-xs btn-outline-warning btn-flex d-inline-flex', data: {turbo: true, 'turbo-confirm': "Force retry this turn?"} do
+                      %span.mi.md-14.me-1 replay
+                      Retry
+                  - else
+                    = button_to cancel_stuck_viva_turn_grader_processes_path(turn_id: turn.id), class: 'btn btn-xs btn-outline-danger btn-flex d-inline-flex', data: {turbo: true, 'turbo-confirm': "Cancel this turn?"} do
+                      %span.mi.md-14.me-1 block
+                      Cancel
+    - else
+      .text-center.text-success.py-4
+        %span.mi.md-48 check_circle
+        .fw-medium.mt-2 No stuck viva turns. Everything's flowing.

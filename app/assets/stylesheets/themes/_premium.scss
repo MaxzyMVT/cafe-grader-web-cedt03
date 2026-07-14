@@ -160,6 +160,8 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
+  --nav-drawer-bg: #120328;
+  --nav-drawer-border: rgba(255,255,255,0.08);
 
   // Headings
   h1 { color: #c8b6ff !important; text-shadow: 0 0 15px rgba(200, 182, 255, 0.3); }
@@ -347,7 +349,7 @@
     .progress-bar:not([class*="bg-"]) { background: linear-gradient(90deg, #6c3ce0, #8b5cf6) !important; }
     .progress-bar.bg-primary { background: linear-gradient(90deg, #6c3ce0, #8b5cf6) !important; }
   }
-  .bg-secondary-subtle { background-color: rgba(255, 255, 255, 0.08) !important; }
+  .bg-secondary-subtle { background-color: rgba(255, 255, 255, 0.16) !important; color: rgba(255,255,255,0.65) !important; }
 
   // Select2 Fixes
   .select2-container {

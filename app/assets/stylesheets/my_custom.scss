@@ -42,6 +42,11 @@ html {
   font-size: 48px;
 }
 
+// Help drawer — centralized width so all offcanvas help drawers match
+.offcanvas-help {
+  width: 480px;
+}
+
 .mi.fill {
   font-variation-settings: 'FILL' 1
 }
@@ -97,12 +102,14 @@ html {
 // --------------- bootstrap adjustment ----------------------
 body {
   font-family: 'Sarabun', 'Noto Sans Thai', Tahoma, "sans-serif";
-  padding: 0;
+  padding: 5px;
+  padding-top: 65px;
+  padding-bottom: 38px; // clearance for the fixed-bottom footer (~30px tall)
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header {
-  position: sticky;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -115,9 +122,10 @@ header {
 
 // Global interactive touches
 .card {
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+  // NOTE: Do NOT add `transform` here — a CSS transform creates a stacking context that breaks
+  // position:fixed modals nested inside the card (they get clipped to the card, not the viewport).
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
   &:hover {
-    transform: translateY(-3px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
   }
 }
@@ -138,10 +146,14 @@ header {
 }
 
 .navbar {
-  // Only transition specific visual properties - avoid 'all' which causes full-style recalc
+  // Avoid 'all' transition; backdrop-filter is set per-theme to avoid stale compositing layers
   transition: background-color 0.3s ease, box-shadow 0.3s ease !important;
-  // backdrop-filter is applied by each theme individually; keep it off globally
-  // to avoid creating an unnecessary compositing layer on the default theme.
+}
+
+// Default nav drawer color (light theme) — overridden per dark theme via --nav-drawer-bg
+:root {
+  --nav-drawer-bg: #0d4a7a;
+  --nav-drawer-border: rgba(255,255,255,0.12);
 }
 
 .form-check-thick {
@@ -427,6 +439,29 @@ table.taskdesc {
   }
 }
 
+// Markdown preview on announcement cards (main page) and the admin announcements table.
+// The body renders as real markdown and is clamped visually; truncating the markdown text itself
+// would cut mid-syntax (code fences, links) and break the render. "Read More" opens the full modal.
+.announcement-preview {
+  // Tame block headings inside a compact preview; the modal shows them full-size.
+  h1, h2, h3, h4, h5 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.announcement-preview-clamped {
+  max-height: 7.5rem;
+  overflow: hidden;
+  // Fade the clipped bottom edge out instead of cutting it abruptly.
+  -webkit-mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+}
+
 div {
   &.message {
     margin: 10px 0 0;
@@ -493,14 +528,14 @@ h2.contest-title {
 
 .grader-comment {
   word-wrap: break-word;
-  //font-family: 'Cascadia Mono';
+
   font-family: 'Inconsolata';
 }
 
-// bring back bootstrap btn-xs
+// Bootstrap btn-xs (removed in BS5)
 .btn-xs {
-  font-size: 0.75rem;  /* Smaller font size */
-  padding: 0.25rem 0.5rem;  /* Smaller padding */
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
 }
 
 
@@ -544,7 +579,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
   min-width: 20rem !important;
 }
 
-// Navbar styling rules for medium sizes
+// Navbar nav items
 .navbar-nav {
   align-items: center;
 
@@ -553,9 +588,107 @@ golden-btn + .golden-btn { margin-top: 1em; }
   }
 }
 
-// Scoreboard card: disable expensive compositing layers from premium theme's .card
-// (mask-image + isolation create per-cell compositing cost on hover;
-//  overflow:hidden already handles border-radius clipping like on /main/list)
+// ---- Responsive tables ----
+// Tables scroll horizontally on small screens instead of overflowing container.
+.dataTables_wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0; // prevent flex children from stretching outside
+}
+
+#main-content {
+  // Target any table directly to make it scrollable on mobile without wrapping divs
+  table:not(.no-responsive) {
+    @media (max-width: 768px) {
+      display: block !important;
+      width: 100% !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+  }
+}
+
+// ---- Offcanvas nav drawer ----
+#navOffcanvas {
+  background-color: var(--nav-drawer-bg) !important;
+  border-left: 1px solid var(--nav-drawer-border) !important;
+  width: min(300px, 85vw) !important;
+  backdrop-filter: blur(16px);
+
+  .offcanvas-header {
+    border-bottom: 1px solid var(--nav-drawer-border) !important;
+    padding: 1rem 1.25rem;
+
+    .navbar-brand {
+      color: #fff !important;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+  }
+
+  // Section labels — clearly separated from clickable items
+  .nav-section-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+    padding: 0.9rem 1rem 0.3rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--nav-drawer-border);
+    &:first-child { border-top: none; margin-top: 0; }
+  }
+
+  .offcanvas-body {
+    padding: 0 !important;
+    overflow-y: auto;
+    // Sub-menu nav items
+    .nav-link {
+      color: rgba(255,255,255,0.82) !important;
+      padding: 0.55rem 1.25rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      margin: 1px 0.5rem;
+      transition: background-color 0.15s ease, color 0.15s ease;
+
+      &:hover, &:focus {
+        background-color: rgba(255,255,255,0.1) !important;
+        color: #fff !important;
+      }
+
+      &.active {
+        background-color: rgba(255,255,255,0.15) !important;
+        color: #fff !important;
+        font-weight: 600;
+      }
+
+      // Sub-items (indented under a category)
+      &.ps-3 {
+        padding-left: 1.75rem !important;
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.65) !important;
+        &:hover { color: #fff !important; }
+      }
+    }
+  }
+
+  // Bottom user action
+  .drawer-footer {
+    border-top: 1px solid var(--nav-drawer-border);
+    padding: 0.75rem 0.5rem;
+
+    .nav-link {
+      color: rgba(255,255,255,0.75) !important;
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      margin: 0;
+      &:hover { background-color: rgba(255,255,255,0.1) !important; color: #fff !important; }
+    }
+  }
+}
+
+// Scoreboard card: disable compositing layers (mask-image/isolation) added by premium theme's .card hover
 .scoreboard-card, .scoreboard-card:hover {
   isolation: auto !important;
   -webkit-mask-image: none !important;
@@ -819,4 +952,45 @@ table.dataTable thead th.dt-ordering-desc span.dt-column-order:after,
 table.dataTable thead td.dt-orderable-desc span.dt-column-order:after,
 table.dataTable thead td.dt-ordering-desc span.dt-column-order:after {
   content: "\25bc" !important;
+}
+
+// ---- Mobile Responsiveness and Component Fitting ----
+.select2-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 576px) {
+  // Reclaim margin space inside filter cards on narrow screens
+  .ms-4 {
+    margin-left: 0.5rem !important;
+  }
+
+  // Stack range columns (e.g. Min/Max filters) to fit screen width
+  .row.g-2.align-items-center {
+    --bs-gutter-x: 0.5rem;
+    .col-auto, .col {
+      flex: 0 0 100% !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      margin-bottom: 6px;
+    }
+  }
+
+  // System Configuration list items formatting
+  .config-item {
+    .config-main {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 12px !important;
+    }
+    .config-info {
+      padding-right: 0 !important;
+    }
+    .config-value-wrapper {
+      justify-content: flex-start !important;
+      text-align: left !important;
+      min-width: unset !important;
+    }
+  }
 }

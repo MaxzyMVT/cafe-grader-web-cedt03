@@ -101,7 +101,7 @@
   background-color: #1a1a2e !important;
   color: #e0e0e0;
 
-  // Utilities
+  // Subtle color utilities
   .text-muted { color: #8e99a4 !important; }
   .text-secondary { color: #8e99a4 !important; }
   .text-body { color: #e0e0e0 !important; }
@@ -109,7 +109,7 @@
   .bg-light { background-color: #1a1a2e !important; }
   .text-dark { color: #f0f0f0 !important; }
   
-  // Specific fix for subtle elements
+  // Subtle color utilities
   .bg-success-subtle { background-color: var(--bs-success-bg-subtle) !important; color: var(--bs-success-text-emphasis) !important; }
   .text-success { color: var(--bs-success) !important; }
   .bg-danger-subtle { background-color: var(--bs-danger-bg-subtle) !important; color: var(--bs-danger-text-emphasis) !important; }
@@ -147,6 +147,8 @@
     backdrop-filter: blur(10px);
     .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #fff !important; }
   }
+  --nav-drawer-bg: rgba(10, 38, 71, 0.98);
+  --nav-drawer-border: rgba(255,255,255,0.08);
 
   // Headings
   h1, h2, h3, h4, h5, h6 { color: #c8d6e5 !important; }
@@ -274,7 +276,8 @@
 
   // Progress
   .progress { background-color: #2d2d44 !important; }
-  .bg-secondary-subtle { background-color: #2d2d44 !important; }
+  // NOTE: must stay lighter than card bg (#16213e) to keep icon containers visible
+  .bg-secondary-subtle { background-color: rgba(142, 153, 164, 0.18) !important; color: #8e99a4 !important; }
 
   // Select2 Fixes
   .select2-container {

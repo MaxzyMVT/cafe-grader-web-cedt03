@@ -1,58 +1,32 @@
 %header
   %nav.navbar.navbar-dark.bg-primary.navbar-expand-xl.shadow
     .container-fluid
-      %a.navbar-brand.d-flex.align-items-center.gap-1{href: list_main_path}
-        %span.mi home
-        = GraderConfiguration.site_name&.html_safe || 'MAIN'
-      .navbar-expand
-        / display MODE button (with countdown in contest mode)
-        - if GraderConfiguration.analysis_mode?
-          %div.btn.btn-success#countdown= "ANALYSIS MODE"
-        - elsif GraderConfiguration.time_limit_mode?
-          - if @current_contest
-            -# we have a contest
-            - if @current_contest.stop + (@current_contest_user&.extra_time_second || 0) < Time.zone.now
-              -# contest is over
-              %div.btn.btn-danger#countdown= "Contest is over"
-            - elsif @current_contest&.contest_status == :later
-              -# contest is not started
-              %div.btn.btn-primary#countdown= (t 'title_bar.contest_not_started')
-            - else
-              -# during a contest
-              %div.btn.btn-dark#countdown
-              :javascript
-                window.addEventListener("load", function() {
-                  too_early_count = 0
-                  setInterval(updateRemainingTime,500)
-                  setTimeout(checkInLoop,1000)
-                })
-          - else
-            %div.btn.btn-dark#countdown NO CONTEST
-      %button.navbar-toggler{ type: :button, data: {bs: {toggle: 'collapse', target: '#navbar-collapse'}} }
+      %a.navbar-brand.d-flex.align-items-center.gap-2{href: list_main_path}
+        = image_tag 'icon.svg', alt: '', height: 28, width: 28, class: 'rounded'
+        %span.site-name-text= GraderConfiguration.site_name&.html_safe || 'MAIN'
+
+      -# Hamburger — opens the right-side offcanvas drawer below xl breakpoint
+      %button.navbar-toggler.border-0.d-xl-none{ type: :button, data: {bs: {toggle: 'offcanvas', target: '#navOffcanvas'}}, 'aria-label': 'Toggle navigation' }
         %span.navbar-toggler-icon
+
+      -# Desktop collapse — shown by navbar-expand-xl at xl+
       .collapse.navbar-collapse#navbar-collapse
         %ul.navbar-nav.me-auto.mb-2.mb-lg-0
-          / submission
           - if (@current_user!=nil) and (GraderConfiguration.show_tasks_to?(@current_user))
             %li.nav-item.dropdown.mx-2
-              %a.nav-link.dropdown-toggle.active-with-children{href: '#', data: {'bs': {toggle:'dropdown'}},  aria: {expanded:"false"}, role: "button"}
+              %a.nav-link.dropdown-toggle.active-with-children{href: '#', data: {'bs': {toggle:'dropdown'}}, aria: {expanded:"false"}, role: "button"}
                 = "#{I18n.t 'menu.submissions'}"
               %ul.dropdown-menu
                 %li= link_to 'View', submissions_path, class: 'dropdown-item '+active_class_when(controller: :submissions)
-          / hall of fame
           - if GraderConfiguration['right.user_hall_of_fame']
             %li.nav-item= link_to "#{I18n.t 'menu.hall_of_fame'}", problem_hof_report_path, class: 'nav-link mx-2'+active_class_when(controller: :report, action: :problem_hof)
-          / scoreboard
           - if GraderConfiguration['system.scoreboard_enabled']
             - level = GraderConfiguration['system.scoreboard_view_level'] || 'user'
             - if level == 'all' || level == 'public' || (level == 'user' && @current_user) || (level == 'admin' && (@current_user&.admin? || @current_user&.problem_setter?))
               %li.nav-item= link_to "Scoreboard", scoreboard_path, class: 'nav-link mx-2'+active_class_when(controller: :scoreboard)
-          / admin section
           - if @current_user && (@current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:edit).any?)
-            / management
             %li.nav-item.dropdown.mx-2
-              %a.nav-link.dropdown-toggle.active-with-children{href: '#',
-                data: {'bs': {toggle:'dropdown'}}, aria: {haspopup:"true", expanded:"false"}, role: "button"}
+              %a.nav-link.dropdown-toggle.active-with-children{href: '#', data: {'bs': {toggle:'dropdown'}}, aria: {haspopup:"true", expanded:"false"}, role: "button"}
                 Manage
               %ul.dropdown-menu
                 %li= link_to 'Announcements', announcements_path, class: 'dropdown-item'+active_class_when(controller: :announcements)
@@ -61,7 +35,7 @@
                 %li= link_to 'Users', user_admin_index_path, class: 'dropdown-item'+active_class_when(controller: :user_admin) if @current_user.admin?
                 %li= link_to 'Groups', groups_path, class: 'dropdown-item'+active_class_when(controller: :groups)
                 %li= link_to 'Graders', grader_processes_path, class: 'dropdown-item'+active_class_when(controller: :graders) if @current_user.admin?
-                %li= link_to 'Message ', console_messages_path, class: 'dropdown-item'+active_class_when(controller: :messages) if @current_user.admin?
+                %li= link_to 'Message', console_messages_path, class: 'dropdown-item'+active_class_when(controller: :messages) if @current_user.admin?
                 - if @current_user.admin?
                   %li
                     %hr.dropdown-divider
@@ -72,28 +46,25 @@
                 %li= link_to 'Sites', sites_path, class: 'dropdown-item'+active_class_when(controller: :sites) if @current_user.admin?
                 %li= link_to 'Contests', contests_path, class: 'dropdown-item'+active_class_when(controller: :contests)
                 %li= link_to 'Languages', languages_path, class: 'dropdown-item'+active_class_when(controller: :languages) if @current_user.admin?
-                -#
-          / report
           - if @current_user && (@current_user.admin? || (@current_user.groups_for_action(:report).any? && !@current_user.problem_setter?))
             %li.nav-item.dropdown.mx-2
-              %a.nav-link.dropdown-toggle.active-with-children{href: '#', data: {bs: {toggle:'dropdown'}},  aria: {haspopup:"true", expanded:"false"}, role: "button"}
+              %a.nav-link.dropdown-toggle.active-with-children{href: '#', data: {bs: {toggle:'dropdown'}}, aria: {haspopup:"true", expanded:"false"}, role: "button"}
                 Report
               %ul.dropdown-menu
                 %li= link_to 'Score Report', max_score_report_path, class: 'dropdown-item'+active_class_when(controller: :report, action: :max_score)
                 %li= link_to 'Submission Report', submission_report_path, class: 'dropdown-item'+active_class_when(controller: :report, action: :submission)
+                %li= link_to 'Activity Report', activity_report_path, class: 'dropdown-item'+active_class_when(controller: :report, action: :activity)
                 %li= link_to 'Login Report', login_report_path, class: 'dropdown-item'+active_class_when(controller: :report, action: :login)
                 %li= link_to 'AI Report', ai_report_path, class: 'dropdown-item'+active_class_when(controller: :report, action: :ai)
                 %li= link_to 'Statistics Report', extended_stat_report_path, class: 'dropdown-item'+active_class_when(controller: :report, action: :extended_stat)
             %li.nav-item.d-flex.align-items-center
               - if @current_user.admin?
-                =link_to "#{@backlog} backlogs!",
-                  grader_processes_path,
-                  class: 'navbar-btn btn btn-default btn-warning me-2', data: {toggle: 'tooltip'},title: 'Number of ungraded submission'
+                = link_to "#{@backlog} backlogs!", grader_processes_path, class: 'navbar-btn btn btn-default btn-warning me-2', data: {toggle: 'tooltip'}, title: 'Number of ungraded submission'
               = form_with id: :view_sub_form, url: list_main_path, method: :get do |f|
                 .input-group.flex-nowrap
                   %input#view_sub_num.form-control{style: "width: 9.5rem", type: :text, placeholder: 'Submission #'}
                   %button#view_sub.btn.btn-secondary{type: :button, onclick: "go_to_sub();"} View
-          - elsif @current_user && @current_user.problem_setter?
+          - elsif @current_user&.problem_setter?
             %li.nav-item= link_to 'Report', extended_stat_report_path, class: 'nav-link mx-2'+active_class_when(controller: :report, action: :extended_stat)
             %li.nav-item.d-flex.align-items-center
               = form_with id: :view_sub_form, url: list_main_path, method: :get do |f|
@@ -101,7 +72,6 @@
                   %input#view_sub_num.form-control{style: "width: 9.5rem", type: :text, placeholder: 'Submission #'}
                   %button#view_sub.btn.btn-secondary{type: :button, onclick: "go_to_sub();"} View
         %ul.navbar-nav
-          -#
           %li.nav-item
             %a.nav-link{href: help_path, 'data-bs-toggle' => 'tooltip', title: 'Help'}
               %span.mi.md-18 help
@@ -128,6 +98,113 @@
               %a.nav-link.link-flex.gap-2{href: login_main_path}
                 %span.mi.md-18 exit_to_app
                 Login
+        -# Mode indicator — desktop
+        .d-flex.align-items-center.ms-2
+          - if GraderConfiguration.analysis_mode?
+            %div.btn.btn-success#countdown= "ANALYSIS MODE"
+          - elsif GraderConfiguration.time_limit_mode?
+            - if @current_contest
+              - if @current_contest.stop + (@current_contest_user&.extra_time_second || 0) < Time.zone.now
+                %div.btn.btn-danger#countdown= "Contest is over"
+              - elsif @current_contest&.contest_status == :later
+                %div.btn.btn-primary#countdown= (t 'title_bar.contest_not_started')
+              - else
+                %div.btn.btn-dark#countdown
+                :javascript
+                  window.addEventListener("load", function() {
+                    too_early_count = 0
+                    setInterval(updateRemainingTime,500)
+                    setTimeout(checkInLoop,1000)
+                  })
+            - else
+              %div.btn.btn-dark#countdown NO CONTEST
+
+-# Offcanvas drawer — outside %header so it has no impact on navbar height
+.offcanvas.offcanvas-end#navOffcanvas{ tabindex: '-1', 'aria-labelledby': 'navOffcanvasLabel' }
+  .offcanvas-header.border-bottom.border-primary-subtle
+    %a.navbar-brand.d-flex.align-items-center.gap-2{href: list_main_path}
+      = image_tag 'icon.svg', alt: '', height: 24, width: 24, class: 'rounded'
+      %strong#navOffcanvasLabel= GraderConfiguration.site_name&.html_safe || 'MAIN'
+    %button.btn-close.btn-close-white{ type: 'button', data: {bs: {dismiss: 'offcanvas'}}, 'aria-label': 'Close' }
+  .offcanvas-body.d-flex.flex-column.p-0
+    %ul.navbar-nav.flex-column.px-2.pt-2
+      - if (@current_user!=nil) and (GraderConfiguration.show_tasks_to?(@current_user))
+        %li.nav-item
+          %a.nav-link.d-flex.align-items-center.gap-2{ href: submissions_path }
+            %span.mi.md-18 assignment
+            = I18n.t 'menu.submissions'
+      - if GraderConfiguration['right.user_hall_of_fame']
+        %li.nav-item= link_to "#{I18n.t 'menu.hall_of_fame'}", problem_hof_report_path, class: 'nav-link d-flex align-items-center gap-2 '+active_class_when(controller: :report, action: :problem_hof)
+      - if GraderConfiguration['system.scoreboard_enabled']
+        - level = GraderConfiguration['system.scoreboard_view_level'] || 'user'
+        - if level == 'all' || level == 'public' || (level == 'user' && @current_user) || (level == 'admin' && (@current_user&.admin? || @current_user&.problem_setter?))
+          %li.nav-item= link_to "Scoreboard", scoreboard_path, class: 'nav-link d-flex align-items-center gap-2 '+active_class_when(controller: :scoreboard)
+      - if @current_user && (@current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:edit).any?)
+        %span.nav-section-label Manage
+        %li.nav-item= link_to 'Announcements', announcements_path, class: 'nav-link '+active_class_when(controller: :announcements)
+        %li.nav-item= link_to 'Problems', problems_path, class: 'nav-link '+active_class_when(controller: :problems)
+        %li.nav-item= link_to 'Tags', tags_path, class: 'nav-link '+active_class_when(controller: :tags)
+        - if @current_user.admin?
+          %li.nav-item= link_to 'Users', user_admin_index_path, class: 'nav-link '+active_class_when(controller: :user_admin)
+        %li.nav-item= link_to 'Groups', groups_path, class: 'nav-link '+active_class_when(controller: :groups)
+        - if @current_user.admin?
+          %li.nav-item= link_to 'Graders', grader_processes_path, class: 'nav-link '+active_class_when(controller: :graders)
+          %li.nav-item= link_to 'Messages', console_messages_path, class: 'nav-link '+active_class_when(controller: :messages)
+          %li.nav-item= link_to 'System Config', grader_configuration_index_path, class: 'nav-link '+active_class_when(controller: :configurations)
+          %li.nav-item= link_to 'Audit Log', audit_logs_path, class: 'nav-link '+active_class_when(controller: :audit_logs)
+          %li.nav-item= link_to 'Sites', sites_path, class: 'nav-link '+active_class_when(controller: :sites)
+        %li.nav-item= link_to 'Contests', contests_path, class: 'nav-link '+active_class_when(controller: :contests)
+        - if @current_user.admin?
+          %li.nav-item= link_to 'Languages', languages_path, class: 'nav-link '+active_class_when(controller: :languages)
+      - if @current_user && (@current_user.admin? || (@current_user.groups_for_action(:report).any? && !@current_user.problem_setter?))
+        %span.nav-section-label Report
+        %li.nav-item= link_to 'Score Report', max_score_report_path, class: 'nav-link '+active_class_when(controller: :report, action: :max_score)
+        %li.nav-item= link_to 'Submission Report', submission_report_path, class: 'nav-link '+active_class_when(controller: :report, action: :submission)
+        %li.nav-item= link_to 'Activity Report', activity_report_path, class: 'nav-link '+active_class_when(controller: :report, action: :activity)
+        %li.nav-item= link_to 'Login Report', login_report_path, class: 'nav-link '+active_class_when(controller: :report, action: :login)
+        %li.nav-item= link_to 'AI Report', ai_report_path, class: 'nav-link '+active_class_when(controller: :report, action: :ai)
+        %li.nav-item= link_to 'Statistics', extended_stat_report_path, class: 'nav-link '+active_class_when(controller: :report, action: :extended_stat)
+      - elsif @current_user&.problem_setter?
+        %li.nav-item= link_to 'Report', extended_stat_report_path, class: 'nav-link '+active_class_when(controller: :report, action: :extended_stat)
+      -# Utility links section
+      %span.nav-section-label Tools
+      %li.nav-item
+        %a.nav-link.d-flex.align-items-center.gap-2{href: help_path}
+          %span.mi.md-18 help
+          Help
+      - if GraderConfiguration.message_enabled? || @current_user&.admin?
+        %li.nav-item
+          %a.nav-link.d-flex.align-items-center.gap-2{href: messages_path}
+            %span.mi.md-18 chat
+            Messages
+      - if GraderConfiguration['system.user_setting_enabled'] && @current_user
+        %li.nav-item
+          %a.nav-link.d-flex.align-items-center.gap-2{href: profile_users_path}
+            %span.mi.md-18 settings
+            Settings
+        %li.nav-item.px-2.py-1
+          %span.badge.bg-success.rounded-pill.d-inline-flex.align-items-center.gap-2.px-3{style: 'height: 32px;'}
+            %span.mi.md-18{style: 'line-height: 1; color: inherit !important;'} stars
+            %span.fw-bold{style: 'line-height: 1;'}
+              = "Points: #{number_with_precision(@current_user.current_score, precision: 2, strip_insignificant_zeros: true)}"
+      - if @current_user && (@current_user.admin? || @current_user.groups_for_action(:report).any?)
+        %li.nav-item.px-2.py-1
+          - if @current_user.admin?
+            = link_to "#{@backlog} backlogs!", grader_processes_path, class: 'btn btn-warning btn-sm w-100 mb-1', data: {toggle: 'tooltip'}, title: 'Ungraded submissions'
+          = form_with id: :view_sub_form_mobile, url: list_main_path, method: :get do |f|
+            .input-group.input-group-sm
+              %input#view_sub_num_mobile.form-control{type: :text, placeholder: 'Submission #'}
+              %button.btn.btn-secondary{type: :button, onclick: "go_to_sub_mobile();"} Go
+    .drawer-footer
+      - if @current_user
+        = link_to logout_main_path, class: 'nav-link d-flex align-items-center gap-2' do
+          %span.mi.md-18 exit_to_app
+          = @current_user.full_name
+      - else
+        = link_to login_main_path, class: 'nav-link d-flex align-items-center gap-2' do
+          %span.mi.md-18 login
+          Login
+
 :javascript
   let server_time_offset_ms = 0
 
@@ -138,7 +215,6 @@
       }
     } )
 
-    //make view sub form use go_to_sub()
     $("#view_sub_form").on('submit',function(e){
         e.preventDefault();
         go_to_sub();
@@ -153,49 +229,40 @@
     }
   }
 
+  function go_to_sub_mobile() {
+    sub_num = $('#view_sub_num_mobile').val();
+    if (!isNaN(sub_num) && !isNaN(parseFloat(sub_num))) {
+      window.location.href = "#{submission_path(-1234)}".replace('-1234',parseInt(sub_num))
+    }
+  }
 
-  // call check_in api and return a string of last check-in time
   function check_in() {
     fetch(check_in_url, {
       method: 'POST',
-      headers: {
-        'X-CSRF-Token': csrfToken  // Send CSRF token in the headers
-      },
+      headers: { 'X-CSRF-Token': csrfToken },
     }).then( response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text() // this is a promise
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.text()
     });
   }
 
   function checkInLoop() {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content'); // Get the CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     const check_in_url = '#{user_check_in_contests_path}'
     const check_in_interval_seconds = #{Contest.check_in_interval}
     let response_received_time = moment()
 
-
-    //call check in
     fetch(check_in_url, {
       method: 'POST',
-      headers: {
-        'X-CSRF-Token': csrfToken  // Send CSRF token in the headers
-      },
+      headers: { 'X-CSRF-Token': csrfToken },
     }).then( response => {
       response_received_time = moment()
-      
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text() // this is a promise
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.text()
     }).then( response_text => {
       response = JSON.parse(response_text)
       ms_since_last_check_in = response.ms_since_last_check_in
-
-      //recalculate time offset
       server_time_offset_ms = response_received_time - moment(response.current_time)
-
 
       if (ms_since_last_check_in > check_in_interval_seconds * 1000) {
         too_early_count = 0
@@ -205,19 +272,18 @@
       wait_multiplyer = (too_early_count + 1)
       randomMs = 500 + 2000 * Math.random()
       sleepDurationMs = wait_multiplyer * check_in_interval_seconds * 1000 + randomMs
-
       console.log(`Next check-in in ${sleepDurationMs / 1000} seconds...(collision = ${too_early_count})`);
       setTimeout(checkInLoop,sleepDurationMs)
 
     }).catch( e => {
       setTimeout(checkInLoop,5000)
       throw e
-    }); // this catch is needed to handle the error happens in "then"
+    });
   }
 
   function updateRemainingTime() {
     const contestEndTime = Date.parse('#{@current_contest&.stop&.iso8601}')
-    if (!contestEndTime) return; // No contest end time to display
+    if (!contestEndTime) return;
 
     const now = (new Date())
     const extraTime = #{ @current_user&.contests_users&.where(contest: @current_contest)&.take&.extra_time_second || 0}
@@ -227,41 +293,28 @@
       const hours = Math.floor(remainingTime / (1000 * 60 * 60));
       const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-
-      document.getElementById('countdown').textContent =
-        `${hours}h ${minutes}m ${seconds}s remaining`;
+      document.getElementById('countdown').textContent = `${hours}h ${minutes}m ${seconds}s remaining`;
     } else {
       document.getElementById('countdown').textContent = 'Contest ended';
     }
   }
 
-  // time should be a string in iso8601 format
-  function humanizeTime(time_iso8601,prepend_text_before = 'in ', prepend_text_after = '') {
+  function humanizeTime(time_iso8601, prepend_text_before = 'in ', prepend_text_after = '') {
     const time = Date.parse(time_iso8601)
-    const now = new Date() ;
+    const now = new Date();
     const remainingTime = time - now + server_time_offset_ms;
     const hours = Math.floor(Math.abs(remainingTime) / (1000 * 60 * 60));
     const minutes = Math.floor((Math.abs(remainingTime) % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((Math.abs(remainingTime) % (1000 * 60)) / 1000);
     let time_text = ''
-    
-    //humanize
+
     if (hours == 0) {
-      if (minutes <= 3) {
-         time_text = `${minutes * 60 + seconds} seconds`
-      } else {
-        time_text = `${minutes} minutes`
-      }
+      time_text = minutes <= 3 ? `${minutes * 60 + seconds} seconds` : `${minutes} minutes`
     } else {
       time_text = `${hours}h ${minutes}m`
     }
 
-    //return the text
-    if (remainingTime < 0) {
-      return prepend_text_after + time_text + ' ago'
-    } else {
-      return prepend_text_before + time_text
-    }
+    return remainingTime < 0
+      ? prepend_text_after + time_text + ' ago'
+      : prepend_text_before + time_text
   }
-
-
