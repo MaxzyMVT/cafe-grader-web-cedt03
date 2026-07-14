@@ -10,35 +10,95 @@ When a release is cut: rename it to `[X.Y.Z] — YYYY-MM-DD`, bump
 
 ## [Unreleased]
 
-### Fixed
-
-- **Cloud/WSL installers produced an unbootable install** — the cloud install
-  scripts and `setup_local_wsl.sh` copied `credentials.yml.SAMPLE` alongside a
-  fresh random `master.key`, a mismatched pair that crashed `db:setup` and every
-  boot with `ActiveSupport::MessageEncryptor::InvalidMessage`. They now generate a
-  matched pair via `credentials:edit`, like the non-cloud scripts always did.
-- **Separate worker servers collided** — worker installers never set `worker_id`,
-  so every worker node registered as `worker_id=1`, sharing `GraderProcess` rows and
-  thrashing the watchdog. `install_worker_server.sh` now takes a validated, unique
-  `WORKER_ID` argument (`bash install_worker_server.sh <WEB_DB_IP> <ID>`).
+Everything below is the **CEDT03 fork's delta over upstream nattee `v4.4.2`**
+(fork version `4.4.2-cedt03.1`) — new gamification/reporting features, the
+`GraderConfiguration` settings and DB columns that back them, and structural /
+deployment changes.
 
 ### Added
 
-- **Advisory RAM-headroom check** in the grading installers — warns when physical
-  RAM is below `WORKER_COUNT × 1 GB + system overhead`, since isolate runs with swap
-  disabled (no OOM cushion).
-- **`.gitattributes`** pins `*.sh`/`*.SAMPLE` to LF so shell scripts never reach a
-  Linux deploy box with CRLF line endings.
+#### Features
+
+- **Realtime scoreboard** — new `scoreboard` controller + `/scoreboard` page:
+  individual/group views, auto-refresh, CSV export, and bonus / first-blood display.
+- **Point-hint / loot-box gimmicks** — hints (comments) gain a point cost and a
+  randomised `success_rate`, so spending points is not a guaranteed reveal and a
+  failure can still deduct points; hints can be time-gated with `available_after`.
+- **Submission limits** — per-problem cap (`problems.max_submissions`) with the
+  remaining count shown to students, a per-user override
+  (`contests_users.extra_sub_limit`), and setter/admin exemption.
+- **First-blood bonus** — configurable bonus for the first N solvers of a problem
+  (`problems.bonus_first_blood`, `problems.first_n_bloods`), shown on the scoreboard.
+- **Theme presets** — user-selectable UI themes stored in `users.theme`.
+- **Extended statistics report** — `report#extended_stat`: most-effort,
+  latest / first-blood counts, shortest-code, and fastest-runtime, filterable by
+  language / tags / problems / time range.
+- **Group scoring modes** — group total on the main list shown as a sum or the
+  max-per-problem.
+- **Tag sorting & colours** — tags carry a display order (`tags.number`) and a hex
+  colour (`tags.color`, default `#6C757D`), with move-up/down/reorder controls.
+- **Problem-setter role** — a new `problem_setter` role with its own scoping and
+  admin management (`problem_setter_query`, group/contest assignment, `bulk_manage`).
+- **Problem & testcase ordering** — `problems.number` plus move-up/down/reorder for
+  problems, testcases, and tags; quick-add testcase; add-problem-by-tag.
+- **Help page** — `help` controller + `/help` (grading legend / clarification help).
+- **Group member self-rename** — opt-in per group (`groups.allow_user_change_name`).
+- **Advisory RAM-headroom check** in the grading installers — warns when physical RAM
+  is below `WORKER_COUNT × 1 GB + system overhead`, since isolate runs with swap off.
+
+#### Settings (new `GraderConfiguration` keys)
+
+- `gimmicks.enable_first_bloods`, `gimmicks.enable_submission_limits` — global toggles.
+- `gimmicks.disable_penalty`, `gimmicks.disable_bonus` — scoreboard penalty/bonus display.
+- `system.scoreboard_enabled`, `system.scoreboard_include_admins`,
+  `system.scoreboard_view_level` (`all` / `user` / `admin`).
+- `system.statistic_include_admins` — include admins in the statistics report.
+- `system.group_score_type` — group score on the main list (sum / max).
+
+#### Schema (new columns)
+
+- `problems`: `max_submissions`, `bonus_first_blood` (decimal), `first_n_bloods`, `number`.
+- `comments`: `point_cost`, `all_points`, `success_rate`, `available_after`.
+- `comment_reveals`: `points_deducted`, `is_success`.
+- `users.theme`; `tags.number`, `tags.color`; `contests_users.extra_sub_limit`;
+  `groups.allow_user_change_name`; a seeded `problem_setter` role.
+
+#### Structure / tooling
+
+- New `deploy/` tree: consolidated Ubuntu installers (`install_single_server.sh`,
+  `install_web_db_server.sh`, `install_worker_server.sh`, all with `--cloud`) sharing
+  `deploy/lib/common.sh`; SSH-pull and Huawei OBS/CBR backups under `deploy/backup/`;
+  `setup_local_wsl.sh` for dev.
+- `config/initializers/dartsass_silence_deprecations.rb`; `en`/`th` locale additions;
+  many new routes (move/reorder, `bulk_manage`, `extra_sub_limit_user`,
+  `add_problem_by_tag`, `direct_edit_problem`, `extended_stat`).
+- `.gitattributes` pins `*.sh`/`*.SAMPLE` to LF so shell scripts never reach a Linux
+  deploy box with CRLF line endings.
 
 ### Changed
 
-- **Installer scripts consolidated** — the 6 install scripts (~2900 lines, ~90%
-  duplicated) became 3 role scripts + a shared `deploy/lib/common.sh` (~800 lines).
-  Cloud variants folded into a `--cloud` flag; `install_*_cloud.sh` removed. Web/DB
-  and grading installers now explicitly `systemctl enable apache2 mysql`. Backup
-  script defaults aligned to the installer layout (`grader_user`,
-  `/home/grader/cafe_grader/web`). Installation/setup docs trimmed to point at the
-  scripts as the source of truth.
+- **Config namespace `point_hint.*` → `gimmicks.*`** (and `system.disable_penalty` →
+  `gimmicks.disable_penalty`); the boolean `system.scoreboard_public_accessible` was
+  replaced by the tri-state `system.scoreboard_view_level`. (Data migrations rename the
+  keys in place — no manual config edit needed on upgrade.)
+- **Installer scripts consolidated** — the 6 install scripts (~2900 lines, ~90 %
+  duplicated) became 3 role scripts + a shared `deploy/lib/common.sh` (~800 lines);
+  cloud variants folded into a `--cloud` flag (`install_*_cloud.sh` removed); web/DB and
+  grading installers now `systemctl enable apache2 mysql`; backup defaults aligned to
+  the installer layout (`grader_user`, `/home/grader/cafe_grader/web`). Installation /
+  setup docs trimmed to point at the scripts as the source of truth.
+
+### Fixed
+
+- **Cloud/WSL installers produced an unbootable install** — the cloud install scripts
+  and `setup_local_wsl.sh` copied `credentials.yml.SAMPLE` alongside a fresh random
+  `master.key`, a mismatched pair that crashed `db:setup` and every boot with
+  `ActiveSupport::MessageEncryptor::InvalidMessage`. They now generate a matched pair
+  via `credentials:edit`, like the non-cloud scripts always did.
+- **Separate worker servers collided** — worker installers never set `worker_id`, so
+  every worker node registered as `worker_id=1`, sharing `GraderProcess` rows and
+  thrashing the watchdog. `install_worker_server.sh` now takes a validated, unique
+  `WORKER_ID` argument (`bash install_worker_server.sh <WEB_DB_IP> <ID>`).
 
 ## [4.4.2] — 2026-07-01
 
