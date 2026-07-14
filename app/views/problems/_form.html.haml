@@ -46,7 +46,7 @@
           %h5.fw-bold.text-body-emphasis.mb-3.pb-2.border-bottom Categorization
           = form.input :tag_ids, label: 'Tags', collection: Tag.all, input_html: {class: 'select2', multiple: true}, wrapper: :horizontal_form, tooltip: "Tags marked public are shown to contestants on the main page."
           = form.input :group_ids, label: 'Groups', collection: Group.all, input_html: {class: 'select2', multiple: true}, wrapper: :horizontal_form
-          = form.input :difficulty, tooltip: 'Integer between 0 and 10.'
+          = form.input :difficulty, tooltip: 'Integer greater than or equal to 0, greater means harder'
 
         %section.mb-4
           %h5.fw-bold.text-body-emphasis.mb-3.pb-2.border-bottom Visibility & Listing
