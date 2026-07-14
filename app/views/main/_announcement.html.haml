@@ -26,6 +26,9 @@
 
     - if announcement.file.attached?
       %hr.my-2
+      - if announcement.file.content_type.to_s.start_with?('image/')
+        .mb-3
+          = image_tag url_for(announcement.file), class: 'img-fluid rounded border shadow-sm', style: 'max-height: 400px;'
       .text-uppercase.small.fw-bold.text-muted.mb-1 Attachments
       .mt-2
         %span.badge.bg-light.text-dark.border.d-inline-flex.align-items-center.gap-1
