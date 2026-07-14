@@ -4,13 +4,13 @@
   %meta{name: "turbo-refresh-scroll", content: "preserve"}
 
 .container-fluid.mt-4{"data-controller" => "auto-refresh", id: "scoreboard-container"}
-  .d-flex.justify-content-between.align-items-center.mb-3
+  .d-flex.flex-column.flex-md-row.justify-content-between.align-items-start.align-items-md-center.gap-3.mb-3
     %h1.mb-0
       %i.mi.mi-leaderboard
       Real-time Score Board
     
-    .d-flex.align-items-center.gap-3
-      = form_with url: scoreboard_path, method: :get, data: { turbo_frame: "scoreboard", turbo_action: "replace" }, class: "d-flex gap-3 align-items-center mb-0" do |f|
+    .d-flex.flex-wrap.align-items-center.gap-3
+      = form_with url: scoreboard_path, method: :get, data: { turbo_frame: "scoreboard", turbo_action: "replace" }, class: "d-flex flex-wrap gap-3 align-items-center mb-0" do |f|
         .form-check.form-switch.d-flex.align-items-center.gap-2.mb-0.ps-0
           = f.check_box :mode, { class: 'form-check-input m-0', style: 'margin-left: 0;', id: 'modeToggle', onchange: 'this.form.requestSubmit()', checked: @mode == 'group' }, 'group', 'individual'
           %label.form-check-label.text-nowrap.mb-0{for: 'modeToggle'} Group Mode

@@ -596,10 +596,16 @@ golden-btn + .golden-btn { margin-top: 1em; }
   min-width: 0; // prevent flex children from stretching outside
 }
 
-// Make card-body scroll so any table inside (DataTable or plain) is covered globally
-.card-body {
-  overflow-x: auto;
-  overflow-y: visible;
+#main-content {
+  // Target any table directly to make it scrollable on mobile without wrapping divs
+  table:not(.no-responsive) {
+    @media (max-width: 768px) {
+      display: block !important;
+      width: 100% !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+  }
 }
 
 // ---- Offcanvas nav drawer ----
@@ -946,4 +952,45 @@ table.dataTable thead th.dt-ordering-desc span.dt-column-order:after,
 table.dataTable thead td.dt-orderable-desc span.dt-column-order:after,
 table.dataTable thead td.dt-ordering-desc span.dt-column-order:after {
   content: "\25bc" !important;
+}
+
+// ---- Mobile Responsiveness and Component Fitting ----
+.select2-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 576px) {
+  // Reclaim margin space inside filter cards on narrow screens
+  .ms-4 {
+    margin-left: 0.5rem !important;
+  }
+
+  // Stack range columns (e.g. Min/Max filters) to fit screen width
+  .row.g-2.align-items-center {
+    --bs-gutter-x: 0.5rem;
+    .col-auto, .col {
+      flex: 0 0 100% !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      margin-bottom: 6px;
+    }
+  }
+
+  // System Configuration list items formatting
+  .config-item {
+    .config-main {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 12px !important;
+    }
+    .config-info {
+      padding-right: 0 !important;
+    }
+    .config-value-wrapper {
+      justify-content: flex-start !important;
+      text-align: left !important;
+      min-width: unset !important;
+    }
+  }
 }
