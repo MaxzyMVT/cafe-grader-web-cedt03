@@ -1,3 +1,6 @@
 database.yml
 tasks.yml
+credentials.yml
+llm.yml
+worker.yml
 
