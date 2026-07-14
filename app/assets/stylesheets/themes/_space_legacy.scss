@@ -150,6 +150,8 @@
     .navbar-brand, .nav-link, .mi, .nav-link .mi { color: #F0EEF8 !important; }
     .nav-link:hover { color: #FAC765 !important; .mi { color: #FAC765 !important; } }
   }
+  --nav-drawer-bg: #090918;
+  --nav-drawer-border: rgba(108,99,232,0.3);
 
   // Headings
   h1, h2, h3, h4, h5, h6 { color: #FAC765 !important; }
