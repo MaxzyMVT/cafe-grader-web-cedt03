@@ -6,7 +6,7 @@
 .grader-management-wrapper{data: {controller: 'init-ui-component'}}
   .d-flex.justify-content-between.align-items-center.mb-3
     .d-flex.align-items-center.gap-2
-      %h2.fw-bold.text-dark.mb-0.font-monospace
+      %h2.fw-bold.text-body-emphasis.mb-0.font-monospace
         Grader Processes
       %span.badge.bg-primary-subtle.text-primary.border.border-primary-subtle.rounded-pill.fw-medium
         %small Monitor
@@ -28,7 +28,7 @@
               %span.mi.md-36.fill pending_actions
 
             .flex-grow-1
-              %h5.fw-bold.text-dark.mb-0 Queue Status
+              %h5.fw-bold.text-body-emphasis.mb-0 Queue Status
               .text-secondary.small Jobs waiting to be processed
 
           .row.g-3
@@ -56,7 +56,7 @@
               %span.mi.md-36.fill bug_report
 
             .flex-grow-1
-              %h5.fw-bold.text-dark.mb-0 Background Workers
+              %h5.fw-bold.text-body-emphasis.mb-0 Background Workers
               .text-secondary.small Solid Queue + LLM job health
 
           .row.g-3
@@ -116,7 +116,7 @@
               %span.mi.md-36.fill dns
 
             .flex-grow-1
-              %h5.fw-bold.text-dark.mb-0 Workers & Graders
+              %h5.fw-bold.text-body-emphasis.mb-0 Workers & Graders
               .text-secondary.small
                 = pluralize(@graders.size, 'grader process')
                 registered
@@ -146,14 +146,14 @@
               %span.mi.md-36.fill history
 
             .flex-grow-1
-              %h5.fw-bold.text-dark.mb-0 Recent Submissions
+              %h5.fw-bold.text-body-emphasis.mb-0 Recent Submissions
               .text-secondary.small= "Last #{@submission_limit} submissions"
 
             .d-flex.align-items-center.gap-2.small
               %span.text-secondary Show:
               - [20, 100, 500].each do |n|
                 - if n == @submission_limit
-                  %span.fw-bold.text-dark= n
+                  %span.fw-bold.text-body-emphasis= n
                 - else
                   = link_to n, grader_processes_path(limit: n), class: 'text-decoration-none'
 
@@ -186,7 +186,7 @@
                 %span.mi.md-36.fill hourglass_top
 
               .flex-grow-1
-                %h5.fw-bold.text-dark.mb-0 Ungraded Submissions
+                %h5.fw-bold.text-body-emphasis.mb-0 Ungraded Submissions
                 .text-secondary.small
                   = pluralize(@backlog_submission.size, 'submission')
                   pending
