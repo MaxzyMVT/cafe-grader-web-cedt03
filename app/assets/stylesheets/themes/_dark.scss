@@ -274,7 +274,12 @@
 
   // Progress
   .progress { background-color: #2d2d44 !important; }
-  .bg-secondary-subtle { background-color: #2d2d44 !important; }
+  .bg-secondary-subtle {
+    // Use a lighter, slightly tinted value so icon containers don't merge with card bg (#16213e).
+    // Old value #2d2d44 was indistinguishable from card backgrounds on dark theme.
+    background-color: rgba(142, 153, 164, 0.18) !important;
+    color: #8e99a4 !important;
+  }
 
   // Select2 Fixes
   .select2-container {

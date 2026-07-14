@@ -347,7 +347,7 @@
     .progress-bar:not([class*="bg-"]) { background: linear-gradient(90deg, #6c3ce0, #8b5cf6) !important; }
     .progress-bar.bg-primary { background: linear-gradient(90deg, #6c3ce0, #8b5cf6) !important; }
   }
-  .bg-secondary-subtle { background-color: rgba(255, 255, 255, 0.08) !important; }
+  .bg-secondary-subtle { background-color: rgba(255, 255, 255, 0.16) !important; color: rgba(255,255,255,0.65) !important; }
 
   // Select2 Fixes
   .select2-container {
