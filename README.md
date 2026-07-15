@@ -111,14 +111,14 @@ bin/rails check
 
 ## Deployment (production)
 
-Ubuntu 22.04 automated installers live at the repo root — see the
-**[Installation Guide](cafe_grader_installation.md)** for details:
+Ubuntu 22.04 automated installers live in `script/installation/` — see the
+**[Installation Guide](doc/guide/cafe_grader_installation.md)** for details:
 
 ```bash
-bash install_single_server.sh                       # all-in-one
+bash script/installation/install_single_server.sh                       # all-in-one
 # or 3-server: web/db node, then each worker with a UNIQUE id
-bash install_web_db_server.sh
-bash install_worker_server.sh <WEB_DB_IP> 1
+bash script/installation/install_web_db_server.sh
+bash script/installation/install_worker_server.sh <WEB_DB_IP> 1
 ```
 
 Add `--cloud` on AWS/GCP/Azure. Shared install steps live in `deploy/lib/common.sh`.
@@ -126,9 +126,9 @@ Add `--cloud` on AWS/GCP/Azure. Shared install steps live in `deploy/lib/common.
 ## Documentation
 
 - **[Overview](cafe_grader_overview.md)** — architecture, tech stack, file layout.
-- **[Installation Guide](cafe_grader_installation.md)** — single-server & 3-server production setup.
-- **[Local Setup Guide](cafe_grader_local_setup.md)** — dev environment (Ubuntu/WSL) via `setup_local_wsl.sh`.
-- **[Administrator Guide](cafe_grader_admin_guide.md)** — users, problems, contests, grader diagnostics.
+- **[Installation Guide](doc/guide/cafe_grader_installation.md)** — single-server & 3-server production setup.
+- **[Local Setup Guide](doc/guide/cafe_grader_local_setup.md)** — dev environment (Ubuntu/WSL) via `script/installation/setup_local_wsl.sh`.
+- **[Administrator Guide](doc/guide/cafe_grader_admin_guide.md)** — users, problems, contests, grader diagnostics.
 - **[MIGRATION.md](MIGRATION.md)** — upgrading from v1.x to v4.x.
 - **[Backup & restore](deploy/backup/README.md)** — SSH-pull and Huawei OBS/CBR backups.
 - **`/api-docs`** (running app) — Swagger UI for the JSON API.

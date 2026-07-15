@@ -6,8 +6,8 @@ privileges (not root). The only manual step afterwards is `sudo reboot`.
 The shell installers fully automate every step and are the **source of truth** — this
 guide summarises *what* they do and *why*; it does not restate every command (which
 would drift). To read the exact steps, see the scripts and the shared library they
-source: `deploy/lib/common.sh` (all `cg_*` functions), `install_single_server.sh`,
-`install_web_db_server.sh`, `install_worker_server.sh`.
+source: `deploy/lib/common.sh` (all `cg_*` functions), `script/installation/install_single_server.sh`,
+`script/installation/install_web_db_server.sh`, `script/installation/install_worker_server.sh`.
 
 ---
 
@@ -15,19 +15,19 @@ source: `deploy/lib/common.sh` (all `cg_*` functions), `install_single_server.sh
 
 | Deployment | Command |
 |---|---|
-| Single server (all-in-one) | `bash install_single_server.sh` |
-| Web/DB node (Server 1 of 3) | `bash install_web_db_server.sh` |
-| Worker node (Server 2, 3, …) | `bash install_worker_server.sh <SERVER_1_IP> <WORKER_ID>` |
+| Single server (all-in-one) | `bash script/installation/install_single_server.sh` |
+| Web/DB node (Server 1 of 3) | `bash script/installation/install_web_db_server.sh` |
+| Worker node (Server 2, 3, …) | `bash script/installation/install_worker_server.sh <SERVER_1_IP> <WORKER_ID>` |
 
 Add `--cloud` on AWS/GCP/Azure (uses the instance metadata service for the public IP
 and prints security-group reminders instead of touching `ufw`), e.g.
-`bash install_single_server.sh --cloud`.
+`bash script/installation/install_single_server.sh --cloud`.
 
 ```bash
 # 3-server: Server 1 first, then each worker with a UNIQUE id
-bash install_web_db_server.sh
-bash install_worker_server.sh <SERVER_1_IP> 1
-bash install_worker_server.sh <SERVER_1_IP> 2
+bash script/installation/install_web_db_server.sh
+bash script/installation/install_worker_server.sh <SERVER_1_IP> 1
+bash script/installation/install_worker_server.sh <SERVER_1_IP> 2
 ```
 
 After each script finishes: `sudo reboot`. Everything starts automatically on boot.
@@ -79,11 +79,11 @@ Services are `systemctl enable`d, so a reboot brings the whole stack up.
 
 ## Three-server specifics
 
-- **Server 1 (`install_web_db_server.sh`)** runs the web app + MySQL, **no isolate, no
+- **Server 1 (`script/installation/install_web_db_server.sh`)** runs the web app + MySQL, **no isolate, no
   grader workers** (`worker.yml` has `isolate_path` blanked, `worker_id: 0`). MySQL
   binds all interfaces with a `grader_user@%` account — **open TCP 3306 only to worker
   IPs**.
-- **Workers (`install_worker_server.sh <IP> <WORKER_ID>`)** build isolate and run the
+- **Workers (`script/installation/install_worker_server.sh <IP> <WORKER_ID>`)** build isolate and run the
   graders, connecting to Server 1 for the DB. **Each worker server needs a UNIQUE
   `WORKER_ID`** (1, 2, 3, …). The id keys every `GraderProcess (worker_id, box_id)` row
   and scopes the watchdog; two workers sharing an id register as the same processes and

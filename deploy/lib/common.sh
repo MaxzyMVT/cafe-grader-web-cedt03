@@ -283,8 +283,9 @@ cg_clone_app() {
   mkdir -p "$CAFE_DIR"
   [ -d "$CAFE_DIR/web" ] || git clone "$REPO_URL" "$CAFE_DIR/web"
   cd "$APP_DIR"
-  [ -f config/application.rb ] || cp config/application.rb.SAMPLE config/application.rb
-  [ -f config/llm.yml ]        || cp config/llm.yml.SAMPLE        config/llm.yml
+  # config/application.rb and config/llm.yml are tracked in the repo — they arrive
+  # with the clone, no template copy needed. Only untracked configs (database.yml,
+  # worker.yml) are generated from their .SAMPLE later.
 }
 
 # Patch database.yml (host = $1).

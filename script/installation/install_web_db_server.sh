@@ -19,7 +19,7 @@ WORKER_COUNT=0   # this node runs no grader workers
 CLOUD=""
 for a in "$@"; do [ "$a" = "--cloud" ] && CLOUD=1; done
 
-source "$(cd "$(dirname "$0")" && pwd)/deploy/lib/common.sh"
+source "$(cd "$(dirname "$0")/../.." && pwd)/deploy/lib/common.sh"
 
 echo "============================================================"
 echo " Cafe-Grader Web/DB Server Installation (Ubuntu 22.04+)${CLOUD:+  [cloud]}"

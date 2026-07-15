@@ -9,7 +9,7 @@ The easiest way to set up the development environment is to use the provided set
 **Run this from your `cafe-grader-web` project directory**:
 
 ```bash
-./setup_local_wsl.sh
+./script/installation/setup_local_wsl.sh
 ```
 
 This script will:
@@ -22,7 +22,7 @@ After running the script, complete the manual steps it outputs (credentials, dat
 
 ## 2. Manual Setup (Alternative)
 
-If you prefer to run the steps yourself instead of the script, `setup_local_wsl.sh` is
+If you prefer to run the steps yourself instead of the script, `script/installation/setup_local_wsl.sh` is
 the authoritative reference — read it top-to-bottom. In short it: installs MySQL + build
 deps, installs rbenv + Ruby 3.4.4 + bundler, copies the `config/*.SAMPLE` templates and
 patches `database.yml` for local dev, creates the `grader_user` MySQL account, runs

@@ -18,12 +18,12 @@ Read the README to understand the major leap from v1 to v4, the tech stack highl
 
 ## Step 3: Installation and Deployment Architecture
 Understand how the system is installed and the different deployment modes (Single Server vs. Multi-Server).
-- [ ] Read [cafe_grader_installation.md](file:///home/grader_admin/cafe_grader/web/cafe_grader_installation.md)
+- [ ] Read [cafe_grader_installation.md](file:///home/grader_admin/cafe_grader/web/doc/guide/cafe_grader_installation.md)
 
 ## Step 4: Administrative Controls and Management
 Learn how to manage users, problems, contests, and system configurations.
-- [ ] Read [cafe_grader_admin_guide.md](file:///home/grader_admin/cafe_grader/web/cafe_grader_admin_guide.md)
+- [ ] Read [cafe_grader_admin_guide.md](file:///home/grader_admin/cafe_grader/web/doc/guide/cafe_grader_admin_guide.md)
 
 ## Step 5: Local Development and Testing
 Learn how to set up the environment for local development and the limitations of grading in WSL.
-- [ ] Read [cafe_grader_local_setup.md](file:///home/grader_admin/cafe_grader/web/cafe_grader_local_setup.md)
+- [ ] Read [cafe_grader_local_setup.md](file:///home/grader_admin/cafe_grader/web/doc/guide/cafe_grader_local_setup.md)

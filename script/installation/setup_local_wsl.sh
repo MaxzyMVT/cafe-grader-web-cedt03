@@ -68,7 +68,7 @@ echo "  Ruby: $(ruby --version) at $(which ruby)"
 # 3. Move to project directory
 # ---------------------------------------------------------------
 echo "[3/7] Preparing project directory..."
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/../.."
 
 # Fix Windows line endings (CRLF -> LF) on bin/* scripts — common WSL issue
 echo "  Fixing CRLF line endings on bin/* scripts..."
@@ -79,7 +79,9 @@ sed -i 's/\r$//' bin/*
 # ---------------------------------------------------------------
 echo "[4/7] Copying and patching configuration files..."
 
-for file in application.rb llm.yml worker.yml; do
+# application.rb and llm.yml are tracked in the repo (arrive with the clone).
+# Only worker.yml is untracked and generated from its .SAMPLE.
+for file in worker.yml; do
   if [ ! -f "config/$file" ]; then
     echo "  Creating config/$file from sample..."
     cp "config/$file.SAMPLE" "config/$file"

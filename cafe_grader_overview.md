@@ -77,12 +77,12 @@ There are three ways to deploy Cafe-Grader:
 
 | Option | Script | Use when |
 |---|---|---|
-| Single server | `install_single_server.sh` | One machine runs everything — web, DB, and grading |
-| 3-server split | `install_web_db_server.sh` + `install_worker_server.sh` | Scale out grading to dedicated worker machines |
-| Local development | `setup_local_wsl.sh` | Running locally on Ubuntu or WSL2 for development |
+| Single server | `script/installation/install_single_server.sh` | One machine runs everything — web, DB, and grading |
+| 3-server split | `script/installation/install_web_db_server.sh` + `script/installation/install_worker_server.sh` | Scale out grading to dedicated worker machines |
+| Local development | `script/installation/setup_local_wsl.sh` | Running locally on Ubuntu or WSL2 for development |
 
-For detailed installation instructions see the [Installation Guide](cafe_grader_installation.md).
-For local development instructions see the [Local Setup Guide](cafe_grader_local_setup.md).
+For detailed installation instructions see the [Installation Guide](doc/guide/cafe_grader_installation.md).
+For local development instructions see the [Local Setup Guide](doc/guide/cafe_grader_local_setup.md).
 
 ---
 
@@ -97,5 +97,5 @@ The password can be customised before installation by setting `GRADER_ADMIN_PASS
 
 ```bash
 export GRADER_ADMIN_PASSWORD='your_secure_password_here'
-bash install_single_server.sh
+bash script/installation/install_single_server.sh
 ```

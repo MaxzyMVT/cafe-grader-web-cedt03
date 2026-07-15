@@ -45,7 +45,7 @@ if ! [[ "$WORKER_ID" =~ ^[0-9]+$ ]] || [ "$WORKER_ID" -lt 1 ]; then
   exit 1
 fi
 
-source "$(cd "$(dirname "$0")" && pwd)/deploy/lib/common.sh"
+source "$(cd "$(dirname "$0")/../.." && pwd)/deploy/lib/common.sh"
 
 echo "============================================================"
 echo " Cafe-Grader Worker Node Installation (Ubuntu 22.04+)${CLOUD:+  [cloud]}"
