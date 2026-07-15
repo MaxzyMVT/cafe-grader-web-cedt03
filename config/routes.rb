@@ -126,6 +126,7 @@ Rails.application.routes.draw do
       post 'toggle_published'
       post 'toggle_front'
       delete 'delete_file'
+      post 'reorder'
     end
   end
 

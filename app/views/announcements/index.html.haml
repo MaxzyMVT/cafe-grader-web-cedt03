@@ -12,53 +12,58 @@
 .card.card-shadow
   .card-body
 
-    %table.table.table-hover
+    %table.table.table-hover{ data: { controller: 'row-reorder init-ui-component', 'row-reorder-url-value': reorder_announcement_path(-123) } }
       %thead
-        %th Updated
-        %th Announcement
-        %th Author
-        %th{style: 'width: 100px'} Published?
-        %th{style: 'width: 100px'} Front?
-        %th Group
-        %th
-      - for announcement in @announcements
         %tr
-          - @announcement = announcement
-          %td= time_ago_in_words announcement.updated_at
-          %td
-            - if !announcement.title.blank?
-              %b Title:
-              = h announcement.title
-              %br/
-            - if !announcement.notes.blank?
-              %strong Notes:
-              = h announcement.notes
-              %br/
-            = render 'body_preview', announcement: announcement
-            - if announcement.file.attached?
-              .mt-2
-                %span.badge.bg-light.text-dark.border.d-inline-flex.align-items-center.gap-1
-                  = mdi('attachment', 'md-18')
-                  = link_to announcement.file.filename, url_for(announcement.file), class: 'text-decoration-none ms-1', target: '_blank', data: {turbo: false}
-                  = link_to rails_blob_path(announcement.file, disposition: 'attachment'), class: 'text-secondary d-inline-flex align-items-center p-0 ms-1', title: 'Download instantly' do
-                    %span.mi{style: 'font-size: 1rem;'} download
-          %td= h announcement.author
-          %td
-            .form-check.form-switch
-              %input.form-check-input{id: "ann-#{announcement.id}-published-switch", checked: announcement.published, type: "checkbox", data: {action: 'announcement#toggle', 'row-id': announcement.id, field: 'published'}}
-          %td
-            .form-check.form-switch
-              %input.form-check-input{id: "ann-#{announcement.id}-front-switch", checked: announcement.frontpage, type: "checkbox", data: {action: 'announcement#toggle', 'row-id': announcement.id, field: 'front'}}
-          %td
-            - if announcement.group.nil?
-              .badge.text-bg-success Public
-              
-            - else
-              = announcement.group.name
-          %td.py-1
-            .d-flex.gap-1.justify-content-end
-              = link_to mdi('edit') + 'Edit', edit_announcement_path(announcement), class: 'btn btn-flex btn-outline-primary border-0'
-              = link_to mdi('delete', 'md-24'), announcement, :method => :delete, :data => { :confirm => 'Are you sure?' }, class: 'btn btn-flex btn-outline-danger border-0'
+          %th{style: 'width: 40px'}
+          %th Updated
+          %th Announcement
+          %th Author
+          %th{style: 'width: 100px'} Published?
+          %th{style: 'width: 100px'} Front?
+          %th Group
+          %th
+      %tbody
+        - for announcement in @announcements
+          %tr{id: "announcement-#{announcement.id}", draggable: 'true'}
+            - @announcement = announcement
+            %td.text-center
+              %span.mi.text-secondary{style: 'cursor: grab;', data: {bs_toggle: 'tooltip', bs_title: 'Drag to reorder'}} drag_indicator
+            %td= time_ago_in_words announcement.updated_at
+            %td
+              - if !announcement.title.blank?
+                %b Title:
+                = h announcement.title
+                %br/
+              - if !announcement.notes.blank?
+                %strong Notes:
+                = h announcement.notes
+                %br/
+              = render 'body_preview', announcement: announcement
+              - if announcement.file.attached?
+                .mt-2
+                  %span.badge.bg-light.text-dark.border.d-inline-flex.align-items-center.gap-1
+                    = mdi('attachment', 'md-18')
+                    = link_to announcement.file.filename, url_for(announcement.file), class: 'text-decoration-none ms-1', target: '_blank', data: {turbo: false}
+                    = link_to rails_blob_path(announcement.file, disposition: 'attachment'), class: 'text-secondary d-inline-flex align-items-center p-0 ms-1', title: 'Download instantly' do
+                      %span.mi{style: 'font-size: 1rem;'} download
+            %td= h announcement.author
+            %td
+              .form-check.form-switch
+                %input.form-check-input{id: "ann-#{announcement.id}-published-switch", checked: announcement.published, type: "checkbox", data: {action: 'announcement#toggle', 'row-id': announcement.id, field: 'published'}}
+            %td
+              .form-check.form-switch
+                %input.form-check-input{id: "ann-#{announcement.id}-front-switch", checked: announcement.frontpage, type: "checkbox", data: {action: 'announcement#toggle', 'row-id': announcement.id, field: 'front'}}
+            %td
+              - if announcement.group.nil?
+                .badge.text-bg-success Public
+                
+              - else
+                = announcement.group.name
+            %td.py-1
+              .d-flex.gap-1.justify-content-end
+                = link_to mdi('edit') + 'Edit', edit_announcement_path(announcement), class: 'btn btn-flex btn-outline-primary border-0'
+                = link_to mdi('delete', 'md-24'), announcement, :method => :delete, :data => { :confirm => 'Are you sure?' }, class: 'btn btn-flex btn-outline-danger border-0'
 
     %br
 

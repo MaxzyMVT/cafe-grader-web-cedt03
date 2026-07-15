@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_07_03_192611) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_15_162807) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -51,6 +51,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_07_03_192611) do
     t.string "notes"
     t.boolean "on_nav_bar", default: false
     t.bigint "group_id"
+    t.integer "number", default: 0
     t.index ["group_id"], name: "index_announcements_on_group_id"
   end
 

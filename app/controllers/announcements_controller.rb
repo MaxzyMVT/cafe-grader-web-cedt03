@@ -1,6 +1,6 @@
 class AnnouncementsController < ApplicationController
   MEMBER_METHOD = %i[show edit destroy update delete_file
-                     toggle_front toggle_published
+                     toggle_front toggle_published reorder
                     ]
 
   before_action :set_announcement, only: MEMBER_METHOD
@@ -110,6 +110,19 @@ class AnnouncementsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to(announcements_url) }
       format.xml  { head :ok }
+    end
+  end
+
+  def reorder
+    old_number = @announcement.number || 0
+    target_pos = params[:target_position].to_i
+    if target_pos > 0
+      Announcement.set_announcement_number(@announcement, target_pos)
+      @toast = {title: "Announcement", body: "Announcement reordered to position #{target_pos}."}
+    end
+    respond_to do |format|
+      format.turbo_stream { render 'turbo_toast' }
+      format.html { redirect_to action: :index, notice: "Announcement was reordered." }
     end
   end
 
