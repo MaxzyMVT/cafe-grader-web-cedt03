@@ -10,6 +10,10 @@ When a release is cut: rename it to `[X.Y.Z] — YYYY-MM-DD`, bump
 
 ## [Unreleased]
 
+### Fixed
+
+- **Announcement modal in Premium theme** — fixed a bug where clicking "Read More" on the main page in the "Premium" theme trapped the modal behind a black `.modal-backdrop` and clipped it to the card container by removing `isolation: isolate` and `overflow: hidden !important` from `.card` in `_premium.scss`, and relocating opened modals to `document.body` in `setup_bootstrap.js`.
+
 ## [4.4.2-cedt03.1] — 2026-07-15
 
 
