@@ -7,7 +7,7 @@
 .announcement-preview{class: ('announcement-preview-clamped' if clipped)}
   = markdown(announcement.body)
 - if clipped
-  %a.fw-bold{href: '#', style: 'text-decoration: none;', data: {bs_toggle: 'modal', bs_target: "#announcementModal-#{announcement.id}"}}
+  %a.fw-bold{href: 'javascript:void(0)', role: 'button', style: 'text-decoration: none;', data: {bs_toggle: 'modal', bs_target: "#announcementModal-#{announcement.id}"}}
     Read More &rarr;
   .modal.fade{id: "announcementModal-#{announcement.id}", tabindex: '-1', 'aria-labelledby': "announcementModalLabel-#{announcement.id}", 'aria-hidden': 'true'}
     .modal-dialog.modal-lg.modal-dialog-scrollable
