@@ -13,7 +13,9 @@ class Testcase < ApplicationRecord
   has_one_attached :inp_file
   has_one_attached :ans_file
 
-  scope :display_order, ->  { order(:group, :num) }
+  scope :display_order, ->  { order(:group, :num, :id) }
+  # excludes legacy LONGTEXT input/sol columns (dead since grading moved to inp_file/ans_file attachments)
+  scope :without_legacy_blobs, -> { select(column_names - %w[input sol]) }
 
   def get_name_for_dir
     return code_name unless code_name.blank?
@@ -23,5 +25,18 @@ class Testcase < ApplicationRecord
   # we should rename score field into weight
   def get_weight
     return score
+  end
+
+  def self.set_testcase_num(testcase, number)
+    dataset = testcase.dataset
+    num = 1
+    AuditLog.paused do
+      dataset.testcases.where.not(id: testcase.id).order(:group, :num, :id).each do |tc|
+        offset = (num >= number) ? 1 : 0
+        tc.update(num: num + offset)
+        num += 1
+      end
+      testcase.update(num: [dataset.testcases.count, [1, number.round].max].min)
+    end
   end
 end

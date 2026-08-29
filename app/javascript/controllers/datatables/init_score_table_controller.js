@@ -107,16 +107,16 @@ export default class extends DatatableInitController {
       count += 1
       let result = []
       if (this.showDeductionValue) {
-        result.push( {data: `raw_score_${id}`,className: 'text-end text-secondary' })
-        result.push( {data: `total_cost_${id}`, className: 'text-end text-secondary',render: this._deduction_renderer_factory(id)})
+        result.push( {data: `raw_score_${id}`,className: 'text-center text-secondary' })
+        result.push( {data: `total_cost_${id}`, className: 'text-center text-secondary',render: this._deduction_renderer_factory(id)})
       }
-      result.push({data: `final_score_${id}`,className: 'text-end border-end',render: this._score_renderer_factory(id) })
+      result.push({data: `final_score_${id}`,className: 'text-center border-end',render: this._score_renderer_factory(id) })
       return result
     }).flat()
     this.deductionColumns.push(6 + 3 * count + 0) // for the summation raw
 
     let columns = [
-      {data: 'row_number', className: 'text-end'},
+      {data: 'row_number', className: 'text-center'},
       {data: 'login', render: cafe.dt.render.link(null,{path: userStatPath, replace_field: 'user_id' })},
       {data: 'full_name'},
       {data: 'remark'},
@@ -124,9 +124,9 @@ export default class extends DatatableInitController {
       {data: 'last_heartbeat',label: 'Last Checkin', className: 'border-end', render: renderers.humanizeTimeRender},
     ].concat(problemColumns)
     if (this.showDeductionValue) {
-      columns.push({data: 'sum_raw', className: 'fw-bold text-end text-secondary'})
+      columns.push({data: 'sum_raw', className: 'fw-bold text-center text-secondary'})
     }
-    columns.push( {data: 'sum_final', className: 'fw-bold text-end border-end'} )
+    columns.push( {data: 'sum_final', className: 'fw-bold text-center border-end'} )
 
     return columns
   }

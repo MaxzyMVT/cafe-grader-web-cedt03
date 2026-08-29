@@ -3,27 +3,32 @@ require 'net/pop'
 require 'net/https'
 require 'net/http'
 require 'json'
+require 'argon2'
 
 class User < ApplicationRecord
+  THEMES = %w[default dark premium ocean solarized space_legacy].freeze
+
   has_and_belongs_to_many :roles
 
   # has_and_belongs_to_many :groups
-  has_many :groups_users, class_name: 'GroupUser'
+  has_many :groups_users, class_name: 'GroupUser', dependent: :destroy
   has_many :groups, through: :groups_users
 
-  has_many :test_requests, -> { order(submitted_at: :desc) }
+  has_many :test_requests, -> { order(submitted_at: :desc) }, dependent: :destroy
 
   has_many :messages, -> { order(created_at: :desc) },
            class_name: "Message",
-           foreign_key: "sender_id"
+           foreign_key: "sender_id",
+           dependent: :destroy
 
   has_many :replied_messages, -> { order(created_at: :desc) },
            class_name: "Message",
-           foreign_key: "receiver_id"
+           foreign_key: "receiver_id",
+           dependent: :destroy
 
-  has_many :logins
+  has_many :logins, dependent: :destroy
 
-  has_many :submissions
+  has_many :submissions, dependent: :destroy
 
   has_one :contest_stat, class_name: "UserContestStat", dependent: :destroy
 
@@ -33,12 +38,14 @@ class User < ApplicationRecord
   belongs_to :default_language, class_name: 'Language', foreign_key: 'default_language_id', optional: true
 
   # contest
-  has_many :contests_users, class_name: 'ContestUser'
+  has_many :contests_users, class_name: 'ContestUser', dependent: :destroy
   has_many :contests, through: :contests_users
 
   # comments
-  has_many :comment_reveals
+  has_many :comment_reveals, dependent: :destroy
   has_many :revealed_comments, through: :comment_reveals, source: :comment
+  has_many :comments, dependent: :destroy
+  has_many :heart_beats, dependent: :destroy
 
   scope :activated_users, -> { where activated: true }
 
@@ -53,6 +60,8 @@ class User < ApplicationRecord
   validates_presence_of :password, if: :password_required?
   validates_length_of :password, within: 4..50, if: :password_required?
   validates_confirmation_of :password, if: :password_required?
+
+  validates_inclusion_of :theme, in: THEMES, allow_nil: true
 
   validates_format_of :email,
                       with: /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i,
@@ -71,6 +80,62 @@ class User < ApplicationRecord
   before_save :encrypt_new_password
   before_save :assign_default_site
   before_save :assign_default_contest
+
+  def bonus_score
+    # Includes "N-th Blood" bonus
+    # We find all problems where this user is one of the N-th blooders
+    return 0 unless GraderConfiguration.show_first_bloods?
+    total_bonus = 0
+    Problem.where.not(bonus_first_blood: [nil, 0]).find_each do |problem|
+      n = problem.respond_to?(:first_n_bloods) ? problem.first_n_bloods : 0
+      if problem.first_n_blood_users(n).include?(self)
+        total_bonus += problem.bonus_first_blood
+      end
+    end
+    total_bonus
+  end
+
+  def current_score
+    problems = problems_for_action(:submit, respect_admin: false)
+    
+    # Calculate range of time (in contest mode)
+    time_range = active_contests_range if GraderConfiguration.contest_mode?
+    start_time = time_range ? time_range.begin : nil
+    stop_time = time_range ? time_range.end : nil
+
+    records = Submission.where(user: self, problem: problems)
+    records = records.where(submitted_at: time_range) if time_range
+
+    records = records.max_score_report(problems, start_time, stop_time)
+    
+    # Sum of raw max points per problem
+    raw_problem_scores = records.to_a.sum { |r| r.max_score.to_d }
+    
+    # Total deductions from all comment reveals (hints, LLM assists, etc.)
+    # Only count deductions for problems that are currently available to the user
+    # 1. Deductions from Problem hints
+    problem_hint_deductions = comment_reveals.joins("INNER JOIN comments ON comments.id = comment_reveals.comment_id AND comments.commentable_type = 'Problem'")
+                                             .joins("INNER JOIN problems ON problems.id = comments.commentable_id")
+                                             .where(problems: { available: true })
+                                             .sum('comments.cost') || 0
+
+    # 2. Deductions from Submission LLM assistance
+    submission_deductions = comment_reveals.joins("INNER JOIN comments ON comments.id = comment_reveals.comment_id AND comments.commentable_type = 'Submission'")
+                                           .joins("INNER JOIN submissions ON submissions.id = comments.commentable_id")
+                                           .joins("INNER JOIN problems ON problems.id = submissions.problem_id")
+                                           .where(problems: { available: true })
+                                           .sum('comments.cost') || 0
+
+    total_deductions = problem_hint_deductions + submission_deductions
+    
+    deductions = GraderConfiguration.enable_penalty? ? total_deductions : 0.0
+    bonus = GraderConfiguration.enable_bonus? ? bonus_score : 0.0
+
+    [0.0, (raw_problem_scores - deductions + bonus).to_f].max
+  end
+  def enabled?
+    !!self[:enabled]
+  end
 
   # ---- problem for the users for specific action ------
   # Determines which problems a user is authorized to perform the specified action on.
@@ -92,41 +157,41 @@ class User < ApplicationRecord
   # is treated as a normal user
   #
   # valid action are :submit, :report, or :edit
-  def problems_for_action(action, respect_admin: true)
-    return Problem.all if admin? && respect_admin
-    return Problem.none unless enabled?
+  def problems_for_action(action, respect_admin: true, contest: nil)
+    return Problem.all if (admin? || problem_setter?) && respect_admin
+    return Problem.none unless enabled? || (admin? || problem_setter?)
 
     action = action.to_sym
+    return Problem.none if [:edit, :report].include?(action)
 
-    if GraderConfiguration.multicontests?
+    res = if GraderConfiguration.multicontests?
       # legacy mode, have not been implemented yet
-      return Problem.contests_problems_for_user(self.id).none
+      Problem.contests_problems_for_user(self.id, contest: contest).none
     elsif GraderConfiguration.contest_mode?
-      if [:edit, :report].include? action
-        return Problem.contests_editable_problems_for_user(self.id)
+      if (admin? || problem_setter?)
+        if contest
+          Problem.joins(:contests_problems)
+                 .where(available: true)
+                 .where(contests_problems: { contest_id: contest.id, enabled: true })
+        else
+          Problem.joins(contests_problems: :contest)
+                 .where(available: true)
+                 .where(contests_problems: { enabled: true })
+                 .where(contests: { enabled: true })
+        end
       else
-        return Problem.contests_problems_for_user(self.id)
+        Problem.contests_problems_for_user(self.id, contest: contest)
       end
     else
       # normal mode
       if GraderConfiguration.use_problem_group?
-        if action == :edit
-          return Problem.group_editable_by_user(self.id)
-        elsif action == :report
-          return Problem.group_reportable_by_user(self.id)
-        elsif action == :submit
-          return Problem.group_submittable_by_user(self.id)
-        else
-          raise ArgumentError.new('action must be one of :edit, :report, :submit')
-        end
+        Problem.group_submittable_by_user(self.id)
       else
-        if action == :submit
-          return Problem.available
-        else
-          return Problem.none
-        end
+        Problem.available
       end
     end
+
+    res.visible_to_user(self)
   end
 
   # ---- groups for the users for specific action ------
@@ -137,21 +202,14 @@ class User < ApplicationRecord
   #
   # valid action is either :submit, :report, :edit
   def groups_for_action(action)
-    return Group.all if admin?
+    return Group.all if admin? || problem_setter?
     return Group.none unless enabled?
 
     action = action.to_sym
+    return Group.none if [:edit, :report].include?(action)
 
     # normal mode
-    if action == :edit
-      return Group.editable_by_user(self.id)
-    elsif action == :report
-      return Group.reportable_by_user(self.id)
-    elsif action == :submit
-      return Group.submittable_by_user(self.id)
-    else
-      raise ArgumentError.new('action must be one of :edit, :report, :submit')
-    end
+    Group.submittable_by_user(self.id)
   end
 
   # ---- groups for the users for specific action ------
@@ -162,13 +220,13 @@ class User < ApplicationRecord
   #
   # valid action is either :submit, :edit
   def contests_for_action(action)
-    return Contest.all if admin?
+    return Contest.all if admin? || problem_setter?
     return Contest.none unless enabled?
     action = action.to_sym
 
     # normal mode
     if action == :edit
-      return Contest.editable_by_user(self.id)
+      return Contest.none
     elsif action == :submit
       return Contest.submittable_by_user(self.id)
     else
@@ -177,7 +235,7 @@ class User < ApplicationRecord
   end
 
   def reportable_users
-    return User.all if admin?
+    return User.all if admin? || problem_setter?
     User.joins(:groups).where(groups: {id: groups_for_action(:report)}).distinct
   end
 
@@ -198,22 +256,26 @@ class User < ApplicationRecord
   end
 
   # return contests of this user that is both enabled and the current time
-  # is during the contest
+  # is during the contest (including pre-contest and post-contest buffer times)
   def active_contests
     if GraderConfiguration.contest_mode?
-      return contests.where(enabled: true).where('start <= ? and stop >= ?', Time.zone.now, Time.zone.now)
+      contests.where(enabled: true).select do |contest|
+        pre_start = contest.start - (contest.pre_contest_seconds || 0).seconds
+        post_stop = contest.stop + (contest.post_contest_seconds || 0).seconds
+        Time.zone.now >= pre_start && Time.zone.now <= post_stop
+      end
     else
-      return Contest.none
+      return []
     end
   end
 
-  # return datetime range of active contests
+  # return datetime range of active contests (including pre-contest and post-contest buffer times)
   def active_contests_range
     start = Date.new(9999, 1, 1).to_time
     stop = Date.new(1, 1, 1).to_time
     active_contests.each do |contest|
-      start = [start, contest.start].min
-      stop = [stop, contest.stop].max
+      start = [start, contest.start - (contest.pre_contest_seconds || 0).seconds].min
+      stop = [stop, contest.stop + (contest.post_contest_seconds || 0).seconds].max
     end
     return start..stop
   end
@@ -226,10 +288,21 @@ class User < ApplicationRecord
   end
 
   def authenticated?(password)
-    if self.activated
-      hashed_password == User.encrypt(password, self.salt)
+    return false unless self.activated
+    return false if hashed_password.blank?
+
+    if hashed_password.start_with?('$argon2')
+      Argon2::Password.verify_password(password, hashed_password)
     else
-      false
+      # legacy SHA1
+      if hashed_password == User.encrypt(password, self.salt)
+        # lazy migration to Argon2
+        self.password = password
+        encrypt_new_password
+        self.save(validate: false)
+        return true
+      end
+      return false
     end
   end
 
@@ -240,6 +313,11 @@ class User < ApplicationRecord
   def admin?
     @is_admin = has_role?('admin') if @is_admin.nil?
     return @is_admin
+  end
+
+  def problem_setter?
+    @is_problem_setter = has_role?('problem_setter') if @is_problem_setter.nil?
+    return @is_problem_setter
   end
 
   def has_role?(role)
@@ -401,7 +479,7 @@ class User < ApplicationRecord
   # this also consider group based problem policy
   def can_view_problem?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     # if a user is a reporter or an editor, they can access disabled problem, which is not allowed in problems_for_action(:submit)
     # we need both :report and :submit action because :report is not the super set of :submit
@@ -414,14 +492,14 @@ class User < ApplicationRecord
 
   def can_report_problem?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     return problems_for_action(:report).where(id: problem.id).any?
   end
 
   def can_edit_problem?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
     return problems_for_action(:edit).where(id: problem).any?
   end
 
@@ -445,36 +523,31 @@ class User < ApplicationRecord
 
   def can_view_submission?(submission)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
-    # For group mode, reporters can always view the submission of the problem
-    return true if problems_for_action(:report).include? submission.problem
+    if submission.user_id == self.id
+      return true
+    elsif GraderConfiguration['system.group_score_type'] == 'group_max'
+      self_group_ids = self.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).pluck(:id)
+      owner_group_ids = submission.user.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).pluck(:id)
+      if (self_group_ids & owner_group_ids).any?
+        return true
+      end
+    end
 
-    # At this step, we knows that the user does not have special privileges to the problem
-
-    # problem available is required
-    return false unless problems_for_action(:submit).include? submission.problem
-
-    # a user can view their own submissions
-    return true if submission.user == self
-
-    # check global disable
-    return false unless GraderConfiguration["right.user_view_submission"]
-
-    # finally, the view_submission of the problem must be true
-    return submission.problem.view_submission
+    return false
   end
 
   def can_view_testcase?(problem)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     return can_view_problem?(problem) && GraderConfiguration["right.view_testcase"]
   end
 
   def can_edit_announcement(announcement)
     # admin always has right
-    return true if admin?
+    return true if admin? || problem_setter?
 
     # if the announcement is not group specific or is in a group t
     return true if Announcement.editable_by_user(self).where(id: announcement).any?
@@ -625,8 +698,7 @@ class User < ApplicationRecord
   protected
     def encrypt_new_password
       return if password.blank?
-      self.salt = (10+rand(90)).to_s
-      self.hashed_password = User.encrypt(self.password, self.salt)
+      self.hashed_password = Argon2::Password.create(self.password)
     end
 
     def assign_default_site

@@ -17,13 +17,12 @@
         .card-body
           %h5.fw-bold.text-secondary.mb-3 Settings
           = f.input :author, wrapper: :horizontal_form
-          = f.input :group_id, collection: @current_user.groups_for_action(:edit), include_blank: (@current_user.admin? ? '-- No group (show too all) --' : false), wrapper: :horizontal_select
+          = f.input :group_id, collection: @current_user.groups_for_action(:edit), include_blank: '-- No group (publicly visible) --', wrapper: :horizontal_select
           
           %hr
           
           = f.input :published, wrapper: :horizontal_boolean
           = f.input :frontpage, label: 'Show on front page', wrapper: :horizontal_boolean
-          = f.input :on_nav_bar, label: 'Show on menu bar', wrapper: :horizontal_boolean
           = f.input :contest_only, label: 'Show in contest only', wrapper: :horizontal_boolean
           
           %hr

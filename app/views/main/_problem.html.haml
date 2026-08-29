@@ -1,7 +1,7 @@
 %tr
-  %td.text-end{'data-order': @numbering}
+  %td.text-end.d-none.d-sm-table-cell{'data-order': @numbering}
     %div= @numbering
-    - if @current_user&.admin?
+    - if @current_user&.admin? || @current_user&.problem_setter?
       .mt-1
         = link_to stat_problem_path(problem), class: 'text-secondary text-decoration-none', 'data-bs-toggle' => 'tooltip', title: 'View Statistics' do
           %span.mi{style: 'font-size: 1.2rem; vertical-align: middle;'} bar_chart
@@ -9,46 +9,79 @@
           %span.mi{style: 'font-size: 1.2rem; vertical-align: middle;'} edit
   - @numbering+=1
   -# problem name, pdf, attachments, etc.
-  %td
+  - limit_reached = problem.submission_limit_reached?(@current_user)
+  %td{style: 'min-width: 200px; max-width: 450px; overflow-wrap: anywhere;'}
     = render partial: 'problems/problem_name', locals: {problem: problem}
+    - if @group_max_scores && @group_max_scores[problem.id]
+      .mt-1
+        %span.badge.bg-info-subtle.text-info-emphasis.border.border-info-subtle.d-inline-flex.align-items-center.gap-1{title: 'Maximum score achieved by your group'}
+          %span.mi{style: 'font-size: 0.85rem;'} group
+          = "Group Max: #{number_with_precision(@group_max_scores[problem.id], precision: 2, strip_insignificant_zeros: true)}"
+  %td.text-end.d-none.d-md-table-cell{style: 'width: 5rem;'}
+    = number_with_precision problem.effective_full_score, precision: 2, strip_insignificant_zeros: true
+
   -# score column
   - score = @prob_submissions[problem.id][:max_score] || 0
+  - full_score = problem.effective_full_score
   - raw_sum_mode = problem.live_dataset&.st_raw_sum?
-  - cc = score == 100 ? 'bg-success' : 'bg-warning text-dark'
-  %td{style: "width: 12em; vertical-align: middle", 'data-order': score || 0}
-    - if raw_sum_mode
-      %span.fw-semibold
-        = number_with_precision score, precision: 2, strip_insignificant_zeros: true
-    - else
+  - is_zero_full_score_pass = false
+  - if full_score == 0 && (best_sub = @prob_submissions[problem.id][:best_submission])
+    - clean_gc = best_sub.grader_comment.to_s.gsub(/[\[\]\s]/, '')
+    - tc_count = problem.live_dataset&.testcases&.count || 0
+    - if best_sub.status.to_s == 'done'
+      - if tc_count == 0
+        - is_zero_full_score_pass = true
+      - elsif clean_gc.match?(/\A[PS]+\z/)
+        - is_zero_full_score_pass = true
+  - cc = (score.to_f.abs >= full_score.to_f.abs || is_zero_full_score_pass) ? 'bg-success' : 'bg-warning text-dark'
+  %td{style: "width: 10rem; min-width: 10rem; vertical-align: middle", 'data-order': score || 0}
+    - unless false
       - text = []
-      - sum_cost = 0
-      - hint_count = @prob_submissions[problem.id][:hint_count]
       - hint_cost = @prob_submissions[problem.id][:hint_cost] || 0
-      - text << "Hint: #{hint_count}" if hint_count
-      - sum_cost += hint_cost
-      - ai_count = @prob_submissions[problem.id][:ai_assist_count]
       - ai_cost = @prob_submissions[problem.id][:ai_assist_cost] || 0
-      - sum_cost += ai_cost
-      - sum_cost = [100, sum_cost].min
+      - sum_cost = [full_score, hint_cost + ai_cost].min
+      - ai_count = @prob_submissions[problem.id][:ai_assist_count]
       - text << "AI Assist: #{ai_count}" if ai_count
-      -# display progress bar
-      - adjusted_score = [100 - sum_cost, score].min
-      .progress.rounded-pill{style: 'height: 0.85rem;'}
-        .progress-bar{style: "width: #{adjusted_score}%", class: cc}
-          = number_with_precision adjusted_score, precision: 2
-        .progress-bar{style: "width: #{score - adjusted_score}%", class: 'bg-danger'}
-          = number_with_precision score - adjusted_score, precision: 2
+      -# display progress bar using absolute values to support negative full scores
+      - score_sign = full_score < 0 ? -1 : 1
+      - abs_full_score = full_score.to_f.abs
+      - abs_score = score.to_f.abs
+      - abs_hint_cost = hint_cost.to_f.abs
+      - abs_ai_cost = ai_cost.to_f.abs
+      - abs_sum_cost = [abs_full_score, abs_hint_cost + abs_ai_cost].min
+      - abs_adjusted_score = [abs_full_score - abs_sum_cost, abs_score].min
+      - pct_adj = is_zero_full_score_pass ? 100 : (abs_full_score > 0 ? (abs_adjusted_score / abs_full_score) * 100 : 0)
+      - abs_extra_points = [0, abs_score - abs_adjusted_score].max
+      - pct_extra = abs_full_score > 0 ? (abs_extra_points / abs_full_score) * 100 : 0
+      - abs_deduction_rem = [0, abs_sum_cost - abs_extra_points].max
+      - pct_deduct_rem = abs_full_score > 0 ? (abs_deduction_rem / abs_full_score) * 100 : 0
+      
+      .progress.rounded-pill.bg-secondary-subtle{style: 'height: 0.85rem;'}
+        - if pct_adj > 0
+          .progress-bar{style: "width: #{pct_adj}%", class: cc}
+            = number_with_precision abs_adjusted_score * score_sign, precision: 2, strip_insignificant_zeros: true
+        - if pct_extra > 0
+          .progress-bar.bg-danger{style: "width: #{pct_extra}%", 'data-bs-toggle' => 'tooltip', title: 'Points lost due to hint cap'}
+            = number_with_precision abs_extra_points * score_sign, precision: 2, strip_insignificant_zeros: true
+        -# spacer
+        .progress-bar.bg-transparent{style: "width: #{[0, 100 - pct_adj - pct_extra - pct_deduct_rem].max}%"}
+        - if pct_deduct_rem > 0
+          .progress-bar.bg-danger{style: "width: #{pct_deduct_rem}%", 'data-bs-toggle' => 'tooltip', title: 'Full score reduction from hints'}
       %div
         %small= text.join(', ')
       %div
-        %small= "Full score reduced by #{sum_cost}" if sum_cost > 0
+        %small= "Reduced by #{number_with_precision(sum_cost, precision: 2, strip_insignificant_zeros: true)}" if sum_cost > 0
   -# last submission column
-  %td
+  %td.d-none.d-lg-table-cell{style: 'min-width: 15rem; width: 15rem;'}
     = render partial: 'submission_short',
       locals: {submission: @prob_submissions[problem.id][:submission], problem_name: problem.name, problem_id: problem.id, sub_count: @prob_submissions[problem.id][:count], show_button: false, show_id: true }
   -# Action column
-  %td
-    - if problem.viva_exam?
+  %td{style: 'width: 5rem;'}
+    - if limit_reached
+      %span.badge.badge-limit-danger.d-inline-flex.align-items-center.gap-1
+        %span.mi{style: 'font-size: 0.9rem;'} block
+        Limit reached
+    - elsif problem.viva_exam?
       - if @prob_submissions[problem.id][:submission]
         = link_to 'View Viva', viva_submission_path(@prob_submissions[problem.id][:submission]), class: 'btn btn-outline-primary btn-sm'
       - else
@@ -59,5 +92,5 @@
       - else
         = link_to 'New', direct_edit_problem_submissions_path(problem.id), class: 'btn btn-outline-success btn-sm'
   -# hidden column
-  %td
+  %td.d-none
     = problem.public_tags.pluck(:name).join ','

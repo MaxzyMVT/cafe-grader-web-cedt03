@@ -1,5 +1,17 @@
 = turbo_stream.append 'js-response' do
   :javascript
-    set_group_switch(#{@group.id},#{@group.enabled?})
+    if (typeof set_group_switch === 'function') {
+      set_group_switch(#{@group.id}, #{@group.enabled?});
+    }
+    const showSwitch = document.getElementById('group-enabled-switch');
+    if (showSwitch) {
+      showSwitch.checked = #{@group.enabled?};
+      showSwitch.disabled = false;
+    }
+    const showBadge = document.getElementById('group-enabled-badge');
+    if (showBadge) {
+      showBadge.className = #{@group.enabled?} ? 'badge bg-success' : 'badge bg-secondary';
+      showBadge.textContent = #{@group.enabled?} ? 'Yes' : 'No';
+    }
 - if @toast
   = turbo_stream.append 'toast-area', partial: 'toast', locals: {toast: @toast}

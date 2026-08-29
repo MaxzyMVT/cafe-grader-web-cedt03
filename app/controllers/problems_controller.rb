@@ -6,6 +6,7 @@ class ProblemsController < ApplicationController
                    :toggle_available, :toggle_view_testcase, :stat,
                    :add_dataset, :import_testcases,
                    :download_archive, :download_by_type, :delete_by_type,
+                   :move_up, :move_down, :reorder, :quick_add_testcase,
                   ]
 
   before_action :set_problem, only: MEMBER_METHOD
@@ -15,11 +16,13 @@ class ProblemsController < ApplicationController
   before_action :group_editor_authorization, except: [:download_by_type]
   before_action :can_view_problem, only: [:download_by_type]
 
-  before_action :admin_authorization, only: [:toggle_available, :turn_all_on, :turn_all_off, :download_archive]
+  before_action :admin_authorization, only: [:turn_all_on, :turn_all_off, :download_archive]
+  before_action :admin_or_setter_authorization, only: [:toggle_available]
   before_action :can_edit_problem, only: [:edit, :update, :destroy,
                                           :toggle_view_testcase, :stat,
                                           :add_dataset, :import_testcases,
-                                          :delete_by_type,
+                                          :delete_by_type, :move_up, :move_down, :reorder,
+                                          :quick_add_testcase,
                                          ]
   before_action :can_report_problem, only: [:stat]
   before_action :set_active_tab, only: %i[update]
@@ -69,11 +72,16 @@ class ProblemsController < ApplicationController
       when 'attachment' then attachment.filename.to_s
       end
 
+    disposition = params[:disposition] || 'inline'
+    unless %w[inline attachment].include? disposition
+      disposition = 'inline'
+    end
+
     begin
       send_data attachment.download,
                 filename: filename,
                 type: attachment.content_type || 'application/octet-stream',
-                disposition: 'inline'
+                disposition: disposition
     rescue  ActiveStorage::FileNotFoundError
       @error_message = "File is not found in the server."
       render 'error'
@@ -208,6 +216,36 @@ class ProblemsController < ApplicationController
     render 'toggle'
   end
 
+  def move_up
+    old_number = @problem.number || 2
+    Problem.set_problem_number(@problem, old_number - 1.2)
+    redirect_to action: :index, notice: "Problem #{@problem.name} was moved up."
+  end
+
+  def move_down
+    old_number = @problem.number || 0
+    Problem.set_problem_number(@problem, old_number + 1.2)
+    redirect_to action: :index, notice: "Problem #{@problem.name} was moved down."
+  end
+
+  def reorder
+    old_number = @problem.number
+    target_pos = params[:target_position].to_i
+    if target_pos > 0
+      Problem.set_problem_number(@problem, target_pos)
+      AuditLog.record!(
+        auditable: @problem,
+        action: 'reorder',
+        object_changes: { 'number' => [old_number, target_pos] }
+      )
+      @toast = {title: "Problem #{@problem.name}", body: "Problem reordered to position #{target_pos}."}
+    end
+    respond_to do |format|
+      format.turbo_stream { render 'turbo_toast' }
+      format.html { redirect_to action: :index, notice: "Problem #{@problem.name} was reordered." }
+    end
+  end
+
   def turn_all_off
     Problem.where(available: true).update_all(available: false)
     redirect_to action: :index
@@ -245,7 +283,7 @@ class ProblemsController < ApplicationController
   end
 
   def manage
-    @problems = @current_user.problems_for_action(:edit).order(date_added: :desc).includes(:tags)
+    @problems = @current_user.problems_for_action(:edit).order(:number).order(:name).includes(:tags)
   end
 
   def do_manage
@@ -254,27 +292,35 @@ class ProblemsController < ApplicationController
     problems = Problem.where(id: get_problems_from_params.ids).where(id: @current_user.problems_for_action(:edit).ids)
 
     @toast = {title: "Bulk Manage #{problems.count} #{'problem'.pluralize(problems.count)}"}
-
-    change_date_added(problems) if params[:change_date_added] == '1' && params[:date_added].strip.empty? == false
     add_to_contest(problems) if params.has_key? 'add_to_contest'
     if params[:change_enable] == '1'
       problems.update_all(available: params[:enable] == 'yes')
       @result << "Set \"Available\" to <strong>#{params[:enable]}</strong>"
     end
-    if params[:add_tags] == '1'
+    if params[:add_tags] == '1' && params[:tag_ids].present?
       problems.each { |p| p.tag_ids += params[:tag_ids] }
       tag_names = Tag.where(id: params[:tag_ids]).pluck(:name).map { |x| "[<strong>#{x}</strong>]" }.join(', ')
       @result << "Add tags #{tag_names}"
     end
 
-    if params[:set_languages] == '1'
+    if params[:clear_tags] == '1'
+      problems.each { |p| p.tags.clear }
+      @result << "Cleared all tags"
+    end
+
+    if params[:set_languages] == '1' && params[:lang_ids].present?
       permitted_lang = Language.where(id: params[:lang_ids]).pluck(:name)
       problems.update_all(permitted_lang: permitted_lang.join(' '))
       @result << "Permitted languages are changed to #{permitted_lang.map { |x| "[<strong>#{x}</strong>]" }.join(', ')}"
     end
 
+    if params[:clear_languages] == '1'
+      problems.update_all(permitted_lang: nil)
+      @result << "Cleared permitted languages (all languages are now allowed)"
+    end
+
     # add to groups
-    if params[:add_group] == '1'
+    if params[:add_group] == '1' && params[:group_id].present?
       Group.where(id: params[:group_id]).each do |group|
         ok = []
         failed = []
@@ -289,8 +335,11 @@ class ProblemsController < ApplicationController
         @result << "Added to group <strong>#{group.name}</strong>"
         @result << "The following problem are already in the group <strong>#{group.name}</strong>: " + failed.join(', ') if failed.count > 0
       end
-      # flash[:success] = "The following problems are added to the group #{group.name}: " + ok.join(', ') if ok.count > 0
-      # flash[:alert] = "The following problems are already in the group #{group.name}: " + failed.join(', ') if failed.count > 0
+    end
+
+    if params[:clear_groups] == '1'
+      problems.each { |p| p.groups.clear }
+      @result << "Cleared from all groups"
     end
 
     @toast[:body] = "<ul> #{@result.map { |x| "<li>#{x}</li>" }.join}  </ul>".html_safe
@@ -304,7 +353,7 @@ class ProblemsController < ApplicationController
 
   def import
     @allow_test_pair_import = allow_test_pair_import?
-    @allow_blank_group = @current_user.admin?
+    @allow_blank_group = @current_user.admin? || @current_user.problem_setter?
   end
 
 
@@ -320,7 +369,7 @@ class ProblemsController < ApplicationController
 
     # check valid group
     group = Group.find(params[:problem][:groups]) rescue nil
-    unless @current_user.admin? || @current_user.groups_for_action(:edit).where(id: group).any?
+    unless @current_user.admin? || @current_user.problem_setter? || @current_user.groups_for_action(:edit).where(id: group).any?
       @errors = ['You can only upload a problem into a group that you are editor']
       render :import and return
     end
@@ -367,7 +416,7 @@ class ProblemsController < ApplicationController
 
       # when non-admin (editor) import a problem, we set available to true
       # (because they cannot set the available) but set the enabled to false
-      unless @current_user.admin?
+      unless @current_user.admin? || @current_user.problem_setter?
         @problem.update(available: true)
         GroupProblem.where(group: group, problem: @problem).first.update(enabled: false)
       end
@@ -418,6 +467,83 @@ class ProblemsController < ApplicationController
     @problem = pi.problem
     @dataset = pi.dataset
     @problem.datasets.reload
+
+    @active_dataset_tab = '#testcases'
+    @toast = {title: 'Import Successful', body: @updated}
+
+    respond_to do |format|
+      format.turbo_stream { render 'datasets/update' }
+      format.html { render :import }
+    end
+  end
+
+  def quick_add_testcase
+    if params[:dataset_id].present?
+      dataset = @problem.datasets.find_by(id: params[:dataset_id])
+    end
+    dataset ||= @problem.live_dataset || @problem.datasets.first
+    unless dataset
+      dataset = @problem.datasets.create(name: @problem.get_next_dataset_name)
+      @problem.update(live_dataset: dataset)
+    end
+
+    codename = params[:codename].to_s.strip
+    if codename.blank?
+      @toast = { title: 'Error', body: 'Codename cannot be blank.', type: :danger }
+      respond_to do |format|
+        format.turbo_stream { render 'application/turbo_toast' }
+        format.html { redirect_to edit_problem_path(@problem), alert: 'Codename cannot be blank.' }
+      end
+      return
+    end
+
+    existing_tc = dataset.testcases.find_by(code_name: codename)
+    if existing_tc
+      @toast = { title: 'Error', body: "Test case with codename '#{codename}' already exists in dataset '#{dataset.name}'.", type: :danger }
+      respond_to do |format|
+        format.turbo_stream { render 'application/turbo_toast' }
+        format.html { redirect_to edit_problem_path(@problem), alert: 'Codename already exists.' }
+      end
+      return
+    end
+
+    num = (dataset.testcases.maximum(:num) || 0) + 1
+    weight = params[:weight].presence ? params[:weight].to_f : 1.0
+    group = params[:group].presence ? params[:group].to_i : 1
+    group_name = params[:group_name].presence || group.to_s
+
+    new_tc = Testcase.new(
+      dataset: dataset,
+      problem: @problem,
+      code_name: codename,
+      num: num,
+      weight: weight,
+      group: group,
+      group_name: group_name
+    )
+
+    input_text = ""
+    ans_text = params[:answer_text].to_s
+
+    new_tc.inp_file.attach(io: StringIO.new(input_text), filename: "#{codename}.in", content_type: 'text/plain', identify: false)
+    new_tc.ans_file.attach(io: StringIO.new(ans_text), filename: "#{codename}.sol", content_type: 'text/plain', identify: false)
+
+    if new_tc.save
+      dataset.resequence_testcases!
+      @toast = { title: 'Success', body: "Testcase ##{num} (codename: #{codename}) successfully added to dataset '#{dataset.name}'.", type: :success }
+    else
+      @toast = { title: 'Error', body: new_tc.errors.full_messages.join(', '), type: :danger }
+    end
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.append('toast-area', partial: 'toast', locals: {toast: @toast}),
+          (turbo_stream.append('toast-area') { "<script>document.getElementById('quick_testcase_form').reset();</script>".html_safe } if new_tc.persisted?)
+        ].compact
+      end
+      format.html { redirect_to edit_problem_path(@problem), notice: 'Testcase added successfully.' }
+    end
   end
 
 
@@ -432,9 +558,10 @@ class ProblemsController < ApplicationController
     end
 
     def problem_params
-      params.require(:problem).permit(:name, :full_name, :change_date_added, :date_added, :available, :compilation_type,
+      params.require(:problem).permit(:name, :full_name, :available, :compilation_type, :full_score,
                                       :submission_filename, :difficulty, :attachment, :statement, :markdown, :view_testcase,
-                                      :test_allowed, :output_only, :url, :description, :description, :view_submission, tag_ids: [], group_ids: [])
+                                      :test_allowed, :output_only, :url, :description, :description, :view_submission,
+                                      :max_submissions, :bonus_first_blood, :first_n_bloods, tag_ids: [], group_ids: [])
     end
 
     def description_params
@@ -447,13 +574,6 @@ class ProblemsController < ApplicationController
       else
         return false
       end
-    end
-
-    # for bulk manage
-    def change_date_added(problems)
-      date = Date.parse(params[:date_added])
-      problems.update_all(date_added: date)
-      @result << "Date added changed to <strong>#{date}</strong>"
     end
 
     def add_to_contest(problems)
@@ -490,7 +610,7 @@ class ProblemsController < ApplicationController
         .joins("LEFT JOIN (#{tc_count_sql}  ) TC ON problems.id = TC.problem_id")
         .joins("LEFT JOIN (#{ms_count_sql}  ) MS ON problems.id = MS.problem_id")
         .joins("LEFT JOIN (#{hint_count_sql}) HC ON problems.id = HC.problem_id")
-        .includes(:tags).order(date_added: :desc).group('problems.id')
+        .includes(:tags, :groups).order(:number).order(:name).group('problems.id')
         .includes(live_dataset: {checker_attachment: :blob})
         .select("problems.*", "count(datasets_problems.id) as dataset_count, MIN(TC.tc_count) as tc_count")
         .select("MIN(MS.ms_count) as ms_count")

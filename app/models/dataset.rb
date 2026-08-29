@@ -37,6 +37,7 @@ class Dataset < ApplicationRecord
   enum :score_type,      { sum: 0,
                            group_min: 1,
                            raw_sum: 2,
+                           group_max: 3,
                          }, prefix: :st
 
   has_one_attached :checker
@@ -157,6 +158,14 @@ class Dataset < ApplicationRecord
       end
     end
     return false
+  end
+
+  def resequence_testcases!
+    AuditLog.paused do
+      testcases.order(:group, :num, :id).each_with_index do |tc, idx|
+        tc.update(num: idx + 1)
+      end
+    end
   end
 
   protected

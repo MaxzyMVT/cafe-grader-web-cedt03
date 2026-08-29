@@ -2,7 +2,8 @@ class Problem < ApplicationRecord
   include Auditable
   audited only: %i[name full_name full_score available live_dataset_id
                    view_testcase view_submission allow_hint
-                   permitted_lang submission_filename task_type compilation_type]
+                   permitted_lang submission_filename task_type compilation_type
+                   max_submissions bonus_first_blood first_n_bloods]
 
   # -- fields --
   # how the submission should be compiled
@@ -51,13 +52,77 @@ class Problem < ApplicationRecord
     message: 'contains invalid characters. Only letters, numbers, <code>( )</code>, <code>[ ]</code>, <code>-</code> and <code>_</code> are allowed.'.html_safe
 
   validates_presence_of :full_name
+  validates_presence_of :full_score
 
+  validates :max_submissions, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :first_n_bloods, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
   # -- callback --
+  after_initialize :set_default_full_score, if: :new_record?
   after_save :generate_and_attach_pdf_statement_later, if: :should_generate_pdf?
+
+  def set_default_full_score
+    self.full_score ||= 100
+  end
+
+  def effective_full_score
+    if live_dataset&.st_raw_sum?
+      count = live_dataset.testcases.count
+      count > 0 ? count : (full_score || 0)
+    else
+      full_score || 0
+    end
+  end
+
+  def first_n_bloods
+    val = self[:first_n_bloods]
+    val.present? ? val : 0
+  end
+
+  def first_blood_user
+    first_n_blood_users(1).first
+  end
+
+  def first_n_blood_users(n = 1)
+    num = (n.present? && n >= 0) ? n : 1
+    return [] if num == 0
+    
+    exclude_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+    exclude_ids = (exclude_ids + User.where(enabled: false).pluck(:id)).uniq
+    
+    results = submissions.tag_default.joins(:user)
+                .where(points: full_score, status: 'done')
+                .where("submissions.grader_comment REGEXP '^[PS\\\\[\\\\][:space:]]*$'")
+                .where.not(user_id: exclude_ids)
+                .group(:user_id)
+                .select('user_id, MIN(submissions.id) as first_sub_id, MIN(submitted_at) as first_time')
+                .order('first_time ASC')
+                .limit(num)
+    
+    User.where(id: results.map(&:user_id)).index_by(&:id).values_at(*results.map(&:user_id)).compact
+  end
 
   # -- scope --
   scope :available, -> { where(available: true) }
+
+  scope :visible_to_user, ->(user) {
+    if GraderConfiguration.contest_mode? || user&.admin? || user&.problem_setter?
+      all
+    elsif user
+      where("NOT EXISTS (SELECT 1 FROM groups_problems WHERE groups_problems.problem_id = problems.id) OR EXISTS (
+        SELECT 1 FROM groups_problems gp
+        INNER JOIN `groups` g ON g.id = gp.group_id
+        INNER JOIN groups_users gu ON gu.group_id = g.id
+        WHERE gp.problem_id = problems.id
+          AND gp.enabled = true
+          AND g.enabled = true
+          AND gu.user_id = ?
+          AND gu.enabled = true
+      )", user.id)
+    else
+      where("NOT EXISTS (SELECT 1 FROM groups_problems WHERE groups_problems.problem_id = problems.id)")
+    end
+  }
 
   # These group_xxx scopes ALWAYS take groups into account
   # REGARDLESS of the group mode configuration
@@ -114,9 +179,9 @@ class Problem < ApplicationRecord
   # Please use User.problems_for_action if you want config and admin to be taken into account
   #
   # This returns all Problem that is submittable by the user in a contest
-  scope :contests_problems_for_user, ->(user_id) {
+  scope :contests_problems_for_user, ->(user_id, contest: nil) {
     now = Time.zone.now
-    joins(contests_problems: {contest: :contests_users})
+    q = joins(contests_problems: {contest: :contests_users})
       .where(available: true)                   # available problems only
       .where('contests.enabled': true)          # contests is enabled
       .where('contests_users.user_id': user_id) # user is in the contest
@@ -124,7 +189,8 @@ class Problem < ApplicationRecord
       .where('contests_problems.enabled': true) # problem is enabled
       .where('ADDTIME(contests.start,-contests_users.start_offset_second) <= ?', now)
       .where('ADDTIME(contests.stop,contests_users.extra_time_second) >= ?', now)
-      .group('problems.id')
+    q = q.where('contests.id': contest.id) if contest
+    q.group('problems.id')
   }
 
   # return all problem that the user has "editing" rights in a contest
@@ -142,11 +208,27 @@ class Problem < ApplicationRecord
 
   scope :default_order, -> {
     if GraderConfiguration.contest_mode?
-      order('MIN(contests_problems.number)')
+      left_joins(:contests_problems).group('problems.id').order(Arel.sql('MIN(contests_problems.number)'))
     else
-      order(date_added: :desc).order(:name)
+      order(:number).order(:name)
     end
   }
+
+  before_create :assign_default_number
+
+  def assign_default_number
+    self.number ||= (Problem.maximum(:number) || 0) + 1
+  end
+
+  def self.set_problem_number(problem, number)
+    num = 1
+    Problem.where.not(id: problem.id).order(:number).each do |p|
+      offset = (num >= number) ? 1 : 0
+      p.update_columns(number: num + offset)
+      num += 1
+    end
+    problem.update_columns(number: [Problem.count, [1, number.round].max].min)
+  end
 
   DEFAULT_TIME_LIMIT = 1
   DEFAULT_MEMORY_LIMIT = 32
@@ -158,6 +240,48 @@ class Problem < ApplicationRecord
   has_one_attached :attachment  # this is public files seen by contestant
 
   def set_default_value
+  end
+
+  # -- submission limit helpers --
+
+  # Returns true if this problem has a submission limit configured
+  def submission_limit?
+    return false unless GraderConfiguration.show_submission_limits?
+    max_submissions.present? && max_submissions > 0
+  end
+
+  # Returns the number of submissions the given user has made to this problem
+  def submission_count_for(user)
+    submissions.where(user: user).count
+  end
+
+  def extra_submission_limit_for(user, contest)
+    return 0 unless user && contest
+    cu = ContestUser.find_by(user_id: user.id, contest_id: contest.id)
+    cu ? (cu.extra_sub_limit || 0) : 0
+  end
+
+  def max_submissions_for(user, contest = nil)
+    limit = max_submissions || 0
+    if contest
+      limit += extra_submission_limit_for(user, contest)
+    end
+    limit
+  end
+
+  # Returns how many submissions remain for the user, or nil if unlimited
+  def submissions_remaining_for(user, contest = nil)
+    return nil if user&.admin? || user&.problem_setter?
+    return nil unless submission_limit?
+    [max_submissions_for(user, contest) - submission_count_for(user), 0].max
+  end
+
+  # Returns true if the user has reached the submission limit
+  # Admins and problem setters are never subject to submission limits
+  def submission_limit_reached?(user, contest = nil)
+    return false if user&.admin? || user&.problem_setter?
+    return false unless submission_limit?
+    submission_count_for(user) >= max_submissions_for(user, contest)
   end
 
   def viva_grounding_tags
@@ -316,7 +440,11 @@ class Problem < ApplicationRecord
   def comments_with_reveal_status(user, kind: nil)
     query = comments
     query = query.where(kind: kind) if kind.present?
-    query.select('comments.*', "EXISTS(SELECT 1 FROM comment_reveals WHERE user_id = #{user.id} AND comment_id = comments.id) AS is_acquired")
+    if GraderConfiguration.enable_all_hints?
+      query.select('comments.*', "1 AS is_acquired")
+    else
+      query.select('comments.*', "EXISTS(SELECT 1 FROM comment_reveals WHERE user_id = #{user.id} AND comment_id = comments.id AND is_success = 1) AS is_acquired")
+    end
   end
 
   # this method is used both in acquiring and viewing
@@ -324,6 +452,8 @@ class Problem < ApplicationRecord
     case comment.kind
     when 'hint'
       # user want to reveal a hint
+      return true if GraderConfiguration.enable_all_hints?
+
 
       # check if the problem allow hint
       return false unless self.allow_hint?
@@ -335,6 +465,15 @@ class Problem < ApplicationRecord
       if GraderConfiguration.contest_mode?
         # TODO: this is WRONG, need to check actual active time
         return false unless self.contests.enabled.where(allow_hint: true).any?
+      end
+
+      # check if the user has enough points globally
+      if comment.all_points
+        # any score is fine, including 0
+        return true
+      else
+        cost = comment.point_cost || 0
+        return false if cost > 0 && user.current_score < cost
       end
 
       # pass all checks

@@ -8,6 +8,83 @@ CONFIGURATIONS =
    },
 
    {
+     key: 'system.scoreboard_enabled',
+     value_type: 'boolean',
+     default_value: 'true',
+     description: 'Enable the Real-time Score Board feature'
+   },
+
+   {
+     key: 'system.scoreboard_public_accessible',
+     value_type: 'boolean',
+     default_value: 'false',
+     description: 'Enable public scoreboard'
+   },
+
+   {
+     key: 'system.scoreboard_include_admins',
+     value_type: 'boolean',
+     default_value: 'false',
+     description: 'Include admins in the public scoreboard'
+   },
+
+    {
+      key: 'system.group_score_type',
+      value_type: 'string',
+      default_value: 'group_sum',
+      description: "Determines how the maximum score of each user's group is calculated and shown on scoreboard."
+    },
+
+    {
+      key: 'system.scoreboard_view_level',
+      value_type: 'string',
+      default_value: 'user',
+      description: "Who can view the real-time scoreboard."
+    },
+
+   {
+     key: 'system.message_enabled',
+     value_type: 'boolean',
+     default_value: 'true',
+     description: 'Whether users can send clarification requests (messages)'
+   },
+
+    {
+      key: 'gimmicks.enable_all_hints',
+      value_type: 'boolean',
+      default_value: 'false',
+      description: "If true, users can view all hints even if they haven't unlocked them with points."
+    },
+
+    {
+      key: 'gimmicks.enable_penalty',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'If true, the scoreboard will show scores with deductions (penalties).'
+    },
+
+    {
+      key: 'gimmicks.enable_bonus',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'If true, the scoreboard and header will calculate and show bonus points.'
+    },
+
+    {
+      key: 'gimmicks.enable_first_bloods',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'Enable/Disable First Bloods globally'
+    },
+
+    {
+      key: 'gimmicks.enable_submission_limits',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'Enable/Disable Submission Limits globally'
+    },
+
+   {
      key: 'ui.front.title',
      value_type: 'string',
      default_value: 'Grader'
@@ -46,12 +123,12 @@ CONFIGURATIONS =
      description: 'Time limit in format hh:mm, or "unlimited" for contests with no time limits.  This config is CACHED.  Restart the server before the change can take effect.'
    },
 
-   {
-     key: 'system.mode',
-     value_type: 'string',
-     default_value: 'standard',
-     description: 'Current modes are "standard", "contest", "indv-contest", and "analysis".'
-   },
+    {
+      key: 'system.mode',
+      value_type: 'string',
+      default_value: 'standard',
+      description: "Determines the operation mode of the system."
+    },
 
 
    {
@@ -210,6 +287,22 @@ CONFIGURATIONS =
      description: "When true, a user can request LLM assist on each submission"
    },
 
+    #---------------------------- gimmicks --------------------------------
+    {
+      key: 'gimmicks.show_user_points',
+      value_type: 'boolean',
+      default_value: 'true',
+      description: 'If true, shows the total user points on the top menu bar.'
+    },
+
+   #---------------------------- system (theme) --------------------------------
+   {
+     key: 'system.theme_selector_enabled',
+     value_type: 'boolean',
+     default_value: 'true',
+     description: 'If true, contestants can change their UI theme from the settings page. If false, all users see the default theme.'
+   },
+
   ]
 
 
@@ -267,7 +360,7 @@ def seed_root
   root = User.new(login: 'root',
                   full_name: 'Administrator',
                   alias: 'root')
-  root.password = 'ioionrails'
+  root.password = ENV.fetch('GRADER_ADMIN_PASSWORD', 'ioionrails')
 
   class << root
     public :encrypt_new_password

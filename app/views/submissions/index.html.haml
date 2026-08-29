@@ -16,16 +16,22 @@
       = mdi('quiz', 'md-48 d-block mb-2 opacity-50')
       Choose a problem above to see your submissions.
 - elsif @submissions.empty?
-  .card.shadow-sm.border-0
+  - if @problem != nil
+    = render partial: 'problems/problem_head', locals: {problem: @problem}
+  .card.shadow-sm.border-0.mt-3
     .card-body.text-center.text-secondary.py-5
       = mdi('inbox', 'md-48 d-block mb-2 opacity-50')
       No submissions yet for this problem.
 - else
-  .card.shadow-sm{data: {controller: 'init-ui-component'}}
+  - if @problem != nil
+    = render partial: 'problems/problem_head', locals: {problem: @problem}
+  .card.shadow-sm.mt-3{data: {controller: 'init-ui-component'}}
     .table-responsive
       %table.table.table-hover.align-middle.mb-0
         %thead.text-secondary.small
           %tr
+            - if @current_user.admin? || @current_user.problem_setter? || GraderConfiguration['system.group_score_type'] == 'group_max'
+              %th.ps-3 User
             %th.ps-3 No.
             %th Submitted
             %th Source

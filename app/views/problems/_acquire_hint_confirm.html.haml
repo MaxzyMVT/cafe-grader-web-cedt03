@@ -1,8 +1,12 @@
 :markdown
-  This hint **costs #{hint.cost || 0} points** to reveal
-  and you haven't revealed it yet. By proceeding, the __full score__
-  for this problem will be __reduced by #{hint.cost || 0} points__
-  and the hint will then be permanently unlocked for you 
-  to view whenever you wish.
+  - This hint costs **#{hint.all_points ? "all your current points" : "#{hint.point_cost || 0} points"}** to reveal.
+  - Success Rate: **#{number_with_precision(hint.success_rate || 100.0, precision: 2, strip_insignificant_zeros: true)}%**.
+  - **IMPORTANT**: If the acquisition fails, your points will **NOT** be refunded.
+  - Additionally, the **full score** for this problem will be **capped/reduced by #{hint.cost || 0} points** (only if successful).
+  
+  By proceeding:
+  - Your **global points will be reduced** immediately.
+  - Your potential score on this problem will be limited.
+  - The hint will be permanently unlocked for you.
 
   **Do you want to confirm and reveal the hint?**

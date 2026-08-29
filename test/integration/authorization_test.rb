@@ -169,21 +169,45 @@ class AuthorizationTest < ActionDispatch::IntegrationTest
   # SECTION 5: Group editor access
   # -------------------------------------------------------
 
-  test "group editor can access problems management" do
+  test "group editor (non-admin/non-setter Mary) cannot access problems management" do
     sign_in_as("mary", "mary")
+    get problems_path
+    assert_redirected_to list_main_path
+  end
+
+  test "problem setter can access problems management" do
+    sign_in_as("setter", "setter")
     get problems_path
     assert_response :success
   end
 
-  test "group editor can access contests management" do
+  test "group editor (non-admin/non-setter Mary) cannot access contests management" do
     sign_in_as("mary", "mary")
+    get contests_path
+    assert_redirected_to list_main_path
+  end
+
+  test "problem setter can access contests management" do
+    sign_in_as("setter", "setter")
     get contests_path
     assert_response :success
   end
 
-  test "group editor can access reports" do
+  test "group editor (non-admin/non-setter Mary) cannot access reports" do
     sign_in_as("mary", "mary")
     get "/report/max_score"
+    assert_redirected_to list_main_path
+  end
+
+  test "problem setter is redirected from max_score report" do
+    sign_in_as("setter", "setter")
+    get "/report/max_score"
+    assert_redirected_to list_main_path
+  end
+
+  test "problem setter can access extended_stat report" do
+    sign_in_as("setter", "setter")
+    get "/report/extended_stat"
     assert_response :success
   end
 

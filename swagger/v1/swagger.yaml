@@ -493,6 +493,12 @@ paths:
                       type: boolean
                     has_attachment:
                       type: boolean
+                    max_submissions:
+                      type: integer
+                      nullable: true
+                    submissions_remaining:
+                      type: integer
+                      nullable: true
                     permitted_languages:
                       type: array
                       nullable: true
@@ -603,6 +609,12 @@ paths:
                     type: boolean
                   has_attachment:
                     type: boolean
+                  max_submissions:
+                    type: integer
+                    nullable: true
+                  submissions_remaining:
+                    type: integer
+                    nullable: true
                   permitted_languages:
                     type: array
                     nullable: true
@@ -936,6 +948,12 @@ paths:
                     type: integer
                   status:
                     type: string
+                  max_submissions:
+                    type: integer
+                    nullable: true
+                  submissions_remaining:
+                    type: integer
+                    nullable: true
                 required:
                 - id
                 - number

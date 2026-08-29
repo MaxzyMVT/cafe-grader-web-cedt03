@@ -30,7 +30,25 @@ class SubmissionsController < ApplicationController
       end
 
 
-      if GraderConfiguration.contest_mode?
+      if @current_user.admin? || @current_user.problem_setter?
+        @submissions = Submission.where(problem: @problem).includes(:user, :language).order(id: :desc)
+      elsif GraderConfiguration['system.group_score_type'] == 'group_max'
+        user_group_ids = @current_user.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).pluck(:id)
+        setter_admin_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+        group_user_ids = User.joins(groups_users: :group)
+                             .where(groups: { id: user_group_ids })
+                             .where(groups: { enabled: true })
+                             .where(groups_users: { enabled: true })
+                             .where(users: { enabled: true })
+                             .where.not(id: setter_admin_ids)
+                             .pluck(:id).uniq
+        group_user_ids = (group_user_ids + [@current_user.id]).uniq
+
+        @submissions = Submission.where(user_id: group_user_ids, problem: @problem).includes(:user, :language).order(id: :desc)
+        if GraderConfiguration.contest_mode?
+          @submissions = @submissions.where(submitted_at: @current_user.active_contests_range)
+        end
+      elsif GraderConfiguration.contest_mode?
         # when in contest mode, show only submission during this contest
         @submissions = Submission.where(user: @current_user, problem: @problem).where(submitted_at: @current_user.active_contests_range).order(id: :desc)
       else
@@ -60,7 +78,7 @@ class SubmissionsController < ApplicationController
 
     # @evaluations = @submission.evaluations.joins(:testcase).includes(:testcase).order(:group, :num)
     #  .select(:num, :group, :group_name, :weight, :time, :memory, :score, :testcase_id, :result_text, :result)
-    @testcases = @submission.problem.live_dataset.testcases.order(:group, :num)
+    @testcases = @submission.problem.live_dataset.testcases.display_order
     @evaluations_by_tcid = Evaluation.where(submission: @submission, testcase: @testcases.ids).index_by(&:testcase_id)
 
     # LLM models for help
@@ -97,6 +115,16 @@ class SubmissionsController < ApplicationController
     @problem = Problem.find(params[:pid])
     @submission = @current_user.last_submission_by_problem(@problem)
     @delay_value = @submission.nil? ? -1 : (Time.zone.now - @submission.submitted_at).clamp(1, 10).to_i * 1000
+    # Determine language settings for the submit form partial
+    problem_lang_ids = @problem.get_permitted_lang_as_ids
+    language_forced = problem_lang_ids.count == 1
+    if language_forced
+      language = Language.find(problem_lang_ids[0]) rescue Language.first
+    else
+      language = @submission&.language || @current_user.default_language || Language.first
+    end
+    as_binary = language&.binary? || false
+
     render turbo_stream: [
       turbo_stream.update("latest_status",
                            partial: 'submission_short',
@@ -104,12 +132,20 @@ class SubmissionsController < ApplicationController
                                     refresh_if_not_graded: @delay_value > 0,
                                     show_id: true,
                                     sub_count: @submission&.number,
-                                    show_button: false })
+                                    show_button: false }),
+      turbo_stream.update("submission_limit_badge",
+                           partial: 'submission_limit_badge',
+                           locals: {problem: @problem, user: @current_user}),
+      turbo_stream.update("submit_form_area",
+                           partial: 'submissions/submit_form',
+                           locals: {problem: @problem, user: @current_user,
+                                    as_binary: as_binary, language: language,
+                                    language_forced: language_forced})
     ]
   end
   # Turbo render evaluations as modal popup
   def evaluations
-    @testcases = @submission.problem.live_dataset.testcases.order(:group, :num)
+    @testcases = @submission.problem.live_dataset.testcases.display_order
     @evaluations_by_tcid = Evaluation.where(submission: @submission, testcase: @testcases.ids).index_by(&:testcase_id)
     render partial: 'msg_modal_show', locals: { do_popup: true, header_msg: 'Evaluation Details', body_msg: render_to_string(partial: 'evaluations', locals: {testcases: @testcases, evaluations_by_tcid: @evaluations_by_tcid}) }
   end

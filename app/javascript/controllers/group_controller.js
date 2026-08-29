@@ -3,9 +3,9 @@ import { rowFieldToggle } from "mixins/row_field_toggle";
 
 export default class extends rowFieldToggle(Controller) {
 
-  static targets = ["usersCommand", "userForm", "userFormUserID", "userFormCommand" ,
+    static targets = ["usersCommand", "userForm", "userFormUserID", "userFormCommand" ,
                     "problemsCommand", "problemForm", "problemFormProblemID", "problemFormCommand" ,
-                    "toggleForm",
+                    "toggleForm", "toggleMemberRenameForm"
                    ]
 
   connect() {
@@ -24,9 +24,16 @@ export default class extends rowFieldToggle(Controller) {
     this.submitToggleForm(form,recId)
   }
 
+  toggleMemberRename(event) {
+    event.target.disabled = true
+    const recId = event.target.dataset.rowId
+    const form = this.toggleMemberRenameFormTarget
+    this.submitToggleForm(form,recId)
+  }
+
   setUsersCommand(event) {
     const command = this.usersCommandTarget
-    command.value = event.target.dataset.value
+    command.value = event.currentTarget.dataset.value
   }
 
   postUserAction(event) {
@@ -34,10 +41,10 @@ export default class extends rowFieldToggle(Controller) {
     const form = this.userFormTarget
     const user_id = this.userFormUserIDTarget
     const command = this.userFormCommandTarget
-    command.value = event.target.dataset.command
-    user_id.value = event.target.dataset.rowId
-    if ('formConfirm' in event.target.dataset) {
-      form.dataset.turboConfirm = event.target.dataset.formConfirm
+    command.value = event.currentTarget.dataset.command
+    user_id.value = event.currentTarget.dataset.rowId
+    if ('formConfirm' in event.currentTarget.dataset) {
+      form.dataset.turboConfirm = event.currentTarget.dataset.formConfirm
     } else {
       form.removeAttribute('data-turbo-confirm')
     }
@@ -61,7 +68,7 @@ export default class extends rowFieldToggle(Controller) {
 
   setProblemsCommand(event) {
     const command = this.problemsCommandTarget
-    command.value = event.target.dataset.value
+    command.value = event.currentTarget.dataset.value
   }
 
   postProblemAction(event) {
@@ -69,10 +76,10 @@ export default class extends rowFieldToggle(Controller) {
     const form = this.problemFormTarget
     const problem_id = this.problemFormProblemIDTarget
     const command = this.problemFormCommandTarget
-    command.value = event.target.dataset.command
-    problem_id.value = event.target.dataset.rowId
-    if ('formConfirm' in event.target.dataset) {
-      form.dataset.turboConfirm = event.target.dataset.formConfirm
+    command.value = event.currentTarget.dataset.command
+    problem_id.value = event.currentTarget.dataset.rowId
+    if ('formConfirm' in event.currentTarget.dataset) {
+      form.dataset.turboConfirm = event.currentTarget.dataset.formConfirm
     } else {
       form.removeAttribute('data-turbo-confirm')
     }
@@ -95,6 +102,13 @@ export default class extends rowFieldToggle(Controller) {
 
   test(event) {
 
+  }
+
+  bulkManageSubmitEnd(event) {
+    this.genericSubmitEnd(event,'#main-table')
+    if (event.detail.fetchResponse.response.ok) {
+      document.querySelectorAll('.manage-action').forEach(cb => cb.checked = false);
+    }
   }
 
 }

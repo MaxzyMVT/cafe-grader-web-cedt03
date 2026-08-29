@@ -20,10 +20,10 @@ class ProblemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "group editor can access problems index" do
+  test "group editor (non-admin/non-setter Mary) is redirected from problems index" do
     sign_in_as("mary", "mary")
     get problems_path
-    assert_response :success
+    assert_redirected_to list_main_path
   end
 
   # --- Read actions ---
@@ -162,6 +162,12 @@ class ProblemsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "problem setter can access problems index" do
+    sign_in_as("setter", "setter")
+    get problems_path
+    assert_response :success
+  end
+
   # --- Toggle endpoints ---
 
   test "admin can toggle problem availability" do
@@ -172,11 +178,19 @@ class ProblemsControllerTest < ActionDispatch::IntegrationTest
     assert_equal !was, p.reload.available
   end
 
-  test "group editor cannot toggle availability (admin only)" do
+  test "problem setter can toggle problem availability" do
+    sign_in_as("setter", "setter")
+    p = problems(:prob_add)
+    was = p.available
+    post toggle_available_problem_path(p), as: :turbo_stream
+    assert_equal !was, p.reload.available
+  end
+
+  test "group editor cannot toggle availability (admin or setter only)" do
     sign_in_as("mary", "mary")
     p = problems(:prob_add)
     post toggle_available_problem_path(p), as: :turbo_stream
-    # admin_authorization redirects non-admins
+    # admin_or_setter_authorization redirects non-admins/non-setters
     assert_response :redirect
   end
 

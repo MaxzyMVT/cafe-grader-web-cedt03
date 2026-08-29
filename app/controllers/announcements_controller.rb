@@ -1,6 +1,6 @@
 class AnnouncementsController < ApplicationController
   MEMBER_METHOD = %i[show edit destroy update delete_file
-                     toggle_front toggle_published
+                     toggle_front toggle_published reorder
                     ]
 
   before_action :set_announcement, only: MEMBER_METHOD
@@ -47,7 +47,7 @@ class AnnouncementsController < ApplicationController
 
   def delete_file
     @announcement.file.purge
-    redirect_to(@announcement)
+    redirect_to(edit_announcement_path(@announcement), notice: 'Attachment was successfully deleted.')
   end
 
   # POST /announcements
@@ -56,7 +56,7 @@ class AnnouncementsController < ApplicationController
     @announcement = Announcement.new(announcement_params)
 
     # check if the user can, and has, set group
-    unless @current_user.admin?
+    unless @current_user.admin? || @current_user.problem_setter?
       editor_groups = @current_user.groups_for_action(:edit)
       unless !@announcement.nil? || editor_groups.include?(@announcement.group)
         @announcement.group = editor_groups.take
@@ -65,7 +65,7 @@ class AnnouncementsController < ApplicationController
     respond_to do |format|
       if @announcement.save
         flash[:notice] = 'Announcement was successfully created.'
-        format.html { redirect_to(@announcement) }
+        format.html { redirect_to(edit_announcement_path(@announcement)) }
         format.xml  { render xml: @announcement, status: :created, location: @announcement }
       else
         format.html { render action: "new" }
@@ -79,7 +79,7 @@ class AnnouncementsController < ApplicationController
   def update
     respond_to do |format|
       if @announcement.update(announcement_params)
-        format.html { redirect_to(@announcement) }
+        format.html { redirect_to(edit_announcement_path(@announcement), notice: 'The announcement is successfully updated.') }
         format.js   { }
         format.xml  { head :ok }
       else
@@ -113,13 +113,26 @@ class AnnouncementsController < ApplicationController
     end
   end
 
+  def reorder
+    old_number = @announcement.number || 0
+    target_pos = params[:target_position].to_i
+    if target_pos > 0
+      Announcement.set_announcement_number(@announcement, target_pos)
+      @toast = {title: "Announcement", body: "Announcement reordered to position #{target_pos}."}
+    end
+    respond_to do |format|
+      format.turbo_stream { render 'turbo_toast' }
+      format.html { redirect_to action: :index, notice: "Announcement was reordered." }
+    end
+  end
+
   private
     def set_announcement
       @announcement = Announcement.find(params[:id])
     end
 
     def announcement_params
-      params.require(:announcement).permit(:author, :body, :published, :frontpage, :contest_only, :title, :on_nav_bar, :file, :group_id, :notes)
+      params.require(:announcement).permit(:author, :body, :published, :frontpage, :contest_only, :title, :file, :group_id, :notes)
     end
 
     def can_edit_announcement

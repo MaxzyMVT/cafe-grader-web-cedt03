@@ -46,6 +46,8 @@ module AuditLogsHelper
       bulk_badge 'library_add', 'bulk add problems'
     when 'bulk_add_problems_by_group'
       bulk_badge 'library_add', 'bulk add problems (group)'
+    when 'bulk_add_problems_by_tag'
+      bulk_badge 'library_add', 'bulk add problems (tag)'
     when 'import_testcases'
       bulk_badge 'upload_file', 'import testcases'
     when 'remove_user'
@@ -70,8 +72,10 @@ module AuditLogsHelper
       bulk_badge 'toggle_off', 'bulk disable problems'
     when 'bulk_remove_problems'
       bulk_badge 'remove_circle_outline', 'bulk remove problems'
+    when 'reorder'
+      bulk_badge 'reorder', 'reorder'
     else
-      badge action, 'bg-secondary-subtle text-secondary-emphasis'
+      badge action, 'badge bg-secondary text-white'
     end
   end
 

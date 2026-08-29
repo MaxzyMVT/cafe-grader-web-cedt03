@@ -36,7 +36,8 @@
   = f.hidden_field :command, 'data-user-admin--index-target': 'userFormCommand'
 
 :javascript
-  window.addEventListener("load", function() {
+  document.addEventListener("turbo:load", function() {
+    if (document.getElementById('main-table') == null) return;
     $('#main-table').DataTable({
       processing: true,
       rowId: 'id',

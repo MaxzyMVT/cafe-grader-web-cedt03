@@ -118,40 +118,16 @@ export const configs = {
           return data;
         }
       },
-      { data: 'role' },  // this is user role column, index 2, must be hidden and has fixed ordering
       { data: 'seat' },
       { data: 'remark' },
       { data: null, render: renderers.startStopOffsetRender, title: 'Extra Time' },
+      { data: null, render: renderers.extraSubLimitRender, title: 'Extra Limit' },
       { data: 'user_id', render: cafe.dt.render.button(null, { element_type: 'switch', action: 'contest#postUserAction', command: 'toggle', checked_data_field: 'enabled' }), title: 'Enabled' },
       { data: null, render: renderers.userActionRenderer, title: 'Actions', class: 'py-1' },
     ],
-    columnDefs: [{ visible: false, targets: 2 }, { orderable: false, targets: [5, 6, 7] }],
-    orderFixed: [2, 'asc'],
+    columnDefs: [{ orderable: false, targets: [4, 5, 6, 7] }],
     drawCallback: function (settings) {
-      // we assume that the row are sorted by users' role (by 'orderFixed' and 'order' options)
-      // this render a header rows when two adjacent rows has their roles differ
       var api = this.api();
-      var rows = api.rows({ page: 'current' }).nodes();
-      var last_role = null;
-      api.column(2, { page: 'current' })
-        .data()
-        .each(function (role, i) {
-          if (last_role !== role) {
-            // set text for role row
-            let role_text
-            if (role == 'editor') {
-              role_text = '<tr class="table-success"><td colspan="9"> Editors (Can edit the contest) </td></tr>'
-            } else {
-              role_text = '<tr class="table-info"><td colspan="9"> Users (Can only submit to the contest) </td></tr>'
-            }
-
-            //prepend row
-            $(rows).eq(i).before(role_text);
-            last_role = role;
-          }
-        });
-      //since columns size changed, we call adjust
-      //but not .draw() !!! else, infinite recursion
       api.columns.adjust()
     },
   },
@@ -161,6 +137,10 @@ export const configs = {
     processing: true,
     rowId: 'id',
     destroy: true,
+    createdRow: function(row, data, dataIndex) {
+      $(row).attr('draggable', 'true');
+      $(row).attr('data-row-id', data.problem_id);
+    },
     order: [[0, 'asc']],
     ajax: {
       type: 'POST',
@@ -199,7 +179,7 @@ export const configs = {
           return data;
         }
       },
-      { data: 'available', render: cafe.dt.render.yes_no_pill(), className: 'text-center' },
+      { data: 'problem_id', render: cafe.dt.render.button(null, { element_type: 'switch', action: 'contest#postProblemAction', command: 'toggle_available', checked_data_field: 'available' }) },
       { data: 'problem_id', render: cafe.dt.render.button(null, { element_type: 'switch', action: 'contest#postProblemAction', command: 'toggle', checked_data_field: 'enabled' }) },
       { data: 'problem_id', render: cafe.dt.render.button(null, { element_type: 'switch', action: 'contest#postProblemAction', command: 'toggle_llm', checked_data_field: 'allow_llm' }) },
       { data: null, render: renderers.problemActionRenderer, className: 'py-1' }

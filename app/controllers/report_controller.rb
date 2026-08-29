@@ -2,7 +2,7 @@ class ReportController < ApplicationController
   include ProblemAuthorization
 
   before_action :check_valid_login
-  before_action :selected_problems, only: [ :show_max_score, :max_score_table, :submission_query, :max_score_query, :ai_query, :activity_query ]
+  before_action :selected_problems, only: [ :show_max_score, :max_score_table, :submission_query, :max_score_query, :ai_query, :extended_stat, :activity_query ]
   before_action :selected_users, only: [ :show_max_score, :max_score_table, :submission_query, :max_score_query, :ai_query, :activity_query ]
   before_action :set_report_empty_hint, only: [ :max_score, :submission, :activity, :ai ]
   before_action :set_report_scope_help, only: [ :max_score, :submission, :activity, :ai ]
@@ -11,6 +11,8 @@ class ReportController < ApplicationController
   before_action(except: [:problem_hof, :problem_hof_view, :problem_hof_query]) {
     group_action_authorization(:report)
   }
+
+  before_action :restrict_setter_reports, except: [:problem_hof, :problem_hof_view, :problem_hof_query, :extended_stat]
 
   # for hall of fame
   before_action :set_problem, only: [:problem_hof_view]
@@ -92,8 +94,10 @@ class ReportController < ApplicationController
 
   def login_summary_query
     @users = Array.new
-    @since_time = Time.zone.parse(params[:since_datetime]) || Time.zone.now rescue Time.zone.now
-    @until_time = Time.zone.parse(params[:until_datetime]) || DateTime.new(3000, 1, 1) rescue DateTime.new(3000, 1, 1)
+    @since_time = (params[:since_datetime].present? ? Time.zone.parse(params[:since_datetime]) : nil) rescue nil
+    @since_time ||= Time.zone.now.beginning_of_day
+    @until_time = (params[:until_datetime].present? ? Time.zone.parse(params[:until_datetime]) : nil) rescue nil
+    @until_time ||= Time.zone.now.end_of_day
     record = User
       .left_outer_joins(:logins).group('users.id')
       .where("logins.created_at >= ? AND logins.created_at <= ?", @since_time, @until_time)
@@ -124,8 +128,10 @@ class ReportController < ApplicationController
 
   def login_detail_query
     @logins = Array.new
-    @since_time = Time.zone.parse(params[:since_datetime]) || Time.zone.now rescue Time.zone.now
-    @until_time = Time.zone.parse(params[:until_datetime]) || DateTime.new(3000, 1, 1) rescue DateTime.new(3000, 1, 1)
+    @since_time = (params[:since_datetime].present? ? Time.zone.parse(params[:since_datetime]) : nil) rescue nil
+    @since_time ||= Time.zone.now.beginning_of_day
+    @until_time = (params[:until_datetime].present? ? Time.zone.parse(params[:until_datetime]) : nil) rescue nil
+    @until_time ||= Time.zone.now.end_of_day
 
     @logins = Login.includes(:user).where("logins.created_at >= ? AND logins.created_at <= ?", @since_time, @until_time)
     case params[:users]
@@ -134,6 +140,7 @@ class ReportController < ApplicationController
     when 'group'
       @logins = @logins.joins(user: :groups).where(user: {groups: {id: params[:groups]}}) if params[:groups]
     end
+    @logins = @logins.limit(100_000)
   end
 
   def submission
@@ -145,17 +152,14 @@ class ReportController < ApplicationController
     @submissions = submission_in_range(params[:sub_range])
       .joins(:problem).joins(:language).joins(:user)
 
-    # filter users
-    unless @users = User.all
-      @submissions = @submissions.where(user: @users)
-    end
+    @submissions = @submissions.where(user: @users)
 
     # filter submissions
     @submissions = @submissions.where(problem: @problems)
 
 
-    @submissions.limit(100_000)
-    @submissions = @submissions.select('submissions.id,points,ip_address,submitted_at,grader_comment')
+    @submissions = @submissions.limit(100_000)
+    @submissions = @submissions.select('submissions.id,points,ip_address,submitted_at,grader_comment,max_runtime,peak_memory,effective_code_length')
       .select('users.login, users.full_name as user_full_name, users.id as user_id')
       .select('problems.full_name, problems.name, problems.id as problem_id')
       .select('languages.pretty_name')
@@ -235,6 +239,7 @@ class ReportController < ApplicationController
       .where('created_at > ?', first_submission_datetime)
       .where('class_name LIKE "Llm::%"')
       .order(created_at: :desc)
+      .limit(20_000)
 
     # We need to eager load the submission, else this will be N+1 queries
     # First, we need all gid of the submission
@@ -282,6 +287,329 @@ class ReportController < ApplicationController
   # def progress_query
   # end
 
+  def extended_stat
+    @limit = 1000
+    @problems_all = @current_user.problems_for_action(:report).default_order
+    @groups = Group.all
+    @tags = Tag.all
+    
+    # if we have problems from selected_problems before_action, use them
+    # If the user explicitly selected 'Specific Problems' (ids) mode but selected nothing,
+    # calculate with nothing. Otherwise, default to ALL reportable problems.
+    if params[:probs].present?
+      if params.dig(:probs, :use) == 'all'
+        selected_prob_ids = @problems_all.ids
+      else
+        selected_prob_ids = @problems.ids
+      end
+    else
+      selected_prob_ids = @problems_all.ids
+    end
+
+    @languages = Language.all
+
+    begin
+      @since_time = Time.zone.parse(params[:since_datetime]) if params[:since_datetime].present?
+    rescue
+      @since_time = nil
+    end
+    begin
+      @until_time = Time.zone.parse(params[:until_datetime]) if params[:until_datetime].present?
+    rescue
+      @until_time = nil
+    end
+
+    # Base submissions scope based on time
+    subs_scope = Submission.joins("INNER JOIN problems ON problems.id = submissions.problem_id")
+    subs_scope = subs_scope.where(problem_id: selected_prob_ids)
+    subs_scope = subs_scope.where("submitted_at >= ?", @since_time) if @since_time
+    subs_scope = subs_scope.where("submitted_at <= ?", @until_time) if @until_time
+    if params[:language_id].present? && params[:language_id] != 'all'
+      subs_scope = subs_scope.where(language_id: params[:language_id])
+    end
+
+    roles_to_exclude = []
+    unless GraderConfiguration['system.statistic_include_admins']
+      roles_to_exclude += ['admin', 'problem_setter']
+    end
+    exclude_user_ids = User.joins(:roles).where(roles: { name: roles_to_exclude }).pluck(:id)
+    exclude_user_ids += User.where(enabled: false).pluck(:id)
+    subs_scope = subs_scope.where.not(user_id: exclude_user_ids.uniq)
+
+    # Helper scope for passed submissions (score >= full_score)
+    # Using COALESCE for full_score to handle cases where it's not set
+    passed_scope = subs_scope.where(status: :done).where("submissions.grader_comment REGEXP '^[\\\\[\\\\sPS\\\\]]*$'")
+
+    # 1. Most Effort (Most submissions)
+    if params[:group_mode] == '1'
+      effort_scope = subs_scope.joins(user: :groups).group('groups.id')
+      effort_counts = effort_scope.order('count_all DESC').limit(@limit).count
+      if effort_counts.any?
+        threshold = effort_counts.values.last
+        @most_effort = effort_scope.having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
+      else
+        @most_effort = {}
+      end
+      @most_effort_groups = Group.where(id: @most_effort.keys).index_by(&:id)
+    else
+      effort_counts = subs_scope.group(:user_id).order('count_all DESC').limit(@limit).count
+      if effort_counts.any?
+        threshold = effort_counts.values.last
+        @most_effort = subs_scope.group(:user_id).having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
+      else
+        @most_effort = {}
+      end
+      @most_effort_users = User.where(id: @most_effort.keys).index_by(&:id)
+    end
+
+    # 2. Latest Passed Submission
+    @latest_passed = passed_scope.order(submitted_at: :desc).limit(@limit).includes(:user, :problem, :language)
+
+    # 3. Latest Submission
+    @latest_sub = subs_scope.order(submitted_at: :desc).limit(@limit).includes(:user, :problem, :language)
+
+    # 4. First Bloods
+    # Submissions that were the first to get >= full_score for each problem
+    blood_sub_ids = []
+    problems_to_check = Problem.where(id: selected_prob_ids)
+    problems_to_check.each do |p|
+      first_sub = p.submissions.tag_default
+                    .where("submissions.points >= ?", p.full_score || 100)
+                    .where.not(user_id: exclude_user_ids.uniq)
+                    .order(submitted_at: :asc, id: :asc)
+                    .first
+      blood_sub_ids << first_sub.id if first_sub
+    end
+    
+    fb_base = passed_scope.where(id: blood_sub_ids)
+
+    if params[:group_mode] == '1'
+      fb_base = fb_base.joins(user: :groups).group('groups.id')
+      fb_top = fb_base.order(Arel.sql('count(*) DESC')).limit(@limit).count
+      if fb_top.any?
+        threshold = fb_top.values.last
+        @first_bloods = fb_base.having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
+      else
+        @first_bloods = {}
+      end
+      @first_bloods_groups = Group.where(id: @first_bloods.keys).index_by(&:id)
+    else
+      fb_base = fb_base.group(:user_id)
+      fb_top = fb_base.order(Arel.sql('count(*) DESC')).limit(@limit).count
+      if fb_top.any?
+        threshold = fb_top.values.last
+        @first_bloods = fb_base.having("count(*) >= ?", threshold).order(Arel.sql('count(*) DESC')).count
+      else
+        @first_bloods = {}
+      end
+      @first_bloods_users = User.where(id: @first_bloods.keys).index_by(&:id)
+    end
+
+    # The following require getting the "best" passed submission per problem per user
+    
+    # 5. Most Efficient Coder (Shortest Code)
+    # Exclude the "999999" placeholder, NULLs, and output-only problems
+    min_len = passed_scope.joins(:problem).where(problems: {output_only: false})
+      .where("effective_code_length IS NOT NULL AND effective_code_length < 999999")
+      .group('submissions.user_id, submissions.problem_id')
+      .select('submissions.user_id, MIN(effective_code_length) as min_len')
+    
+    if params[:group_mode] == '1'
+      chars_stats = Group.joins(:users).joins("INNER JOIN (#{min_len.to_sql}) ml ON users.id = ml.user_id")
+        .group('groups.id')
+        .select('groups.id', 'COUNT(ml.min_len) as solved_count', 'SUM(ml.min_len) as total_chars')
+        .index_by(&:id)
+    else
+      chars_stats = User.joins("INNER JOIN (#{min_len.to_sql}) ml ON users.id = ml.user_id")
+        .group('users.id')
+        .select('users.id', 'COUNT(ml.min_len) as solved_count', 'SUM(ml.min_len) as total_chars')
+        .index_by(&:id)
+    end
+
+    sorted_chars_ids = chars_stats.keys.sort_by { |id| s = chars_stats[id]; [-s.solved_count, s.total_chars] }
+    if sorted_chars_ids.any?
+      last_stat = chars_stats[sorted_chars_ids.first(@limit).last]
+      @least_chars = chars_stats.values.select { |s| s.solved_count > last_stat.solved_count || (s.solved_count == last_stat.solved_count && s.total_chars <= last_stat.total_chars) }
+        .sort_by { |s| [-s.solved_count, s.total_chars] }
+        .map { |s| [s.id, {solved: s.solved_count, value: s.total_chars}] }.to_h
+    else
+      @least_chars = {}
+    end
+    
+    # 6. Fastest Runtime (Exclude output-only problems)
+    min_time = passed_scope.joins(:problem).where(problems: {output_only: false})
+      .where("max_runtime IS NOT NULL AND max_runtime < 999999")
+      .group('submissions.user_id, submissions.problem_id')
+      .select('submissions.user_id, MIN(max_runtime) as min_time')
+    
+    if params[:group_mode] == '1'
+      time_stats = Group.joins(:users).joins("INNER JOIN (#{min_time.to_sql}) mt ON users.id = mt.user_id")
+        .group('groups.id')
+        .select('groups.id', 'COUNT(mt.min_time) as solved_count', 'SUM(mt.min_time) as total_time')
+        .index_by(&:id)
+    else
+      time_stats = User.joins("INNER JOIN (#{min_time.to_sql}) mt ON users.id = mt.user_id")
+        .group('users.id')
+        .select('users.id', 'COUNT(mt.min_time) as solved_count', 'SUM(mt.min_time) as total_time')
+        .index_by(&:id)
+    end
+
+    sorted_time_ids = time_stats.keys.sort_by { |id| s = time_stats[id]; [-s.solved_count, s.total_time] }
+    if sorted_time_ids.any?
+      last_stat = time_stats[sorted_time_ids.first(@limit).last]
+      @fastest_runtime = time_stats.values.select { |s| s.solved_count > last_stat.solved_count || (s.solved_count == last_stat.solved_count && s.total_time <= last_stat.total_time) }
+        .sort_by { |s| [-s.solved_count, s.total_time] }
+        .map { |s| [s.id, {solved: s.solved_count, value: s.total_time}] }.to_h
+    else
+      @fastest_runtime = {}
+    end
+
+    # 7. Least Memory (Exclude output-only problems)
+    min_mem = passed_scope.joins(:problem).where(problems: {output_only: false})
+      .where("peak_memory IS NOT NULL AND peak_memory < 999999")
+      .group('submissions.user_id, submissions.problem_id')
+      .select('submissions.user_id, MIN(peak_memory) as min_mem')
+    
+    if params[:group_mode] == '1'
+      mem_stats = Group.joins(:users).joins("INNER JOIN (#{min_mem.to_sql}) mm ON users.id = mm.user_id")
+        .group('groups.id')
+        .select('groups.id', 'COUNT(mm.min_mem) as solved_count', 'SUM(mm.min_mem) as total_mem')
+        .index_by(&:id)
+    else
+      mem_stats = User.joins("INNER JOIN (#{min_mem.to_sql}) mm ON users.id = mm.user_id")
+        .group('users.id')
+        .select('users.id', 'COUNT(mm.min_mem) as solved_count', 'SUM(mm.min_mem) as total_mem')
+        .index_by(&:id)
+    end
+
+    sorted_mem_ids = mem_stats.keys.sort_by { |id| s = mem_stats[id]; [-s.solved_count, s.total_mem] }
+    if sorted_mem_ids.any?
+      last_stat = mem_stats[sorted_mem_ids.first(@limit).last]
+      @least_memory = mem_stats.values.select { |s| s.solved_count > last_stat.solved_count || (s.solved_count == last_stat.solved_count && s.total_mem <= last_stat.total_mem) }
+        .sort_by { |s| [-s.solved_count, s.total_mem] }
+        .map { |s| [s.id, {solved: s.solved_count, value: s.total_mem}] }.to_h
+    else
+      @least_memory = {}
+    end
+
+    # 8. Score Growth
+    since_scores = @since_time ? get_total_scores_at(@since_time, exclude_user_ids.uniq, selected_prob_ids, params[:group_mode] == '1') : {}
+    until_scores = get_total_scores_at(@until_time, exclude_user_ids.uniq, selected_prob_ids, params[:group_mode] == '1')
+
+    @score_growth = {}
+    until_scores.each do |id, score_data|
+      since_data = since_scores[id] || { raw: 0.0, deducted: 0.0, bonus: 0.0, total: 0.0 }
+      growth = score_data[:total] - since_data[:total]
+      raw_growth = score_data[:raw] - since_data[:raw]
+      bonus_growth = score_data[:bonus] - since_data[:bonus]
+      deducted_growth = score_data[:deducted] - since_data[:deducted]
+
+      # "but still not show sum '0' scorers (negative is meant to show)"
+      if growth.abs > 0.01
+        @score_growth[id] = {
+          growth: growth,
+          raw_growth: raw_growth,
+          bonus_growth: bonus_growth,
+          deducted_growth: deducted_growth
+        }
+      end
+    end
+
+    # Fetch completion times and passed counts for sorting ties
+    problems_to_check = Problem.where(id: selected_prob_ids)
+    zero_score_prob_ids = problems_to_check.select { |p| p.effective_full_score == 0 }.map(&:id)
+    
+    passing_zero_sub_ids = []
+    if zero_score_prob_ids.any?
+      zero_subs = Submission.where(problem_id: zero_score_prob_ids, status: 'done', viva_archived_at: nil)
+      zero_subs = zero_subs.where("submitted_at <= ?", @until_time) if @until_time
+      zero_subs.each do |s|
+        prob = problems_to_check.find { |p| p.id == s.problem_id }
+        next unless prob
+        tc_count = prob.live_dataset&.testcases&.count || 0
+        clean_gc = s.grader_comment.to_s.gsub(/[\[\]\s]/, '')
+        passed = if tc_count == 0
+          true
+        elsif clean_gc.match?(/\A[PS]+\z/)
+          true
+        else
+          false
+        end
+        passing_zero_sub_ids << s.id if passed
+      end
+    end
+
+    max_pts_sub = Submission.where(problem_id: selected_prob_ids)
+    max_pts_sub = max_pts_sub.where("submitted_at <= ?", @until_time) if @until_time
+    if passing_zero_sub_ids.any?
+      max_pts_sub = max_pts_sub.where("submissions.points > 0 OR submissions.id IN (?)", passing_zero_sub_ids)
+    else
+      max_pts_sub = max_pts_sub.where("submissions.points > 0")
+    end
+    max_pts_sub = max_pts_sub.group(:user_id, :problem_id).select('user_id, problem_id, MAX(points) as max_pts')
+
+    first_bests = Submission.joins("INNER JOIN (#{max_pts_sub.to_sql}) mp ON submissions.user_id = mp.user_id AND submissions.problem_id = mp.problem_id AND submissions.points = mp.max_pts")
+    first_bests = first_bests.where("submissions.submitted_at <= ?", @until_time) if @until_time
+    first_bests = first_bests.group(:user_id, :problem_id).select('submissions.user_id, submissions.problem_id, MIN(submissions.submitted_at) as first_best_time')
+
+    user_completion_times = Submission.from("(#{first_bests.to_sql}) fb")
+      .group('fb.user_id')
+      .select('fb.user_id, MAX(fb.first_best_time) as last_completed_time')
+      .each_with_object({}) { |r, h| h[r.user_id] = r.last_completed_time }
+
+    # Passed counts query
+    best_subs = Submission.joins("INNER JOIN (#{first_bests.to_sql}) fb ON submissions.user_id = fb.user_id AND submissions.problem_id = fb.problem_id AND submissions.submitted_at = fb.first_best_time")
+      .select('submissions.user_id, submissions.grader_comment, submissions.points, submissions.problem_id')
+      
+    user_passed_counts = Hash.new(0)
+    best_subs.each do |sub|
+      comment = sub.grader_comment.to_s.gsub(/[\[\]\s]/, '')
+      if !comment.blank? && comment.match?(/\A[PS]*\z/)
+        user_passed_counts[sub.user_id] += 1
+      end
+    end
+
+    if params[:group_mode] == '1'
+      group_completion_times = {}
+      group_passed_counts = Hash.new(0)
+      Group.joins(:groups_users).pluck('groups.id, groups_users.user_id').each do |group_id, user_id|
+        t = user_completion_times[user_id]
+        if t
+          group_completion_times[group_id] = group_completion_times[group_id] ? [group_completion_times[group_id], t].max : t
+        end
+        group_passed_counts[group_id] += user_passed_counts[user_id] || 0
+      end
+      completion_times = group_completion_times
+      passed_counts = group_passed_counts
+      
+      @score_growth_groups = Group.where(id: @score_growth.keys).index_by(&:id)
+      @score_growth_names = @score_growth_groups.transform_values { |g| g.name }
+    else
+      completion_times = user_completion_times
+      passed_counts = user_passed_counts
+      
+      @score_growth_users = User.where(id: @score_growth.keys).index_by(&:id)
+      @score_growth_names = @score_growth_users.transform_values { |u| u.full_name }
+    end
+
+    @score_growth = @score_growth.sort_by do |id, data|
+      time = completion_times[id] || Time.zone.at(2147483647)
+      pass = passed_counts[id] || 0
+      name = @score_growth_names[id].to_s.downcase
+      [-data[:growth], time.to_i, -pass, name]
+    end.to_h
+
+    # Expose helper details for frontend to read on DOM load
+    @score_growth_details = {}
+    @score_growth.each_key do |id|
+      @score_growth_details[id] = {
+        time: (completion_times[id] || Time.zone.at(2147483647)).to_i,
+        pass: passed_counts[id] || 0,
+        name: @score_growth_names[id].to_s
+      }
+    end
+  end
+
   def problem_hof
   end
 
@@ -317,7 +645,14 @@ class ReportController < ApplicationController
 
     @summary = {count: 0, solve: 0, attempt: 0}
     user = Hash.new(0)
-    Submission.where(problem_id: @problem.id).includes(:language).each do |sub|
+    roles_to_exclude = []
+    unless GraderConfiguration['system.statistic_include_admins']
+      roles_to_exclude += ['admin', 'problem_setter']
+    end
+    exclude_ids = User.joins(:roles).where(roles: { name: roles_to_exclude }).pluck(:id)
+    exclude_ids += User.where(enabled: false).pluck(:id)
+    exclude_ids = exclude_ids.uniq
+    Submission.where(problem_id: @problem.id).where.not(user_id: exclude_ids).includes(:language, :user).find_each do |sub|
       # histogram
 
       next unless sub.points
@@ -347,8 +682,9 @@ class ReportController < ApplicationController
         @by_lang[lang.pretty_name][:memory] = { avail: true, user_id: sub.user_id, value: sub.peak_memory, sub_id: sub.id }
       end
 
+      is_excluded = (sub.user.admin? || sub.user.problem_setter?) && !GraderConfiguration['system.statistic_include_admins']
       if sub.submitted_at and sub.submitted_at < @by_lang[lang.pretty_name][:first][:value] and sub.user and
-          !sub.user.admin?
+          !is_excluded
         @by_lang[lang.pretty_name][:first] = { avail: true, user_id: sub.user_id, value: sub.submitted_at, sub_id: sub.id }
       end
 
@@ -523,7 +859,7 @@ UNION
       WHERE l.created_at >= ? and l.created_at <= ?
       GROUP BY l.ip_address
       HAVING count > 1
-    ) ml on ml.ip_address = s.ip_address
+    ) ml on ml.ip_address = s.ip_address COLLATE utf8mb4_unicode_ci
     WHERE s.submitted_at >= ? and s.submitted_at <= ?
 ORDER BY ip_address,submitted_at
             SQL
@@ -626,48 +962,44 @@ ORDER BY submitted_at
 
     # build @problems that matches the given params
     def selected_problems
-      # start with reportable problems (this already consider when @current_user is an admin)
+      # start with reportable problems (this already considers when @current_user is an admin)
       @problems = Problem.where(id: @current_user.problems_for_action(:report).ids)
 
-      # problem
-      prob_use = params[:probs][:use] rescue ''
-      if prob_use == 'all'
-        @problems = Problem.all
-      elsif prob_use == 'ids'
-        @problems = @problems.where(id: params[:probs][:ids])
-      elsif prob_use == 'groups'
-        ids = Group.where(id: params[:probs][:group_ids]).joins(:problems).pluck(:problem_id).uniq
-        @problems = @problems.where(id: ids)
-      elsif prob_use == 'tags'
-        ids = Tag.where(id: params[:probs][:tag_ids]).joins(:problems).pluck(:problem_id).uniq
-        @problems = @problems.where(id: ids)
-      else
-        # wrong PARAM
-        @problems = Problem.none
+      if params[:probs].present?
+        prob_use = params[:probs][:use] rescue ''
+        if prob_use == 'all'
+          @problems = Problem.all
+        elsif prob_use == 'ids'
+          @problems = @problems.where(id: params[:probs][:ids])
+        elsif prob_use == 'groups'
+          ids = Group.where(id: params[:probs][:group_ids]).joins(:problems).pluck(:problem_id).uniq
+          @problems = @problems.where(id: ids)
+        elsif prob_use == 'tags'
+          ids = Tag.where(id: params[:probs][:tag_ids]).joins(:problems).pluck(:problem_id).uniq
+          @problems = @problems.where(id: ids)
+        end
       end
 
       # sort it
-      @problems = @current_user.problems_for_action(:report).where(id: @problems.ids).order(:date_added)
+      @problems = @current_user.problems_for_action(:report).where(id: @problems.ids).default_order
     end
 
     def selected_users
-      return (@users = User.none) unless params.has_key? :users
-      @users = if params[:users][:use] == "group" then
-                 if params[:users][:only_users]
-                   User.where(id: Group.where(id: params[:users][:group_ids]).joins(:groups_users).where(groups_users: {role: 'user'}).pluck(:user_id))
-                 else
+      if params[:users].present?
+        @users = if params[:users][:use] == "group" then
                    User.where(id: Group.where(id: params[:users][:group_ids]).joins(:groups_users).pluck(:user_id))
-                 end
-      elsif params[:users][:use] == 'enabled'
-                 User.where(enabled: true)
-      elsif params[:users][:use] == 'all'
-                 User.all
+        elsif params[:users][:use] == 'enabled'
+                   User.where(enabled: true)
+        elsif params[:users][:use] == 'all'
+                   User.all
+        else
+                   User.all
+        end
       else
-                 # wrong PARAM
-                 User.none
+        @users = User.all
       end
 
-      # if user is not admin, filter problem to be only that are reportable
+      # if user is not admin, filter users to be only those that are reportable
       @users = @users.where(id: @current_user.reportable_users) unless @current_user.admin?
     end
 
@@ -678,5 +1010,87 @@ ORDER BY submitted_at
 
     def set_problem
       @problem = Problem.find(params[:id])
+    end
+
+    def get_total_scores_at(time, admin_ids, prob_ids, group_mode = false)
+      # 1. Max points per user/problem
+      max_pts = Submission.where(problem_id: prob_ids)
+      max_pts = max_pts.where("submitted_at <= ?", time) if time
+      max_pts = max_pts.group(:user_id, :problem_id)
+        .select('user_id, problem_id, MAX(points) as max_pts')
+
+      # 2. LLM costs per user/problem
+      llm_costs = Comment.joins("INNER JOIN submissions ON comments.commentable_id = submissions.id AND comments.commentable_type = 'Submission'")
+      llm_costs = llm_costs.where("submissions.submitted_at <= ?", time) if time
+      llm_costs = llm_costs.where("submissions.problem_id": prob_ids)
+        .where(kind: 'llm_assist')
+        .group('submissions.user_id, submissions.problem_id')
+        .select('submissions.user_id, submissions.problem_id, SUM(comments.cost) as llm_cost')
+
+      # 3. Hint costs per user/problem
+      hint_costs = Comment.joins(:comment_reveals)
+      hint_costs = hint_costs.where("comment_reveals.created_at <= ?", time) if time
+      hint_costs = hint_costs.where(commentable_type: 'Problem')
+        .where(commentable_id: prob_ids)
+        .group('comment_reveals.user_id, comments.commentable_id')
+        .select('comment_reveals.user_id, comments.commentable_id as problem_id, SUM(comments.cost) as hint_cost')
+
+      # First Blood bonus calculation at `time`
+      bonus_scores = Hash.new(0.0)
+      bonus_problems = Problem.where(id: prob_ids).where.not(bonus_first_blood: [nil, 0])
+      bonus_problems.each do |p|
+        n = p.respond_to?(:first_n_bloods) ? p.first_n_bloods : 0
+        next if n <= 0
+        subs = p.submissions.tag_default
+          .where("submissions.points >= ?", p.full_score || 100)
+          .where.not(user_id: admin_ids)
+        subs = subs.where("submissions.submitted_at <= ?", time) if time
+        blood_user_ids = subs.order(submitted_at: :asc, id: :asc).limit(n).pluck(:user_id).uniq
+        blood_user_ids.each do |uid|
+          bonus_scores[uid] += p.bonus_first_blood.to_f
+        end
+      end
+
+      if group_mode
+        group_bonus_scores = Hash.new(0.0)
+        Group.joins(:groups_users).pluck('groups.id, groups_users.user_id').each do |group_id, user_id|
+          group_bonus_scores[group_id] += bonus_scores[user_id]
+        end
+        bonus_scores = group_bonus_scores
+
+        raw_and_deductions = Group.joins(:users).joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
+          .joins("INNER JOIN problems ON problems.id = mp.problem_id")
+          .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
+          .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
+          .where.not(users: {id: admin_ids})
+          .group('groups.id')
+          .select('groups.id', 'SUM(COALESCE(mp.max_pts, 0)) as raw_score', 'SUM(COALESCE(lc.llm_cost, 0) + COALESCE(hc.hint_cost, 0)) as deducted_score')
+          .each_with_object({}) { |g, h| h[g.id] = { raw: g.raw_score.to_f, deducted: g.deducted_score.to_f } }
+      else
+        raw_and_deductions = User.where.not(id: admin_ids)
+          .joins("INNER JOIN (#{max_pts.to_sql}) mp ON users.id = mp.user_id")
+          .joins("INNER JOIN problems ON problems.id = mp.problem_id")
+          .joins("LEFT JOIN (#{llm_costs.to_sql}) lc ON users.id = lc.user_id AND problems.id = lc.problem_id")
+          .joins("LEFT JOIN (#{hint_costs.to_sql}) hc ON users.id = hc.user_id AND problems.id = hc.problem_id")
+          .group('users.id')
+          .select('users.id', 'SUM(COALESCE(mp.max_pts, 0)) as raw_score', 'SUM(COALESCE(lc.llm_cost, 0) + COALESCE(hc.hint_cost, 0)) as deducted_score')
+          .each_with_object({}) { |u, h| h[u.id] = { raw: u.raw_score.to_f, deducted: u.deducted_score.to_f } }
+      end
+
+      result = {}
+      all_ids = (raw_and_deductions.keys + bonus_scores.keys).uniq
+      all_ids.each do |id|
+        rd = raw_and_deductions[id] || { raw: 0.0, deducted: 0.0 }
+        bonus = bonus_scores[id] || 0.0
+        total = [0.0, rd[:raw] - rd[:deducted] + bonus].max
+        result[id] = { raw: rd[:raw], deducted: rd[:deducted], bonus: bonus, total: total }
+      end
+      result
+    end
+
+    def restrict_setter_reports
+      if @current_user.problem_setter? && !@current_user.admin?
+        unauthorized_redirect(msg: 'You are only authorized to view the statistics report.')
+      end
     end
 end

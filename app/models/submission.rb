@@ -21,10 +21,12 @@ class Submission < ApplicationRecord
 
   before_validation :assign_language
   before_save :assign_latest_number_if_new_recond
+  before_save :set_effective_code_length
 
   validates_length_of :source, maximum: 1_000_000, allow_blank: true, message: 'code too long, the limit is 1,000,000 bytes'
   validate :must_have_valid_problem
   validate :must_specify_language
+  validate :must_not_exceed_submission_limit
 
   has_one :task
 
@@ -56,7 +58,7 @@ class Submission < ApplicationRecord
   scope :max_score_report, ->(problems, start, stop) {
     max_records = all
       .group('submissions.user_id,submissions.problem_id')
-      .select('MAX(submissions.points) as max_score, submissions.user_id, submissions.problem_id')
+      .select('MAX(submissions.points) as max_score, submissions.user_id, submissions.problem_id, MAX(submissions.id) as max_sub_id')
 
     llm_assist_count = Comment.llm_assists_for_submissions(all)
       .select('SUM(comments.cost) as llm_cost')
@@ -64,7 +66,8 @@ class Submission < ApplicationRecord
       .select('comments.commentable_id as submission_id')
 
     # should I includes all hint? or just hint reveal during the given time?
-    hint_reveal = Comment.hint_reveal_for_problems(problems, start..stop)
+    hint_reveal = Comment.hint_reveal_for_problems(problems.where(available: true), start..stop)
+      .where(comment_reveals: {is_success: true})
       .select('comment_reveals.user_id as user_id')
       .select('comments.commentable_id as problem_id')
       .select('SUM(comments.cost) as hint_cost')
@@ -74,9 +77,7 @@ class Submission < ApplicationRecord
     # this is what we returned
     all.joins(:user)
       .joins("JOIN (#{max_records.to_sql}) MAX_RECORD ON " +
-                   'submissions.points = MAX_RECORD.max_score AND ' +
-                   'submissions.user_id = MAX_RECORD.user_id AND ' +
-                   'submissions.problem_id = MAX_RECORD.problem_id ')
+                   'submissions.id = MAX_RECORD.max_sub_id ')
       .joins("LEFT JOIN (#{llm_assist_count.to_sql}) LLM_ASSIST ON " +
         "submissions.id = LLM_ASSIST.submission_id"
        )
@@ -88,7 +89,7 @@ class Submission < ApplicationRecord
       .select('submissions.user_id,users.login,users.full_name,users.remark')
       .select('problems.name')
       .select('max_score')
-      .select('LEAST(max_score,100.0-IFNULL(LLM_ASSIST.llm_cost,0.0)-IFNULL(HINT_REVEAL.hint_cost,0.0)) as final_score')
+      .select(GraderConfiguration.enable_penalty? ? 'LEAST(max_score,GREATEST(0.0, IFNULL(problems.full_score, 100.0)-IFNULL(LLM_ASSIST.llm_cost,0.0)-IFNULL(HINT_REVEAL.hint_cost,0.0))) as final_score' : 'max_score as final_score')
       .select('submitted_at')
       .select('submissions.id as sub_id')
       .select('submissions.problem_id,submissions.user_id')
@@ -114,7 +115,7 @@ class Submission < ApplicationRecord
 
 
   def set_grading_complete(point, grading_text, max_time, max_mem)
-    update(points: point, status: :done, graded_at: Time.zone.now, grader_comment: grading_text, max_runtime: max_time, peak_memory: max_mem)
+    update(points: point, status: :done, graded_at: Time.zone.now, grader_comment: grading_text, max_runtime: max_time, peak_memory: max_mem, effective_code_length: source&.length)
   end
 
   def set_grading_error(error_text)
@@ -316,7 +317,7 @@ class Submission < ApplicationRecord
       errors.add(:problem, :blank, 'aaa')
     else
       # admin always have right
-      return if self.user.admin?
+      return if self.user.admin? || self.user.problem_setter?
 
       # check if user has the right to submit the problem
       errors[:base] << "Authorization error: you have no right to submit to this problem" if (!self.user.problems_for_action(:submit).include?(self.problem)) and (self.new_record?)
@@ -328,6 +329,20 @@ class Submission < ApplicationRecord
     return if !self.new_record?
     latest = Submission.find_last_by_user_and_problem(self.user_id, self.problem_id)
     self.number = (latest==nil) ? 1 : latest.number + 1
+  end
+
+  def must_not_exceed_submission_limit
+    return unless self.new_record?
+    return if self.problem.nil? || self.user.nil?
+    return if self.user.admin? || self.user.problem_setter?
+    if self.problem.submission_limit_reached?(self.user)
+      remaining = self.problem.submissions_remaining_for(self.user)
+      errors.add(:base, "Submission limit reached: this problem allows a maximum of #{self.problem.max_submissions} submissions (#{remaining} remaining)")
+    end
+  end
+  
+  def set_effective_code_length
+    self.effective_code_length = source.presence&.length || binary.presence&.length
   end
 
   public

@@ -228,7 +228,7 @@ module JudgeBase
 
     # download any testcases
     if type == :testcases
-      dataset.testcases.each do |tc|
+      dataset.testcases.without_legacy_blobs.each do |tc|
         prepare_testcase_directory(nil, tc) # prepare only problem testcase path, not sub's testcase path
 
         # download testcase
@@ -261,7 +261,35 @@ module JudgeBase
     # we always prepare manager
     WorkerDataset.transaction do
       wp = WorkerDataset.lock("FOR UPDATE").find_or_create_by(worker_id: @worker_id, dataset_id: dataset.id)
-      if wp.managers_status == 'created'
+      
+      # Verify that manager files actually exist on disk
+      managers_exist = true
+      if wp.managers_status == 'ready'
+        if dataset.checker.attached? && !@prob_checker_file.exist?
+          managers_exist = false
+        end
+        dataset.managers.each do |mng|
+          basename = mng.filename.base + mng.filename.extension_with_delimiter
+          dest = @manager_path + basename
+          managers_exist = false unless dest.exist?
+        end
+        dataset.initializers.each do |init|
+          basename = init.filename.base + init.filename.extension_with_delimiter
+          dest = @prob_init_path + basename
+          managers_exist = false unless dest.exist?
+        end
+        dataset.data_files.each do |data_file|
+          basename = data_file.filename.base + data_file.filename.extension_with_delimiter
+          dest = @prob_data_path + basename
+          managers_exist = false unless dest.exist?
+        end
+      end
+
+      if wp.managers_status == 'ready' && !managers_exist
+        judge_log("Managers marked as ready in DB, but files are missing on disk. Redownloading...")
+      end
+
+      if wp.managers_status == 'created' || (wp.managers_status == 'ready' && !managers_exist)
         # no one is working on this worker problem, I will download
         wp.update(managers_status: :downloading)
 
@@ -279,7 +307,24 @@ module JudgeBase
     if type == :all
       WorkerDataset.transaction do
         wp = WorkerDataset.lock("FOR UPDATE").find_or_create_by(worker_id: @worker_id, dataset_id: dataset.id)
-        if wp.testcases_status == 'created'
+        
+        # Verify that testcase files actually exist on disk
+        testcases_exist = true
+        if wp.testcases_status == 'ready'
+          dataset.testcases.without_legacy_blobs.each do |tc|
+            prepare_testcase_directory(nil, tc)
+            unless @input_file.exist? && @ans_file.exist?
+              testcases_exist = false
+              break
+            end
+          end
+        end
+
+        if wp.testcases_status == 'ready' && !testcases_exist
+          judge_log("Testcases marked as ready in DB, but files are missing on disk. Redownloading...")
+        end
+
+        if wp.testcases_status == 'created' || (wp.testcases_status == 'ready' && !testcases_exist)
           # no one is working on this worker problem, I will download
           wp.update(testcases_status: :downloading)
 
@@ -304,7 +349,7 @@ module JudgeBase
   def run_initializer(dataset)
     # build all testcases files into a json
     tc_hash = {testcases: Hash.new { |h, k| h[k] = {} } }
-    dataset.testcases.each do |tc|
+    dataset.testcases.without_legacy_blobs.each do |tc|
       prepare_testcase_directory(nil, tc)
       tc_hash[:testcases][tc.id][:inp_file] = @input_file
       tc_hash[:testcases][tc.id][:ans_file] = @ans_file
@@ -321,7 +366,7 @@ module JudgeBase
   end
 
   # set up directory and path/filename of the testcase directory
-  def prepare_testcase_directory(sub, testcase)
+  def prepare_testcase_directory(sub, testcase, clean: false)
     # preparing pathname for problem directory
     @prob_testcase_path = @problem_path + testcase.id.to_s
     @input_path = @prob_testcase_path + 'input' # we need additional dir because we will mount this dir to the isolate
@@ -339,6 +384,13 @@ module JudgeBase
 
       @sub_testcase_path.mkpath
       @output_path.mkpath
+      # Remove any existing output/metadata files to avoid permission issues under fs.protected_regular
+      # or stale results from previous runs.
+      if clean
+        File.delete(@output_file) if File.exist?(@output_file)
+        File.delete(@sub_testcase_path + StdErrFilename) if File.exist?(@sub_testcase_path + StdErrFilename)
+        File.delete(@sub_testcase_path + 'meta.txt') if File.exist?(@sub_testcase_path + 'meta.txt')
+      end
       @output_path.chmod(0777)
     end
   end

@@ -12,7 +12,7 @@
 
     -# problems comment section (hint / solution / etc)
     = turbo_frame_tag :problem_hints do
-      = render partial: 'problems/hints', locals: {problem: @problem}
+      = render partial: 'problems/hints', locals: {problem: @problem, submission: @submission}
 
     -# Submission comments section (AI assist / actual comment)
     = turbo_frame_tag :submission_comments do

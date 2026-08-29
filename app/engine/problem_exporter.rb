@@ -38,7 +38,7 @@ class ProblemExporter
     @testcase_dir = @main_dir + OptionConst::DEFAULT[:dir][:testcases]
     @testcase_dir.mkpath
     tc_options = {}
-    @ds.testcases.each do |tc|
+    @ds.testcases.without_legacy_blobs.each do |tc|
       basename = tc.code_name || tc.num
       inp_fn = @testcase_dir + "#{basename}.#{@inp_ext}"
       ans_fn = @testcase_dir + "#{basename}.#{@ans_ext}"

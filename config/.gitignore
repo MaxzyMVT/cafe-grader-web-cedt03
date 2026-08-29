@@ -1,3 +1,8 @@
 database.yml
 tasks.yml
-
+credentials.yml
+llm.yml
+worker.yml
+secrets.yml
+credentials.yml.enc
+master.key

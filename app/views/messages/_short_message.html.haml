@@ -1,12 +1,24 @@
 %tr
-  - if short_message.sender
-    %td=h short_message.sender.full_name
-  - else
-    %td (user deleted)
-  %td= "#{short_message.created_at}"
-  %td=h truncate(short_message.body)
-  %td
+  %td.ps-4
     - if short_message.sender
-      = link_to "[reply]", :action => 'show', :id => short_message.id
-    - if params[:action] != 'list_all'
-      = link_to "[hide]", :action => 'hide', :id => short_message.id
+      .d-flex.align-items-center.gap-2
+        %span.mi.text-secondary{style: 'font-size: 1.1rem;'} person
+        = short_message.sender.full_name
+    - else
+      %span.text-muted.small (user deleted)
+  %td
+    .text-muted.small
+      %span.mi.md-14{style: 'vertical-align: middle'} schedule
+      = time_ago_in_words(short_message.created_at) + " ago"
+  %td
+    .fw-medium= truncate(short_message.body, length: 60)
+  %td.text-end.pe-4
+    .d-flex.justify-content-end.gap-2
+      - if short_message.sender
+        = link_to message_path(short_message), class: 'btn btn-sm btn-primary d-inline-flex align-items-center gap-1' do
+          %span.mi.md-14 reply
+          Reply
+      - if params[:action] != 'list_all'
+        = link_to hide_message_path(short_message), class: 'btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1' do
+          %span.mi.md-14 visibility_off
+          Hide

@@ -4,7 +4,7 @@ class UserAdminController < ApplicationController
   # Stimulus controller connection
   before_action :page_stimulus_controller, only: %w[admin index]
   before_action :set_user, only: %w[ clear_last_ip toggle_enable toggle_activate
-                                     edit update stat stat_contest ]
+                                     edit update stat stat_contest add_group remove_group add_contest remove_contest ]
 
   def index
     @user_count = User.count
@@ -125,19 +125,29 @@ class UserAdminController < ApplicationController
   end
 
   def edit
+    @groups = Group.all
+    @contests = Contest.all
   end
 
   def update
     if @user.update(user_params)
       redirect_to edit_user_admin_path(@user), notice: 'User was successfully updated.'
     else
+      @groups = Group.all
+      @contests = Contest.all
       render action: 'edit'
     end
   end
 
   def destroy
-    User.find(params[:id]).destroy
-    redirect_to action: 'index'
+    @user = User.find(params[:id])
+    login = @user.login
+    @user.destroy
+    @toast = {title: 'User deleted', body: "User '#{login}' has been removed."}
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to action: 'index', notice: "User '#{login}' deleted." }
+    end
   end
 
   # GET — renders the import form / result page. The form posts to
@@ -267,6 +277,7 @@ class UserAdminController < ApplicationController
   def admin
     @admins = Role.find_by(name: 'admin')&.users || User.none
     @tas = Role.find_by(name: 'ta')&.users || User.none
+    @problem_setters = Role.find_by(name: 'problem_setter')&.users || User.none
   end
 
   def admin_query
@@ -275,6 +286,10 @@ class UserAdminController < ApplicationController
 
   def ta_query
     render json: {data: Role.find_by(name: 'ta')&.users || User.none}
+  end
+
+  def problem_setter_query
+    render json: {data: Role.find_by(name: 'problem_setter')&.users || User.none}
   end
 
   # TURBO_STREAM
@@ -376,9 +391,23 @@ class UserAdminController < ApplicationController
       @action[:gen_password] = params[:gen_password]
       @action[:add_group] = params[:add_group]
       @action[:group_name] = params[:group_name]
+      @action[:delete_users] = params[:delete_users]
+      @action[:change_roles] = params[:change_roles]
+      @action[:role_name] = params[:role_name]
     end
 
     if params[:commit] == "Perform"
+      if @action[:delete_users]
+        deleted_count = 0
+        @users.each do |user|
+          if user.destroy
+            deleted_count += 1
+          end
+        end
+        flash[:success] = "Successfully deleted #{deleted_count} user(s) from the database."
+        redirect_to action: 'index' and return
+      end
+
       if @action[:set_enable]
         @users.update_all(enabled: @action[:enabled])
       end
@@ -391,19 +420,51 @@ class UserAdminController < ApplicationController
         end
       end
       if @action[:add_group] and @action[:group_name]
-        @group = Group.find(@action[:group_name])
-        ok = []
-        failed = []
+        if @action[:group_name] == 'none'
+          @users.each do |user|
+            user.groups.clear
+          end
+          flash[:success] = "Successfully cleared groups for matched users."
+        else
+          @group = Group.find(@action[:group_name])
+          ok = []
+          failed = []
+          @users.each do |user|
+            begin
+              @group.users << user
+              ok << user.login
+            rescue => e
+              failed << user.login
+            end
+          end
+          flash[:success] = "The following users are added to the 'group #{@group.name}': " + ok.join(', ') if ok.count > 0
+          flash[:alert] = "The following users are already in the 'group #{@group.name}': " + failed.join(', ') if failed.count > 0
+        end
+      end
+      if @action[:change_roles] and @action[:role_name]
+        role = Role.find_by(name: @action[:role_name]) unless @action[:role_name] == 'default'
         @users.each do |user|
-          begin
-            @group.users << user
-            ok << user.login
-          rescue => e
-            failed << user.login
+          if user.login == 'root'
+            # Safety check: do not revoke admin role from root
+            admin_role = Role.find_by(name: 'admin')
+            user.roles.clear
+            user.roles << admin_role if admin_role
+          elsif user == @current_user && @action[:role_name] != 'admin'
+            # Do not allow current user to revoke their own admin role
+            if user.roles.where(name: 'admin').any?
+              admin_role = Role.find_by(name: 'admin')
+              user.roles.clear
+              user.roles << admin_role if admin_role
+              user.roles << role if role && role.name != 'admin'
+            else
+              user.roles.clear
+              user.roles << role if role
+            end
+          else
+            user.roles.clear
+            user.roles << role if role
           end
         end
-        flash[:success] = "The following users are added to the 'group #{@group.name}': " + ok.join(', ') if ok.count > 0
-        flash[:alert] = "The following users are already in the 'group #{@group.name}': " + failed.join(', ') if failed.count > 0
       end
     end
   end
@@ -515,6 +576,58 @@ class UserAdminController < ApplicationController
       @users = User.find_users_with_no_contest
     end
     return [@contest, @users]
+  end
+
+  public
+
+  def add_group
+    group = Group.find_by(id: params[:group_id])
+    if group
+      gu = GroupUser.find_or_initialize_by(group_id: group.id, user_id: @user.id)
+      gu.role = 'editor'
+      gu.enabled = true
+      gu.save!
+      flash[:success] = "Added to group #{group.name}"
+    else
+      flash[:alert] = "Group not found"
+    end
+    redirect_to edit_user_admin_path(@user), status: :see_other
+  end
+
+  def remove_group
+    group = Group.find_by(id: params[:group_id])
+    if group
+      @user.groups.delete(group)
+      flash[:success] = "Removed from group #{group.name}"
+    else
+      flash[:alert] = "Group not found"
+    end
+    redirect_to edit_user_admin_path(@user), status: :see_other
+  end
+
+  def add_contest
+    contest = Contest.find_by(id: params[:contest_id])
+    if contest
+      cu = ContestUser.find_or_initialize_by(contest_id: contest.id, user_id: @user.id)
+      cu.role = 'editor'
+      cu.enabled = true
+      cu.save!
+      flash[:success] = "Added to contest #{contest.name}"
+    else
+      flash[:alert] = "Contest not found"
+    end
+    redirect_to edit_user_admin_path(@user), status: :see_other
+  end
+
+  def remove_contest
+    contest = Contest.find_by(id: params[:contest_id])
+    if contest
+      @user.contests.delete(contest)
+      flash[:success] = "Removed from contest #{contest.name}"
+    else
+      flash[:alert] = "Contest not found"
+    end
+    redirect_to edit_user_admin_path(@user), status: :see_other
   end
 
 

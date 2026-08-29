@@ -15,9 +15,12 @@
 .modal.fade{id: id, tabindex: -1,role: 'dialog'}
   .modal-dialog.modal-lg{role:'document'}
     .modal-content
-      .modal-header{class: header_class}
-        %h4= header_msg
-        %button.btn-close{type: 'button', data: {bs: {dismiss: :modal}}, aria: {label: 'Close'}}
+      .modal-header.d-flex.align-items-center.justify-content-between{class: header_class}
+        %h4.modal-title.mb-0= header_msg
+        .d-flex.align-items-center.gap-2
+          - if local_assigns[:header_content]
+            = header_content
+          %button.btn-close{type: 'button', data: {bs: {dismiss: :modal}}, aria: {label: 'Close'}}
       .modal-body
         - unless error_messages
           = body_msg
@@ -26,6 +29,8 @@
             - error_messages.each do |msg|
               %li= msg.html_safe
       .modal-footer
+        - if local_assigns[:footer_content]
+          = footer_content
         %button.btn.btn-secondary{type: 'button', data: {bs: {dismiss: 'modal'}}} Close
 - if do_popup
   :javascript

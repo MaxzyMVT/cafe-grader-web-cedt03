@@ -1,7 +1,16 @@
-.message
-  .stat
-    = "#{message.sender.full_name} at #{message.created_at}"
-  %div{:class => (!defined?(reply) or (reply==false)) ? "body" : "reply-body"}
-    = simple_format(message.body)
-  - if message.replied_messages.length!=0
-    = render :partial => 'message', :collection => message.replied_messages, :locals => {:reply => true}
+- is_reply = defined?(reply) && reply
+.message-container{class: is_reply ? 'ms-4 mt-2' : 'mb-4'}
+  .card.border-0.shadow-sm{class: is_reply ? 'bg-light border-start border-4 border-primary' : 'bg-white'}
+    .card-body.p-3
+      .d-flex.justify-content-between.align-items-center.mb-2
+        .d-flex.align-items-center.gap-2
+          %span.mi.text-secondary{style: 'font-size: 1rem;'} account_circle
+          %span.fw-bold.small= message.sender.full_name
+        %span.text-muted.small= time_ago_in_words(message.created_at) + " ago"
+      
+      .message-body.text-dark
+        = simple_format(message.body)
+
+      - if message.replied_messages.any?
+        .replies-section
+          = render partial: 'message', collection: message.replied_messages, locals: { reply: true }

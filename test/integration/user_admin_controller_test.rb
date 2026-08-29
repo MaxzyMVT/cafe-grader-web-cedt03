@@ -130,6 +130,20 @@ class UserAdminControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "admin can destroy user with submissions" do
+    sign_in_as("admin", "admin")
+    user = users(:john)
+    
+    # Create related records to make sure dependent destroy works properly
+    HeartBeat.create!(user: user, ip_address: "127.0.0.1")
+    Comment.create!(user: user, title: "Test Hint", commentable: problems(:prob_add), kind: :hint)
+
+    assert_difference "User.count", -1 do
+      delete user_admin_path(user)
+    end
+    assert_response :redirect
+  end
+
   test "admin can toggle activate" do
     sign_in_as("admin", "admin")
     user = users(:disabled_user)
@@ -268,5 +282,44 @@ class UserAdminControllerTest < ActionDispatch::IntegrationTest
          as: :turbo_stream
     assert_response :success
     assert_equal before, user.reload.roles.pluck(:name).sort
+  end
+
+  # --- Bulk manage user deletion ---
+
+  test "admin can bulk delete users" do
+    sign_in_as("admin", "admin")
+    # Make sure we have a user that matches our filter
+    u = users(:disabled_user)
+    assert User.exists?(u.id)
+
+    # Perform bulk delete with regex pattern that matches 'disabled'
+    assert_difference "User.count", -1 do
+      post bulk_manage_user_admin_index_path, params: {
+        regex: "^disabled",
+        delete_users: "true",
+        commit: "Perform"
+      }
+    end
+    assert_redirected_to user_admin_index_path
+    assert_nil User.find_by(id: u.id)
+  end
+
+  # --- Problem setter limit exemption ---
+
+  test "problem setters are not subject to submission limits" do
+    problem = problems(:easy)
+    problem.update!(max_submissions: 2) # set a limit of 2 submissions
+
+    user = users(:john)
+    # Grant 'problem_setter' role to john
+    role = Role.find_or_create_by!(name: "problem_setter")
+    user.roles << role
+
+    # Ensure john is recognized as a problem_setter
+    assert user.problem_setter?
+
+    # Verify that the problem setter is not blocked by submission limits
+    assert_not problem.submission_limit_reached?(user)
+    assert_nil problem.submissions_remaining_for(user)
   end
 end

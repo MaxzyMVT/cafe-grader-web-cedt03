@@ -7,6 +7,14 @@
     - if GraderConfiguration.show_submitbox_to?(@user)
       .mb-4
         = render 'submission_box'
+    - enabled_groups = @current_user.groups.joins(:groups_users).where(groups: { enabled: true }, groups_users: { enabled: true }).order(:name).distinct
+    - if enabled_groups.any?
+      .mb-4
+        .alert.alert-info.d-flex.align-items-center.flex-wrap.shadow-sm.mb-0{style: 'min-width: 0; word-break: break-word;'}
+          %span.mi.me-2 group
+          %span{style: 'min-width: 0; flex: 1 1 auto;'}
+            You are in the Group:
+            != enabled_groups.pluck(:name).map { |name| "<strong>#{h(name)}</strong>" }.to_sentence
     - if GraderConfiguration.show_tasks_to?(@user)
       .mb-4
         = render partial: 'problem_list', locals: {problems: @problems, groups: @groups}
@@ -23,14 +31,14 @@
 :javascript
   function filter_tag() {
     let selected_tag = $('#filter-tag :selected').val()
-    table.column(5).search(selected_tag).draw()
+    table.column(6).search(selected_tag).draw()
   }
 
   window.addEventListener("load", function() {
     table = $("#main_table").DataTable({
       columnDefs: [
-        { targets: [3,4], sortable: false }, // latest result & action
-        { targets: [5], visible: false }, // hidden tags column
+        { targets: [4,5], sortable: false }, // latest result & action
+        { targets: [6], visible: false }, // hidden tags column
       ],
       paging: false,
       responsive: true,

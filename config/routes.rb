@@ -54,9 +54,14 @@ Rails.application.routes.draw do
   resources :tags, except: [:show] do
     post :toggle_public, on: :member
     post :index_query, on: :collection
+    post :move_up, on: :member
+    post :move_down, on: :member
+    post :reorder, on: :member
   end
 
   get "sources/direct_edit"
+  get "scoreboard", to: "scoreboard#index"
+  get "help", to: "help#index"
 
   root to: 'main#login'
 
@@ -82,11 +87,13 @@ Rails.application.routes.draw do
       post 'do_all_users'
       post 'do_user'
       post 'extra_time_user'
+      post 'extra_sub_limit_user'
 
       # contests_problems
       post 'show_problems_query'
       post 'add_problem'
       post 'add_problem_by_group'
+      post 'add_problem_by_tag'
       post 'do_all_problems'
       post 'do_problem'
     end
@@ -110,6 +117,7 @@ Rails.application.routes.draw do
     collection do
       get 'console'
       get 'list_all'
+      post 'clear_all'
     end
   end
 
@@ -118,6 +126,7 @@ Rails.application.routes.draw do
       post 'toggle_published'
       post 'toggle_front'
       delete 'delete_file'
+      post 'reorder'
     end
   end
 
@@ -125,6 +134,10 @@ Rails.application.routes.draw do
     member do
       post 'toggle_available'
       post 'toggle_view_testcase'
+      post 'move_up'
+      post 'move_down'
+      post 'reorder'
+      post 'quick_add_testcase'
       get 'stat'
       get 'get_statement(/:filename)', as: 'get_statement', action: 'get_statement'
       get 'get_attachment(/:filename)', as: 'get_attachment', action: 'get_attachment'
@@ -171,6 +184,10 @@ Rails.application.routes.draw do
       post 'testcase/input/:tc_id', action: 'testcase_input', as: 'testcase_input'
       post 'testcase/sol/:tc_id', action: 'testcase_sol', as: 'testcase_sol'
       post 'testcase/delete/:tc_id', action: 'testcase_delete', as: 'testcase_delete'
+      post 'testcase/delete_all', action: 'testcase_delete_all', as: 'testcase_delete_all'
+      post 'testcase/move_up/:tc_id', action: 'testcase_move_up', as: 'testcase_move_up'
+      post 'testcase/move_down/:tc_id', action: 'testcase_move_down', as: 'testcase_move_down'
+      post 'testcase/reorder/:tc_id', action: 'testcase_reorder', as: 'testcase_reorder'
       post 'set_as_live'
       post 'view'
       post 'rejudge'
@@ -179,9 +196,14 @@ Rails.application.routes.draw do
   end
 
   resources :groups do
+    collection do
+      match 'bulk_manage', via: [:get, :post]
+      post 'bulk_manage_query'
+    end
     member do
       # groups
       post 'toggle'
+      post 'toggle_member_rename'
 
       # groups_users
       post 'show_users_query'
@@ -194,6 +216,7 @@ Rails.application.routes.draw do
       post 'show_problems_query'
       post 'add_problem', to: 'groups#add_problem', as: 'add_problem'
       post 'add_problem_by_group'
+      post 'add_problem_by_tag'
       post 'do_all_problems'
       post 'do_problem'
     end
@@ -228,6 +251,7 @@ Rails.application.routes.draw do
       post 'chg_passwd'
       post 'chg_default_language'
       patch 'update_self'
+      post 'rename_group'
     end
   end
 
@@ -245,6 +269,7 @@ Rails.application.routes.draw do
       get 'admin'
       post 'admin_query'
       post 'ta_query'
+      post 'problem_setter_query'
       get 'active'
       get 'mass_mailing'
       match 'modify_role', via: [:get, :post]
@@ -257,6 +282,10 @@ Rails.application.routes.draw do
       get 'toggle_enable'
       get 'stat'
       get 'stat/contest/:contest_id', to: 'user_admin#stat_contest', as: 'stat_contest'
+      post 'add_group'
+      delete 'remove_group/:group_id', to: 'user_admin#remove_group', as: 'remove_group'
+      post 'add_contest'
+      delete 'remove_contest/:contest_id', to: 'user_admin#remove_contest', as: 'remove_contest'
     end
   end
 
@@ -276,7 +305,7 @@ Rails.application.routes.draw do
     end
     collection do
       get 'prob/:problem_id', to: 'submissions#index', as: 'problem'
-      get 'direct_edit_problem/:problem_id(/:user_id)', to: 'submissions#direct_edit_problem', as: 'direct_edit_problem'
+      get 'new/:problem_id(/:user_id)', to: 'submissions#direct_edit_problem', as: 'direct_edit_problem'
       get 'get_latest_submission_status/:uid/:pid', to: 'submissions#get_latest_submission_status', as: 'get_latest_submission_status'
     end
     resources :comments, only: [] do
@@ -320,6 +349,10 @@ Rails.application.routes.draw do
     # ai report
     get 'ai'
     post 'ai_query'
+
+    # extended statistics report
+    get 'extended_stat'
+    post 'extended_stat'
 
     # hall of fame
     get 'problem_hof'

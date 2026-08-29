@@ -7,6 +7,11 @@ export default class extends Controller {
 
   connect() {
     this.handleFrameHasLoaded()
+
+    // Destroy Select2 BEFORE Turbo caches the page.
+    // This prevents duplication when Turbo restores the cached page.
+    this._beforeCacheHandler = () => this._teardownSelect2()
+    document.addEventListener('turbo:before-cache', this._beforeCacheHandler)
   }
 
   handleFrameHasLoaded = () => {
@@ -41,8 +46,17 @@ export default class extends Controller {
   initializeSelect2() {
     $(".select2").select2({
       theme: "bootstrap-5",
+      width: 'style',
       templateResult: this.formatArchivableOption,
-      templateSelection: this.formatArchivableOption,
+      templateSelection: this.formatArchivableOption
+    });
+  }
+
+  _teardownSelect2() {
+    $(this.element).find(".select2").each((i, el) => {
+      if ($(el).data('select2')) {
+        $(el).select2('destroy');
+      }
     });
     // Bridge select2's jQuery-triggered `select2:select` event to a native
     // `change` event. select2 v4 dispatches its events through jQuery, which
@@ -90,6 +104,9 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this._teardownSelect2();
+    if (this._beforeCacheHandler) {
+      document.removeEventListener('turbo:before-cache', this._beforeCacheHandler);
+    }
   }
 }
-

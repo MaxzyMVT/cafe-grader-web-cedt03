@@ -55,6 +55,8 @@ class GradersController < ApplicationController
   def set_enabled
     @grader.update(enabled: params[:enabled])
 
+
+
     # render partial: 'grader', locals: {grader: @grader}
     render turbo_stream: turbo_stream.replace(helpers.dom_id(@grader), partial: 'grader', locals: {grader: @grader})
   end

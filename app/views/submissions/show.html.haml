@@ -24,14 +24,14 @@
             .col-4.text-end.text-secondary
               User
             .col
-              - if @current_user.admin? ||@current_user == @submission.user
-                - if @submission.user
+              - if @submission.user
+                - if @current_user.admin?
                   = link_to "#{@submission.user.login}", stat_user_admin_path(@submission.user)
-                  = @submission.user.full_name
                 - else
-                  = "(n/a)"
+                  = @submission.user.login
+                = @submission.user.full_name
               - else
-                = '-- REDACTED --'
+                = "(n/a)"
           .row.mb-2
             .col-4.text-end.text-secondary
               Problem
@@ -70,13 +70,11 @@
             .col-4.text-end.text-secondary
               Points
             .col
-              - live_dataset = @submission.problem&.live_dataset
               - if @submission.points.nil?
                 = '-'
-              - elsif live_dataset&.st_raw_sum?
-                = @submission.points
               - else
-                = "#{@submission.points}/100"
+                - full_score = @submission.problem&.effective_full_score || 100
+                = "#{number_with_precision(@submission.points, precision: 2, strip_insignificant_zeros: true)}/#{number_with_precision(full_score, precision: 2, strip_insignificant_zeros: true)}"
           .row.mb-2
             .col-4.text-end.text-secondary
               Result
@@ -150,6 +148,8 @@
         .card-body
           %h4 Evaluations
           = render partial: 'evaluations', locals: {testcases: @testcases, evaluations_by_tcid: @evaluations_by_tcid}
+          .mt-3
+            = render 'main/grading_legend'
 
 -# compiler msg modal
 = render partial: 'msg_modal', locals: {id: 'compiler-msg-modal', header_msg: 'Compiler message', body_msg: "<pre>#{@submission.compiler_message}</pre>".html_safe}

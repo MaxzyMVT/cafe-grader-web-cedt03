@@ -5,18 +5,28 @@ class Checker
   include JudgeBase
   include Rails.application.routes.url_helpers
 
+  # The checker/comparator (diff, relative.rb, postgres_checker.rb, or a problem-author-supplied
+  # custom binary) runs on the worker host itself, not inside the submission's isolate box, so it
+  # needs its own resource ceiling. Otherwise a large answer/output file or a pathological custom
+  # checker can grow unbounded and exhaust host RAM outright.
+  CHECKER_MEM_LIMIT_BYTES = 1.gigabyte
+  CHECKER_CPU_LIMIT_SEC = 30
+
   # Each branch produces the shell command that compares submission output
   # to the expected answer. Semantics documented in
   # doc/dataset-scoring-and-evaluation.md — keep that file in sync with
   # this dispatch table when adding/changing evaluators.
+  #
+  # A language specific sub-class may override this method
+  # it should return shell command that do the comparison
   def check_command(evaluation_type, input_file, output_file, ans_file)
     case evaluation_type
     when 'default'
       # -b: ignore amount-of-whitespace diffs; -B: ignore blank lines;
       # -Z: ignore trailing whitespace. Right default for most problems.
-      return "diff -q -b -B -Z #{output_file} #{ans_file}"
+      return "diff -q -b -B -Z --strip-trailing-cr #{output_file} #{ans_file}"
     when 'exact'
-      return "diff -q #{output_file} #{ans_file}"
+      return "diff -q --strip-trailing-cr #{output_file} #{ans_file}"
     when 'relative'
       # Tokenizes on whitespace; numbers compared with EPSILON = 1e-6.
       prog = Rails.root.join 'lib', 'checker', (evaluation_type + ".rb")
@@ -108,11 +118,18 @@ class Checker
   # check if required files, that are, output from submttion, answer from problem
   # and any other file is there
   def check_for_required_file
-    raise "Output file [#{@output_file.cleanpath}] does not exists" unless @output_file.exist?
-    raise "Answer file [#{@ans_file.cleanpath}] does not exists" unless @ans_file.exist?
+    unless @output_file.exist?
+      judge_log "Output file [#{@output_file.cleanpath}] does not exist", Logger::ERROR
+      raise "Output file [#{@output_file.cleanpath}] does not exist"
+    end
+    unless @ans_file.exist?
+      judge_log "Answer file [#{@ans_file.cleanpath}] does not exist", Logger::ERROR
+      raise "Answer file [#{@ans_file.cleanpath}] does not exist"
+    end
     if ['custom_cms', 'custom_cms_raw', 'custom_cafe'].include?(@ds.evaluation_type) &&
         (@prob_checker_file.nil? || @prob_checker_file.exist? == false)
-      raise GraderError.new("Checker file does not exists", submission_id: @sub.id)
+      judge_log "Checker file does not exist", Logger::ERROR
+      raise GraderError.new("Checker file does not exist", submission_id: @sub.id)
     end
   end
 
@@ -139,9 +156,6 @@ class Checker
     @testcase = testcase
     @ds = @testcase.dataset
 
-    # init isolate
-    # setup_isolate(@box_id)
-
     # prepare files location variable
     prepare_submission_directory(@sub)
     prepare_dataset_directory(@ds)
@@ -150,9 +164,9 @@ class Checker
 
     cmd = check_command(@ds.evaluation_type, @input_file, @output_file, @ans_file)
 
-    # call the compare command
+    # call the compare command, bounded by rlimit so it can't exhaust worker host RAM/CPU (see constants above)
     judge_log "#{rb_sub(@sub)} Testcase: #{rb_testcase(@testcase)} check cmd: " + Rainbow(cmd).color(JudgeBase::COLOR_CHECK_CMD)
-    out, err, status = Open3.capture3(cmd)
+    out, err, status = Open3.capture3(cmd, rlimit_as: CHECKER_MEM_LIMIT_BYTES, rlimit_cpu: CHECKER_CPU_LIMIT_SEC)
 
     result = process_result(@ds.evaluation_type, out, err, status)
     judge_log "#{rb_sub(@sub)} Testcase: #{rb_testcase(@testcase)} check result: "+result_status_with_color(result)

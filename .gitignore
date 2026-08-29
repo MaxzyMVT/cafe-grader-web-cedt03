@@ -18,10 +18,9 @@
 
 /vendor/plugins/rails_upgrade
 
-#ignore public assets???
+# ignore compiled public assets and packs
 /public/assets
-/public
-
+/public/packs
 /data
 
 #ignore .orig and .swp
@@ -33,14 +32,10 @@
 #.ruby-gemset
 #.ruby-version
 
-/config/secrets.yml
-/config/worker.yml
-/config/credentials.yml.enc
 
 /.byebug_history
 /storage/*
 
-/config/master.key
 
 /.hg/
 /.idea/
@@ -50,20 +45,9 @@
 /app/assets/builds/*
 #!/app/assets/builds/.keep
 
-# yarn
-/node_modules/*
+# Node modules
 /node_modules
-
-# Yarn 2/3/4
-# !.yarn/cache
-# !.yarn/releases
-# !.yarn/plugins
-# !.yarn/sdks
-# !.yarn/versions
-.yarn/*
-.pnp.*
-.yarn/install-state.gz
-.yarn/unplugged
+/node_modules/*
 
 /app/assets/builds/*
 #!/app/assets/builds/.keep

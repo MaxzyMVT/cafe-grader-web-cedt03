@@ -4,23 +4,32 @@
   .card-body{'data-controller' => 'init-ui-component'}
     %h5.fw-bold Problems
     - if @primary_tags.count > 0
-      .row
-        .col-auto.d-flex.align-items-center
+      .d-flex.flex-wrap.align-items-center.gap-3.mb-3.justify-content-start
+        .d-flex.align-items-center.gap-2
           Topic:
-          %span.mi.text-info.ms-1{style: 'font-size: 1.1rem; cursor: help;', data: { bs: { toggle: 'tooltip', title: 'Click a topic button to filter problems. Click again to clear.', placement: 'top' } } } help_outline
-        .col-auto
+          %span.mi.text-info{style: 'font-size: 1.1rem; cursor: help;', data: { bs: { toggle: 'tooltip', title: 'Click a topic button to filter problems. Click again to clear.', placement: 'top' } } } help_outline
+          .btn-group.btn-group-sm{role: 'group', aria: {label: 'Topic filter mode'}}
+            %input#mode-and.btn-check{type: 'radio', name: 'topic_mode', value: 'AND', checked: true, data: {action: 'change->main#changeTopicMode'}}
+            %label.btn.btn-outline-secondary.px-2.py-0{for: 'mode-and', style: 'font-size: 0.75rem;'} AND
+            %input#mode-or.btn-check{type: 'radio', name: 'topic_mode', value: 'OR', data: {action: 'change->main#changeTopicMode'}}
+            %label.btn.btn-outline-secondary.px-2.py-0{for: 'mode-or', style: 'font-size: 0.75rem;'} OR
+        .d-flex.flex-wrap.align-items-center.gap-2
           - @primary_tags.each do |tag|
             - data_hash = { action: 'click->main#setActiveTopic',  bs: tag.description.present? ?  { toggle: 'tooltip', title: tag.description } : nil }
-            %span.btn.btn-outline-secondary.btn-sm.rounded-pill.topic-badge.me-1{data: data_hash}= tag.name
-    %table#main_table.table.table-hover.align-middle{width: '100%'}
-      %thead
-        %tr
-          %th No.
-          %th.all Name
-          %th Best Score
-          %th.all Latest Results
-          %th.all
-      %tbody{data: {controller: 'problem-name'}}
-        - @numbering = 1
-        / problem count = #{problems.count}
-        = render partial: 'problem', collection: problems
+            - tag_style = "--tag-color: #{tag.color}; --tag-text-color: #{contrast_text_color(tag.color)}; --bs-btn-color: #{tag.color}; --bs-btn-border-color: #{tag.color};"
+            %span.btn.btn-outline-secondary.btn-sm.rounded-pill.topic-badge{data: data_hash, style: tag_style}= tag.name
+    .table-responsive
+      %table#main_table.table.table-hover.align-middle{width: '100%'}
+        %thead
+          %tr
+            %th.d-none.d-sm-table-cell No.
+            %th.all Name
+            %th.d-none.d-md-table-cell Full Score
+            %th Best Score
+            %th.d-none.d-lg-table-cell Latest Results
+            %th.all
+            %th.d-none
+        %tbody{data: {controller: 'problem-name'}}
+          - @numbering = 1
+          / problem count = #{problems.count}
+          = render partial: 'problem', collection: problems

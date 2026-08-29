@@ -18,15 +18,16 @@ export const renderers = {
       `<span class="mi md-18 mx-1">edit</span></a>` +
       `<span>`
   },
+  extraSubLimitRender: (data, type, row, meta) => {
+    const extra_limit = row['extra_sub_limit'] || 0
+    return `<span class="d-inline-flex align-items-center">${extra_limit} ` +
+      `<a class="d-inline-flex align-items-center text-decoration-none" href='#' data-row-id="${row['id']}" data-login="${row['login']}" data-extra-limit="${extra_limit}" data-action="click->contest#showExtraSubLimitDialog">` +
+      `<span class="mi md-18 mx-1">edit</span></a>` +
+      `<span>`
+  },
   userActionRenderer: (data, type, row, meta) => {
     // only render for display
     if (type != 'display') return ''
-
-    // roles and labels
-    const isEditor = row['role'] === 'editor';
-    const toggleRoleLabel = isEditor ? 'Set as User' : 'Set as Editor';
-    const toggleRoleCommand = isEditor ? 'make_user' : 'make_editor';
-    const toggleRoleIcon = isEditor ? 'person' : 'shield_person';
 
     return `
       <div class="d-flex align-items-center">
@@ -37,24 +38,17 @@ export const renderers = {
           </a>
           <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
             <li><h6 class="dropdown-header">Actions for ${row['login']}</h6></li>
+            ${window.CafeUI && window.CafeUI.currentUser && window.CafeUI.currentUser.isAdmin ? `
             <li>
               <a class="dropdown-item d-flex align-items-center gap-2" href="#" 
                  data-action="click->contest#postUserAction" 
                  data-row-id="${row['user_id']}" 
                  data-command="clear_ip">
-                <span class="mi md-18 text-warning">lock_reset</span>
-                Clear Session Lock
+               <span class="mi md-18 text-warning">lock_reset</span>
+               Clear Session Lock
               </a>
             </li>
-            <li>
-              <a class="dropdown-item d-flex align-items-center gap-2" href="#" 
-                 data-action="click->contest#postUserAction" 
-                 data-row-id="${row['user_id']}" 
-                 data-command="${toggleRoleCommand}">
-                <span class="mi md-18 text-info">${toggleRoleIcon}</span>
-                ${toggleRoleLabel}
-              </a>
-            </li>
+            ` : ''}
             <li><hr class="dropdown-divider"></li>
             <li>
               <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" 

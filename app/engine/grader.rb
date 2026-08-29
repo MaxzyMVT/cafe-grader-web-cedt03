@@ -194,7 +194,7 @@ class Grader
     GraderProcess.where(worker_id: worker_id).each do |gp|
       # check running status
       escaped_key = Shellwords.escape(server_key.to_s)
-      grader_process = `ps -e -o pid,args | grep "start([[:blank:]]*#{gp.box_id}[[:blank:]]*,[[:blank:]]*:#{escaped_key})$" | grep Grader`
+      grader_process = `ps -e -o pid,args | grep "start([[:blank:]]*#{gp.box_id}[[:blank:]]*,[[:blank:]]*:#{escaped_key})" | grep Grader | grep -v grep`
       running = grader_process.lines.count >= 1
       puts "grader process with box_id #{gp.box_id} is #{running ? 'found' : 'not found'}"
       if gp.enabled
@@ -202,8 +202,10 @@ class Grader
         if !running
           # start it
           stdout_file = Rails.configuration.worker[:directory][:grader_stdout_base_file] + gp.box_id.to_s + '.txt'
-          cmd = "rails runner \"Grader.start(#{gp.box_id},:#{server_key})\""
-          spawn(cmd, [:out, :err] => [stdout_file, 'a'])
+          cmd = "#{RbConfig.ruby} #{Rails.root.join('bin', 'rails')} runner \"Grader.start(#{gp.box_id},:#{server_key})\""
+          Bundler.with_unbundled_env do
+            spawn(cmd, [:out, :err] => [stdout_file, 'a'], pgroup: true)
+          end
 
           puts "spawning new grader main loop with #{cmd}, redirecting :out,:err to #{stdout_file}"
         end
@@ -261,10 +263,19 @@ class Grader
   end
 
   def self.cleanup_judge(ago_min = 60*24)
-    # delete old submission dir that is older than 12 hour
+    # delete old submission dir, default: anything older than 24 hours (ago_min = 60*24)
     isolate_sub_path = Pathname.new(Rails.configuration.worker[:directory][:judge_path]) + Grader::JudgeSubmissionPath
     cmd = "find #{isolate_sub_path} -maxdepth 1 -mmin +#{ago_min} -exec rm -rf {} \\;"
-    puts "executing #{cmd}"
-    spawn(cmd)
+    JudgeLogger.logger.info("cleanup_judge: executing #{cmd}")
+    # system (not spawn) so cron waits for completion and we can check/log the exit status --
+    # a silently-failing or fire-and-forget cleanup here previously let isolate_submission grow
+    # unbounded for weeks with the cron log showing no error at all
+    success = system(cmd)
+    if success
+      JudgeLogger.logger.info("cleanup_judge: completed successfully")
+    else
+      JudgeLogger.logger.error("cleanup_judge: FAILED (exit status #{$?&.exitstatus.inspect}) - cmd: #{cmd}")
+    end
+    success
   end
 end

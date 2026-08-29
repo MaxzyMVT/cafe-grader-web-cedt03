@@ -20,10 +20,10 @@ class ContestsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "group editor can access contests index" do
+  test "group editor (non-admin/non-setter Mary) is redirected from contests index" do
     sign_in_as("mary", "mary")
     get contests_path
-    assert_response :success
+    assert_redirected_to list_main_path
   end
 
   # --- CRUD ---
@@ -62,16 +62,16 @@ class ContestsControllerTest < ActionDispatch::IntegrationTest
 
   # --- Cross-permission ---
 
-  test "group editor (mary) can view their contest" do
+  test "group editor (non-admin/non-setter Mary) is redirected from viewing a contest" do
     sign_in_as("mary", "mary")
     get contest_path(contests(:contest_a))
-    assert_response :success
+    assert_redirected_to list_main_path
   end
 
-  test "group editor (mary) cannot view a contest they don't own" do
-    sign_in_as("mary", "mary")
-    get contest_path(contests(:contest_b))
-    assert_response :redirect
+  test "problem setter can view contest" do
+    sign_in_as("setter", "setter")
+    get contest_path(contests(:contest_a))
+    assert_response :success
   end
 
   # --- Member actions ---
@@ -125,5 +125,26 @@ class ContestsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as("james", "morning")
     post user_check_in_contests_path
     assert_response :success
+  end
+
+  test "admin can add problems by tag" do
+    sign_in_as("admin", "admin")
+    contest = contests(:contest_a)
+    tag = tags(:tag_hard)
+
+    assert_difference "contest.problems.count", 1 do
+      post add_problem_by_tag_contest_path(contest), params: { tag_ids: [tag.id] }, as: :turbo_stream
+    end
+    assert_response :success
+  end
+
+  test "admin can set user extra submission limit" do
+    sign_in_as("admin", "admin")
+    contest = contests(:contest_a)
+    contest_user = contests_users(:james_in_contest_a)
+
+    post extra_sub_limit_user_contest_path(contest), params: { row_id: contest_user.id, extra_sub_limit: 5 }, as: :turbo_stream
+    assert_response :success
+    assert_equal 5, contest_user.reload.extra_sub_limit
   end
 end

@@ -46,7 +46,7 @@
           %h5.fw-bold.text-body-emphasis.mb-3.pb-2.border-bottom Categorization
           = form.input :tag_ids, label: 'Tags', collection: Tag.all, input_html: {class: 'select2', multiple: true}, wrapper: :horizontal_form, tooltip: "Tags marked public are shown to contestants on the main page."
           = form.input :group_ids, label: 'Groups', collection: Group.all, input_html: {class: 'select2', multiple: true}, wrapper: :horizontal_form
-          = form.input :difficulty, tooltip: 'Integer between 0 and 10.'
+          = form.input :difficulty, tooltip: 'Integer greater than or equal to 0, greater means harder'
 
         %section.mb-4
           %h5.fw-bold.text-body-emphasis.mb-3.pb-2.border-bottom Visibility & Listing
@@ -54,14 +54,70 @@
           = form.input :available, wrapper: :horizontal_boolean, label: 'Globally Available', tooltip: 'If "Globally available" is not set, the problem will remain hidden from all contestants, even if enabled in groups or contests.' , disabled: @current_user.admin? == false
           = form.input :view_testcase, wrapper: :horizontal_boolean, wrapper_html: {data: {'viva-mode-toggle-target': 'hideForViva'}}, disabled: @current_user.admin? == false
           = form.input :view_submission, wrapper: :horizontal_boolean, disabled: @current_user.admin? == false, hint: 'For viva problems: controls whether other students can see this viva transcript.'
+          -# Submission Limit
+          .row.mb-3
+            %label.col-sm-3.col-form-label
+              Submission Limit
+              %span.mi.md-18.text-body-tertiary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Leave unchecked for unlimited submissions. When enabled, non-admin users cannot exceed this number of submissions.'}}} help_center
+            .col-sm-9
+              .d-flex.align-items-center.gap-3
+                .form-check
+                  %input.form-check-input#submission_limit_enabled{type: 'checkbox', checked: problem.submission_limit?, onchange: 'toggleSubmissionLimit(this)'}
+                  %label.form-check-label{for: 'submission_limit_enabled'} Enable limit
+                .input-group{style: 'max-width: 200px;'}
+                  %input.form-control#problem_max_submissions{type: 'number', name: 'problem[max_submissions]', value: problem.max_submissions, min: 1, placeholder: 'Max', disabled: !problem.submission_limit?}
+                  %span.input-group-text submissions
 
         %section.mb-4
           %h5.fw-bold.text-body-emphasis.mb-3.pb-2.border-bottom Grading & Compilation
+          = form.input :full_score, required: true, tooltip: 'Maximum points a contestant can get from this problem (default 100)'
           = form.input :permitted_lang, label: 'Allowed Language', collection: Language.all, selected: @problem.get_permitted_lang_as_ids(when_blank: nil), input_html: {class: 'select2', multiple: true}, wrapper: :horizontal_form, wrapper_html: {data: {'viva-mode-toggle-target': 'hideForViva'}}, tooltip: 'Leave blank to allow any language.'
           - compilation_options = [['<strong>Self contained</strong> <span class="text-secondary">— the submission compiles by itself (most problems).</span>'.html_safe, 'self_contained'], ['<strong>With managers</strong> <span class="text-secondary">— the submission is compiled together with manager files attached to the dataset.</span>'.html_safe, 'with_managers'], ['<strong>Viva Exam</strong> <span class="text-secondary">— LLM-driven Socratic interview + rubric grading. No test-case dataset; attach llm_prompt + viva_grounding tags instead.</span>'.html_safe, 'viva_exam']]
           = form.input :compilation_type, as: :radio_buttons, collection: compilation_options, wrapper: :horizontal_collection, input_html: {data: {action: 'change->viva-mode-toggle#toggle'}}, tooltip: 'See Help drawer (top-right) for details on each mode.'
           = form.input :submission_filename, wrapper_html: {data: {'viva-mode-toggle-target': 'hideForViva'}}
-
+          = form.input :bonus_first_blood, label: 'First Blood Bonus Point', tooltip: 'Additional points for the first active user to solve this problem', input_html: { step: 'any' }
+          = form.input :first_n_bloods, label: 'N-th Blood Winners Count', tooltip: 'Number of unique users who can receive the First Blood bonus points (default: 0). Setting to 0 disables first blood bonus for this problem.', input_html: { min: 0, step: 1 }
+          = form.input :output_only, wrapper: :horizontal_boolean, tooltip: 'If set, the grader will not compile or run the submission. It will only grade the submitted output file(s) against the test cases. Useful for "output-only" tasks.', input_html: { id: 'problem_output_only', onchange: "document.getElementById('quick_testcase_box').style.display = this.checked ? 'flex' : 'none';" }
+          #quick_testcase_box.row.mb-3{style: ('display: none;' unless @problem.output_only?)}
+            .col-sm-3
+            .col-sm-9
+              .card.bg-light.p-3.border.border-secondary-subtle
+                %h6.card-title.d-flex.align-items-center.gap-2.mb-3.text-secondary.fw-bold
+                  %span.mi.md-18 add_box
+                  Quick Test Case Creator
+                .row.g-3
+                  .col-md-12
+                    %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                      Answer Text
+                      %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'The content that will be saved into the .sol file'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                    %textarea.form-control{name: 'answer_text', form: 'quick_testcase_form', rows: 3, placeholder: 'Answer content...'}
+                  .col-md-12
+                    %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                      Target Dataset
+                      %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'The dataset this testcase will be added to'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                    = select_tag 'dataset_id', options_from_collection_for_select(problem.datasets, :id, ->(ds) { ds.name + (ds == problem.live_dataset ? " (Live)" : "") }, problem.live_dataset&.id), form: 'quick_testcase_form', class: 'form-select'
+                  .col-md-6
+                    %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                      Codename
+                      %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Unique code name for this testcase (e.g. 01, task1)'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                    %input.form-control{type: 'text', name: 'codename', form: 'quick_testcase_form', placeholder: 'e.g. 01'}
+                  .col-md-6
+                    %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                      Weight
+                      %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Weight for this testcase (integer)'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                    %input.form-control{type: 'number', name: 'weight', form: 'quick_testcase_form', value: 1, min: 0}
+                  .col-md-6
+                    %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                      Group
+                      %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Group number for subtask/scoring (integer)'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                    %input.form-control{type: 'number', name: 'group', form: 'quick_testcase_form', value: 1, min: 1}
+                  .col-md-6
+                    %label.form-label.d-flex.align-items-center.gap-1.mb-1
+                      Group Name
+                      %span.badge.rounded-circle.bg-secondary-subtle.text-secondary{data: {bs: {toggle: 'tooltip', placement: 'top', title: 'Label or name of the group/subtask'}}, style: 'cursor: help; font-size: 0.75rem; padding: 0.15rem 0.35rem;'} ?
+                    %input.form-control{type: 'text', name: 'group_name', form: 'quick_testcase_form', placeholder: 'e.g. Subtask 1'}
+                .mt-3.text-end
+                  %button.btn.btn-secondary.btn-sm{type: 'submit', form: 'quick_testcase_form'} Add
         = form.button :submit, class: 'btn btn-primary me-2'
       %div#description.my-3.tab-pane.fade{class: (' show active ' if @active_problem_tab == '#description')}
         %section.mb-4
@@ -110,6 +166,8 @@
           = render partial: 'hint_select', locals: {ds: @problem.live_dataset, problem: @problem}
         -# hint detail editor (lazy-loaded for the selected hint)
         = turbo_frame_tag :hint_detail, src: edit_problem_hint_index_path(@problem,@problem.hints.first)
+  = form_with url: quick_add_testcase_problem_path(problem), method: :post, id: 'quick_testcase_form', data: { turbo: true } do
+    -# empty block
 
 
 :javascript
@@ -120,4 +178,14 @@
     //cafe.initSelect2()
   }
 
+  function toggleSubmissionLimit(checkbox) {
+    var input = document.getElementById('problem_max_submissions');
+    if (checkbox.checked) {
+      input.disabled = false;
+      if (!input.value) input.value = 10;
+    } else {
+      input.disabled = true;
+      input.value = '';
+    }
+  }
 

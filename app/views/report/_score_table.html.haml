@@ -26,7 +26,7 @@
   %table#table.table.datatable.table-hover
     %thead
       %tr
-        %th.text-end{rowspan: 2} #
+        %th{rowspan: 2} #
         %th{rowspan: 2} Login
         %th{rowspan: 2} Name
         %th{rowspan: 2} Contest Remark
@@ -54,9 +54,9 @@
         %td
         - problems.each do |problem|
           - if show_deduction
-            %td.text-end{id: "sum-raw-#{problem.id}"}
-            %td.text-end{id: "sum-deduction-#{problem.id}"}
-          %td.text-end{id: "sum-final-#{problem.id}"}
+            %td.text-center{id: "sum-raw-#{problem.id}"}
+            %td.text-center{id: "sum-deduction-#{problem.id}"}
+          %td.text-center{id: "sum-final-#{problem.id}"}
         - if show_deduction
-          %td#grand-total-raw.text-end
-        %td#grand-total-final.text-end
+          %td#grand-total-raw.text-center
+        %td#grand-total-final.text-center

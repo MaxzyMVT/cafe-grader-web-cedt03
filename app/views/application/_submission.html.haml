@@ -1,4 +1,9 @@
 %tr
+  - if @current_user.admin? || @current_user.problem_setter? || GraderConfiguration['system.group_score_type'] == 'group_max'
+    %td
+      = submission.user.login
+      %br
+      %small.text-muted= submission.user.full_name
   %td.ps-3
     .fw-semibold= submission.number
     = link_to "##{submission.id}", submission_path(submission.id), class: 'small text-decoration-none', data: {turbo: false}

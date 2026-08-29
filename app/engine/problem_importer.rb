@@ -80,34 +80,46 @@ class ProblemImporter
         end
 
         # overwrite with options if exists
-        if @options.has_key?(OptionConst::YAML_KEY[:testcases]) && @options[OptionConst::YAML_KEY[:testcases]].has_key?(codename.to_sym)
-          weight = @options[OptionConst::YAML_KEY[:testcases]][codename.to_sym][:weight]
-          group = @options[OptionConst::YAML_KEY[:testcases]][codename.to_sym][:group]
-          group_name = @options[OptionConst::YAML_KEY[:testcases]][codename.to_sym][:group_name]
+        if @options.has_key?(OptionConst::YAML_KEY[:testcases])
+          tc_options = nil
+          [codename.to_sym, codename, (Integer(codename) rescue nil)].compact.each do |key|
+            if @options[OptionConst::YAML_KEY[:testcases]].has_key?(key)
+              tc_options = @options[OptionConst::YAML_KEY[:testcases]][key]
+              break
+            end
+          end
+          if tc_options
+            weight = tc_options[:weight] if tc_options.has_key?(:weight)
+            group = tc_options[:group] if tc_options.has_key?(:group)
+            group_name = tc_options[:group_name] if tc_options.has_key?(:group_name)
+          end
         end
 
         # create new testcase
         new_tc = @dataset.testcases.where(code_name: codename).first
         if new_tc
           @log << "replace existing testcase with codename #{codename} (num,weight,group,group_name are #{[num, weight, group, group_name].join ','})"
+          new_tc.num = num
           new_tc.weight = weight
           new_tc.group = group
           new_tc.group_name = group_name
+          num += 1
         else
           @log << "add a testcase #{num} with codename #{codename} (num,weight,group,group_name are #{[num, weight, group, group_name].join ','})"
-          new_tc = Testcase.new(code_name: codename, num: num, group: group, weight: weight, group_name: group_name)
+          new_tc = Testcase.new(code_name: codename, num: num, group: group, weight: weight, group_name: group_name, dataset: @dataset)
           num +=1
         end
         input = File.read(@tc[codename][:input]).gsub(/\r$/, '')
         ans = File.read(@tc[codename][:sol]).gsub(/\r$/, '')
         new_tc.inp_file.attach(io: StringIO.new(input), filename: 'input.txt', content_type: 'text/plain',  identify: false)
         new_tc.ans_file.attach(io: StringIO.new(ans),   filename: 'answer.txt', content_type: 'text/plain',  identify: false)
-        @dataset.testcases << new_tc
+        new_tc.save!
         @log << "  #{@tc[codename][:input]} is the input"
         @log << "  #{@tc[codename][:sol]} is the sol"
       end
     end
 
+    @dataset.resequence_testcases!
     @problem.save
   end
 
@@ -374,7 +386,7 @@ class ProblemImporter
     @log << "Found existing problem with the same name ('#{name}') !!! This import will UPDATE the existing problem." if @problem.id
     @problem.date_added = Time.zone.now unless @problem.date_added
     @problem.available = false if @problem.available.nil?
-    @problem.full_name = full_name
+    @problem.full_name = full_name.blank? ? name : full_name
     @problem.set_default_value unless @problem.id
     if dataset && dataset.problem == @problem
       @dataset = dataset

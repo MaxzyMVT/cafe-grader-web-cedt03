@@ -20,9 +20,10 @@
 .card.card-shadow
   .card-body
 
-    %table#main_table.table.table-condense.table-hover{'data-controller': 'init-ui-component'}
+    %table#main_table.table.table-condense.table-hover{'data-controller': 'init-ui-component row-reorder', 'data-row-reorder-url-value': reorder_problem_path(-123), 'data-row-reorder-reload-type-value': 'page'}
       %thead
         %tr
+          %th.all Number
           %th.all Name
           %th Full name
           %th Difficulty
@@ -38,6 +39,8 @@
           %th
             Submit
             = render partial: 'tooltip', locals: {title: 'Admin can always submit to any problem'}
+          %th
+            %span.mi{data: {'bs-toggle': 'tooltip', 'bs-title': 'Submission Limit'}} counter_1
           %th Date added
           %th.text-center.all
             %span.mi{data: {bs_toggle: 'tooltip', bs_title: 'Available to students'}} toggle_on
@@ -46,8 +49,9 @@
           %th.text-center.all
       %tbody
         - for problem in @problems
-          %tr{:class => "#{(problem.available) ? "table-success" : ""}", :id => "prob-#{problem.id}", :name => "prob-#{problem.id}"}
+          %tr{:class => "#{(problem.available) ? "row-available" : ""}", :id => "prob-#{problem.id}", :name => "prob-#{problem.id}", :draggable => 'true'}
             - @problem=problem
+            %td= problem.number
             %td.font-monospace= problem.name
             %td
               .d-inline-flex.align-items-center
@@ -68,17 +72,25 @@
                 = problem.ms_count
             %td
               - problem.tags.each do |t|
-                %span.badge.text-bg-secondary.bg-opacity-100= t.name
+                %span.badge{style: "background-color: #{t.color}; color: #{contrast_text_color(t.color)};"}= t.name
             %td.py-1.align-middle= link_to "Submit", direct_edit_problem_submissions_path(problem,@current_user.id), class: 'btn btn-sm btn-primary'
+            %td.text-center
+              - if problem.submission_limit?
+                %span.badge.badge-limit-info= problem.max_submissions
+              - else
+                %span.text-muted –
             %td= problem.date_added
             %td
               .form-check.form-switch.d-flex.justify-content-center
-                %input.form-check-input{id: "prob-#{problem.id}-available-switch", checked: problem.available, type: "checkbox", data: {action: 'problem#toggle', 'row-id': problem.id, field: 'available', readonly: @current_user.admin? ? 'false' : 'true'}, disabled: @current_user.admin? == false}
+                - is_allowed = @current_user.admin? || @current_user.problem_setter?
+                %input.form-check-input{id: "prob-#{problem.id}-available-switch", checked: problem.available, type: "checkbox", data: {action: 'problem#toggle', 'row-id': problem.id, field: 'available', readonly: is_allowed ? 'false' : 'true'}, disabled: !is_allowed}
             %td
               .form-check.form-switch.d-flex.justify-content-center
                 %input.form-check-input{id: "prob-#{problem.id}-view-testcase-switch", checked: problem.view_testcase, type: "checkbox", data: {action: 'problem#toggle', 'row-id': problem.id, field: 'view_testcase'}}
             %td.py-1.all
               .d-flex.gap-1.justify-content-end
+                = link_to mdi(:arrow_upward), move_up_problem_path(problem), class: 'btn btn-outline-secondary border-0 p-1 btn-flex', title: 'Move Up', data: {turbo: true, turbo_method: :post}
+                = link_to mdi(:arrow_downward), move_down_problem_path(problem), class: 'btn btn-outline-secondary border-0 p-1 btn-flex', title: 'Move Down', data: {turbo: true, turbo_method: :post}
                 = link_to "#{mdi(:query_stats)} Stat".html_safe, {:action => 'stat', :id => problem.id}, class: 'btn btn-flex btn-outline-primary border-0'
                 = link_to "#{mdi(:edit)} Edit".html_safe, {:action => 'edit', :id => problem}, class: 'btn btn-flex btn-outline-primary border-0'
                 = link_to "#{mdi(:delete)}".html_safe, { :action => 'destroy', :id => problem }, 'data-confirm': 'Are you sure?', :method => :delete, class: 'btn btn-outline-danger btn-flex border-0'
@@ -95,7 +107,7 @@
     $("#main_table").DataTable({
       sorting: false,
       columnDefs: [
-        { targets: [3,4,5,6,7,8,9,12], sortable: false },
+        { targets: [4,5,6,7,8,9,10,11,14], sortable: false },
       ],
       paging: false,
       responsive: true,
@@ -112,7 +124,7 @@
     avail_button.disabled = avail_button.dataset.readonly == 'true'
 
     row = document.getElementById(`prob-${problem_id}`)
-    if (available) { row.classList.add('table-success')} else { row.classList.remove('table-success')}
+    if (available) { row.classList.add('row-available')} else { row.classList.remove('row-available')}
 
     let view_testcase_button = document.getElementById(`prob-${problem_id}-view-testcase-switch`)
     view_testcase_button.checked = view_testcase

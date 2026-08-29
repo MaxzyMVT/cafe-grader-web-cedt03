@@ -13,9 +13,9 @@
         = f.input :time_limit, label: "Time limit (s)", tooltip: 'Decimals allowed (e.g., 1.2).'
         = f.input :memory_limit, label: "Memory limit (MB)"
         -# score_type — rich radio buttons (compilation_type pattern).
-        -# 3 options each benefit from a short explanation; radios make
+        -# 4 options each benefit from a short explanation; radios make
         -# the trade-offs scannable. See doc/dataset-scoring-and-evaluation.md.
-        - score_options = [['<strong>Sum</strong> <span class="text-secondary">— weighted sum / total weight × 100. Default for most problems.</span>'.html_safe, 'sum'], ['<strong>Group Min</strong> <span class="text-secondary">— IOI/ICPC subtask style; a group is only as strong as its weakest testcase.</span>'.html_safe, 'group_min'], ['<strong>Raw Sum</strong> <span class="text-secondary">— literal Σ of testcase scores (no normalization). Pair with Custom CMS-raw evaluator.</span>'.html_safe, 'raw_sum']]
+        - score_options = [['<strong>Sum</strong> <span class="text-secondary">— weighted sum / total weight × 100. Default for most problems.</span>'.html_safe, 'sum'], ['<strong>Group Min</strong> <span class="text-secondary">— IOI/ICPC subtask style; a group is only as strong as its weakest testcase.</span>'.html_safe, 'group_min'], ['<strong>Group Max</strong> <span class="text-secondary">— summation of maximum of each group of testcases.</span>'.html_safe, 'group_max'], ['<strong>Raw Sum</strong> <span class="text-secondary">— literal Σ of testcase scores (no normalization). Pair with Custom CMS-raw evaluator.</span>'.html_safe, 'raw_sum']]
         = f.input :score_type, as: :radio_buttons, collection: score_options, wrapper: :horizontal_collection, tooltip: 'How testcase scores aggregate into a final grade.'
 
         -# evaluation_type — grouped select. 7 options would be too

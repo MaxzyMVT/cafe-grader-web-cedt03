@@ -6,3 +6,6 @@ admin:
 ta:
   name: ta
   rights:
+
+problem_setter:
+  name: problem_setter

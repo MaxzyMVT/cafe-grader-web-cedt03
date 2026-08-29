@@ -15,9 +15,7 @@
     .ms-4.mb-3
       = select_tag "users[group_ids]", options_for_select(@groups.order('id DESC').map { |g| [g.name, g.id, { 'data-archived' => (!g.enabled).to_s }] }, params[:group_id]),
         class: 'select2', style: 'width: 100%', data: {'form--filter-user-target': 'groupSelect'};
-    .form-check
-      %input#only-users.form-check-input{type: 'checkbox', name: 'users[only_users]', checked: true, data: {'form--filter-user-target': 'onlyUsers'}}
-      %label.form-check-label{for: 'only-users'} Exclude editors and reporters
+
 
 :javascript
   // save the problem selection input into d

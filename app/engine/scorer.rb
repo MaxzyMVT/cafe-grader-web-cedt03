@@ -8,7 +8,7 @@ class Scorer
 
   def sorted_evaluation
     @sub.evaluations.joins(:testcase).includes(:testcase)
-          .order(:group, :code_name, 'testcases.id ASC')
+          .order(:group, :num, 'testcases.id ASC')
   end
 
   # Three score-aggregation strategies live below: sum_of_all_testcases,
@@ -27,7 +27,7 @@ class Scorer
       sum_total_weight += weight
     end
     raise GraderError.new("All testcase weights are zero for Sub ##{@sub.id}", submission_id: @sub.id) if sum_total_weight.zero?
-    score = sum_user_score / sum_total_weight * 100.to_d
+    score = sum_user_score / sum_total_weight * (@sub.problem.full_score || 100.to_d)
     return score
   end
 
@@ -40,36 +40,71 @@ class Scorer
     evs = sorted_evaluation.select(:group, :group_name, :score, :weight, :testcase_id).map { |r| r.attributes.symbolize_keys }
     return 0.to_d if evs.empty?
     max_group = evs.max_by { |x| x[:group] || 0 }
-    evs << {group: max_group[:group]+1} # this is sentinel, the after final group
+    evs << {group: max_group[:group]+1} # sentinel
 
     last_group = max_group[:group]+2
     sum_user_score, sum_total_weight = 0.to_d, 0.to_d
-    min_score = 0
-    max_weight = 0
-    evs.each.with_index do |ev, idx|
+    min_weighted_score = 0
+    min_grp_weight = 0
+    evs.each do |ev|
       group = ev[:group]
       score = ev[:score] || 0
       weight = ev[:weight] || 0
 
       # process group
       if last_group != group
-        # found new group, save old group result
-        # the nil group has min_score, max_weight as 0
-        sum_user_score += min_score * max_weight
-        sum_total_weight += max_weight
+        # save result of the previous group
+        sum_user_score += min_weighted_score
+        sum_total_weight += min_grp_weight
 
-        # reset group tally
-        min_score = score
-        max_weight = weight
+        # reset for the new group
+        min_weighted_score = score * weight
+        min_grp_weight = weight
       else
-        min_score = [min_score, score].min
-        max_weight = [max_weight, weight].min
+        min_weighted_score = [min_weighted_score, score * weight].min
+        min_grp_weight = [min_grp_weight, weight].min
       end
       last_group = group
     end
 
     raise GraderError.new("All testcase weights are zero for Sub ##{@sub.id}", submission_id: @sub.id) if sum_total_weight.zero?
-    score = sum_user_score / sum_total_weight * 100.to_d
+    score = sum_user_score / sum_total_weight * (@sub.problem.full_score || 100.to_d)
+    return score
+  end
+
+  def group_max
+    # evs = evaluations sorted by group
+    evs = sorted_evaluation.select(:group, :group_name, :score, :weight, :testcase_id).map { |r| r.attributes.symbolize_keys }
+    return 0.to_d if evs.empty?
+    max_group = evs.max_by { |x| x[:group] || 0 }
+    evs << {group: max_group[:group]+1} # sentinel
+
+    last_group = max_group[:group]+2
+    sum_user_score, sum_total_weight = 0.to_d, 0.to_d
+    max_weighted_score = 0
+    max_grp_weight = 0
+    evs.each do |ev|
+      group = ev[:group]
+      score = ev[:score] || 0
+      weight = ev[:weight] || 0
+
+      if last_group != group
+        # save result of the previous group
+        sum_user_score += max_weighted_score
+        sum_total_weight += max_grp_weight
+
+        # reset for the new group
+        max_weighted_score = score * weight
+        max_grp_weight = weight
+      else
+        max_weighted_score = [max_weighted_score, score * weight].max
+        max_grp_weight = [max_grp_weight, weight].max
+      end
+      last_group = group
+    end
+
+    raise GraderError.new("All testcase weights are zero for Sub ##{@sub.id}", submission_id: @sub.id) if sum_total_weight.zero?
+    score = sum_user_score / sum_total_weight * (@sub.problem.full_score || 100.to_d)
     return score
   end
 
@@ -88,44 +123,46 @@ class Scorer
 
   # build a combined short string that represent evaluation results of the entire dataset
   def build_grading_text
-    result = ''
-
-    # gen group info
-    evs = sorted_evaluation.select(:group, :group_name, :result, :testcase_id).map { |r| r.attributes.symbolize_keys }
+    score_type = @working_dataset.score_type
+    evs = sorted_evaluation.select(:group, :group_name, :result, :score, :weight, :testcase_id).map { |r| r.attributes.symbolize_keys }
     return '' if evs.empty?
-    max_group = evs.max_by { |x| x[:group] || 0 }
-    evs << {group: max_group[:group]+1, result: ''} # this is sentinel
 
-    last_group = max_group[:group]+2 # some group number that is not in the data and not sentinel
-    group_result = ''
-    current_group_count = 0
-    # build the string
-    evs.each do |ev|
-      group = ev[:group]
-      result_code = Evaluation.result_enum_to_code(ev[:result])
+    if score_type == 'sum'
+      # Just list all result codes in a single pair of brackets
+      text = evs.map { |ev| Evaluation.result_enum_to_code(ev[:result]) }.join
+      return '[' + text + ']'
+    end
 
-      # process end of group
-      if last_group != group
-        # found new group, save old group result
-        if last_group != nil
-          if current_group_count <= 1
-            result += group_result
-          else
-            # multiple testcase in group
-            result += '[' +  group_result + ']'
+    # Grouped logic (group_min, group_max)
+    # For group_max, we need to pre-calculate the max points achieved in each group to identify skipped cases
+    group_max_map = {}
+    if score_type == 'group_max'
+      evs.group_by { |ev| ev[:group] }.each do |group, group_evs|
+        group_max_map[group] = (group_evs.map { |e| (e[:score] || 0).to_d * (e[:weight] || 0).to_d }.max || 0).to_d
+      end
+    end
+
+    result = ''
+    evs.group_by { |ev| ev[:group] }.each do |group, group_evs|
+      group_result = ''
+      group_evs.each do |ev|
+        code = Evaluation.result_enum_to_code(ev[:result])
+        if score_type == 'group_max'
+          # A testcase is unnecessary if we already achieved a better or equal score in the group
+          # OR if it was actually skipped/not evaluated (waiting)
+          if ev[:result] == 'waiting'
+            code = 'S'
+          elsif (ev[:weight] || 0).to_d <= group_max_map[group] && ev[:result] != 'correct'
+            code = 'S'
           end
         end
-
-        # reset group tally
-        group_result = ''
-        current_group_count = 0
+        group_result += code
       end
-
-      group_result += result_code
-      current_group_count += 1
-      last_group = group
+      result += '[' + group_result + ']'
     end
-    return result
+
+    # Wrap the grouped results in outer brackets
+    return '[' + result + ']'
   end
 
   # main run function
@@ -150,6 +187,8 @@ class Scorer
       point = sum_of_all_testcases
     when 'group_min'
       point = group_min
+    when 'group_max'
+      point = group_max
     when 'raw_sum'
       point = raw_sum
     else

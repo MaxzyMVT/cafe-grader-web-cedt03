@@ -1,5 +1,8 @@
+- user_theme = (@current_user&.theme.presence || 'default')
+- user_theme = 'default' unless GraderConfiguration['system.theme_selector_enabled']
+- user_theme = nil if user_theme == 'default'
 <!DOCTYPE html>
-%html
+%html{ 'data-theme': user_theme }
   %head
     %title= GraderConfiguration['ui.site_title']
     = favicon_link_tag 'icon.svg', type: 'image/svg+xml'
@@ -22,7 +25,7 @@
     = render partial: 'layouts/js_route'
     = render partial: 'layouts/js_ui'
 
-  %body.bg-light{ 'data-controller': "initialize #{@stimulus_controller}" }
+  %body.bg-light{ 'data-controller': "initialize #{@stimulus_controller}", 'data-theme': user_theme }
     - unless local_assigns[:skip_header]
       = render 'layouts/header'
 
@@ -55,11 +58,13 @@
       #js-response
         / place holder
 
+    = yield :modals
+
   %footer.footer.py-1.bg-light.fixed-bottom.border-top
     .container-fluid.px-3.text-center.small.text-body-secondary
-      ☕
-      %a.text-decoration-none.fw-medium{href: 'https://github.com/nattee/cafe-grader-web'} cafe-grader
-      %span.mx-1.opacity-50 &middot;
-      -# both constants are set in the initializers/version.rb
-      %span.font-monospace rev #{APP_VERSION}#{APP_VERSION_SUFFIX}
+      &copy; #{Time.now.year}
+      %a.text-decoration-none.fw-medium{href: 'https://github.com/MaxzyMVT/cafe-grader-web-cedt03'} cafe-grader-cedt03
+      %span | v#{FORK_VERSION} (forked from
+      %a.text-decoration-none.fw-medium{href: 'https://github.com/nattee/cafe-grader-web'} nattee/cafe-grader-web
+      %span | v#{APP_VERSION}#{APP_VERSION_SUFFIX})
 

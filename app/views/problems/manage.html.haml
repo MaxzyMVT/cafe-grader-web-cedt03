@@ -27,13 +27,7 @@
           %small.text-muted Select problems below, choose actions, then apply. You can shift-click to select a range.
       .row
         .col-md-6
-          .row.mb-3.align-items-center
-            .col-md-auto
-              .form-check
-                = f.check_box :change_date_added, class: 'form-check-input manage-action'
-                = f.label :change_date_added, 'Change "Date added" to'
-            .col-md-auto
-              = f.text_field :date_added, class: 'form-control'
+
           .row.mb-3.align-items-center
             .col-md-auto
               .form-check
@@ -52,45 +46,86 @@
                 = f.check_box :add_group, class: 'form-check-input manage-action'
                 = f.label :add_group, 'Add to groups'
             .col-md-auto
-              = f.select "group_id", options_from_collection_for_select( Group.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "400px", placeholder: 'Click to select groups'}
+              = f.select "group_id", options_from_collection_for_select( Group.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "300px", placeholder: 'Click to select groups'}
+            .col-md-auto
+              .form-check
+                = f.check_box :clear_groups, class: 'form-check-input manage-action'
+                = f.label :clear_groups, 'Clear groups'
           .row.mb-3.align-items-center
             .col-md-auto
               .form-check
                 = f.check_box :add_tags, class: 'form-check-input manage-action'
                 = f.label :add_tags, 'Add tags'
             .col-md-auto
-              = f.select "tag_ids", options_from_collection_for_select( Tag.all, 'id','name'), {},class: 'select2', multiple: true, data: {placeholder: 'Select tags by clicking', width: "400px"}
+              = f.select "tag_ids", options_from_collection_for_select( Tag.all, 'id','name'), {},class: 'select2', multiple: true, data: {placeholder: 'Select tags by clicking', width: "300px"}
+            .col-md-auto
+              .form-check
+                = f.check_box :clear_tags, class: 'form-check-input manage-action'
+                = f.label :clear_tags, 'Clear tags'
           .row.mb-3.align-items-center
             .col-md-auto
               .form-check
                 = f.check_box :set_languages, class: 'form-check-input manage-action'
                 = f.label :set_languages, 'Set permitted languages'
             .col-md-auto
-              = f.select "lang_ids", options_from_collection_for_select( Language.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "400px", placeholder: 'Click to select languages'}
+              = f.select "lang_ids", options_from_collection_for_select( Language.all, 'id','name',params[:group_name]), {}, class: 'select2 form-control', multiple: true, data: {width: "300px", placeholder: 'Click to select languages'}
+            .col-md-auto
+              .form-check
+                = f.check_box :clear_languages, class: 'form-check-input manage-action'
+                = f.label :clear_languages, 'Clear languages'
+      .row.border-top.pt-3.mt-3.mb-3
+        .col-md-12
+          %h6.fw-bold.text-dark.mb-2 Select Problems by Condition
+          .row.align-items-center.g-3
+            .col-md-3
+              = select_tag :select_by_tag, options_from_collection_for_select(Tag.all, 'name', 'name'), include_blank: '-- Select Tag --', class: 'select2 form-control', id: 'select-by-tag-dropdown'
+            .col-md-3
+              = select_tag :select_by_group, options_from_collection_for_select(Group.all, 'name', 'name'), include_blank: '-- Select Group --', class: 'select2 form-control', id: 'select-by-group-dropdown'
+            .col-md-3
+              = select_tag :select_by_lang, options_from_collection_for_select(Language.all, 'name', 'name'), include_blank: '-- Select Language --', class: 'select2 form-control', id: 'select-by-lang-dropdown'
+            .col-md-auto
+              %button#btn-select-match.btn.btn-outline-primary{type: 'button', onclick: 'selectProblemsByCondition()'} Select Match
       .d-flex.justify-content-end
         = f.submit 'Apply to Selected', class: 'btn btn-primary btn-flex px-4'
 
   .card.card-shadow
     .card-body
-      %table#main-table.table.table-hover.table-condense.align-middle.datatable
-        %thead
-          %tr
-            %th
-              .form-check
-                %input#select_all.form-check-input.form-check-thick{type: :checkbox}
-            %th Name
-            %th Full name
-            %th Difficulty
-            %th Permitted Languages
-            %th Tags
-            %th Date added
-            %th Available
+      .table-responsive
+        %table#main-table.table.table-hover.table-condense.align-middle.datatable
+          %thead
+            %tr
+              %th.text-center
+                .form-check.d-inline-block
+                  %input#select_all.form-check-input.form-check-thick{type: :checkbox}
+              %th Name
+              %th Full name
+              %th Difficulty
+              %th Permitted Languages
+              %th Tags
+              %th Group
+              %th Date added
+              %th Available
 
 :javascript
 
   window.addEventListener("load", function() {
 
     badge_renderer = cafe.dt.render_factory.badge()
+
+    function tags_render(data, type, row, meta) {
+      if (!data || !Array.isArray(data)) return '';
+
+      if (type == 'display' || type == 'filter') {
+        return data.map(t => {
+          const color = t.color || '#6C757D';
+          const name = cafe.escapeHtml(t.name);
+          const text_color = cafe.getContrastColor(color);
+          return `<span class="badge" style="background-color: ${color}; color: ${text_color};">${name}</span>`;
+        }).join(' ');
+      }
+
+      return data.map(t => t.name).join(' ');
+    }
 
     function permitted_langs_render(data,type,row,meta) {
       if (data == null) return ''
@@ -104,7 +139,7 @@
 
     function check_box_render(data,type,row,meta) {
       if (type == 'display') {
-        return `<div class="form-check"><input class="form-check-input form-check-thick prob-select-check" type="checkbox" id="prob-${data}" name="prob-${data}"> </div>`
+        return `<div class="form-check d-inline-block"><input class="form-check-input form-check-thick prob-select-check" type="checkbox" id="prob-${data}" name="prob-${data}"> </div>`
       }
 
       return data;
@@ -148,20 +183,21 @@
         },
       },
       columns: [
-        {data: 'id', name: 'checkbox', render: check_box_render, className: 'd-flex justify-content-center'},
+        {data: 'id', name: 'checkbox', render: check_box_render, className: 'text-center'},
         {data: 'name', className: 'font-monospace'},
         {data: 'full_name', render: full_name_render},
         {data: 'difficulty', render: difficulty_render, className: 'text-start'},
-        {data: 'permitted_lang', render: permitted_langs_render},
-        {data: 'tags', render: cafe.dt.render_factory.badge()},
-        {data: 'date_added', render: cafe.dt.render.datetime("Y-MM-DD")},
+        {data: 'permitted_lang', render: permitted_langs_render, className: 'text-nowrap'},
+        {data: 'tags', render: tags_render},
+        {data: 'groups', render: cafe.dt.render_factory.badge()},
+        {data: 'date_added', render: cafe.dt.render.datetime("Y-MM-DD"), className: 'text-nowrap'},
         {data: 'available', render: cafe.dt.render.yes_no_pill()},
       ],
       columnDefs: [{orderable: false, targets: [0]} ],
       order: [[0]],
     });
 
-    td = new TempusDominus(document.getElementById('date_added'), cafe.config.td.date);
+
 
     let firstRowIndex = null;
     const checkboxColumnIndex = table.column('checkbox:name').index();
@@ -195,5 +231,54 @@
     $('#select_all').on('click', function(e) {
       $('.prob-select-check').prop('checked',e.target.checked)
     })
+
+    window.selectProblemsByCondition = function() {
+      const selectedTag = $('#select-by-tag-dropdown').val();
+      const selectedGroup = $('#select-by-group-dropdown').val();
+      const selectedLang = $('#select-by-lang-dropdown').val();
+
+      if (!selectedTag && !selectedGroup && !selectedLang) {
+        alert("Please select at least one condition (Tag, Group, or Language) first.");
+        return;
+      }
+
+      table.rows().every(function(rowIdx, tableLoop, rowLoop) {
+        const data = this.data();
+        let match = true;
+
+        // 1. Tag match
+        if (selectedTag) {
+          if (!data.tags || !data.tags.some(t => t.name === selectedTag)) {
+            match = false;
+          }
+        }
+
+        // 2. Group match
+        if (selectedGroup) {
+          if (!data.groups || !data.groups.includes(selectedGroup)) {
+            match = false;
+          }
+        }
+
+        // 3. Language match
+        if (selectedLang) {
+          if (!data.permitted_lang) {
+            match = false;
+          } else {
+            const langs = data.permitted_lang.split(/\s+/);
+            if (!langs.includes(selectedLang)) {
+              match = false;
+            }
+          }
+        }
+
+        if (match) {
+          const checkbox = document.getElementById(`prob-${data.id}`);
+          if (checkbox) {
+            checkbox.checked = true;
+          }
+        }
+      });
+    };
 
   });

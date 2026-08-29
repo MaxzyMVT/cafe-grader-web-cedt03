@@ -1,8 +1,8 @@
 class GroupsController < ApplicationController
   GroupMemberAction =             [:show, :edit, :update, :destroy,
                                    :show_users_query, :show_problems_query,
-                                   :add_user, :add_user_by_group, :add_problem, :add_problem_by_group,
-                                   :toggle, :do_all_users, :do_user, :do_all_problems, :do_problem,
+                                   :add_user, :add_user_by_group, :add_problem, :add_problem_by_group, :add_problem_by_tag,
+                                   :toggle, :toggle_member_rename, :do_all_users, :do_user, :do_all_problems, :do_problem,
                                   ]
   before_action :stimulus_controller
   before_action :set_group, only: GroupMemberAction
@@ -20,6 +20,40 @@ class GroupsController < ApplicationController
     @groups = @current_user.groups_for_action(:edit)
   end
 
+  def bulk_manage
+    if request.post?
+      do_bulk_manage
+    else
+      @groups = @current_user.groups_for_action(:edit).order(:name)
+    end
+  end
+
+  def bulk_manage_query
+    @groups = @current_user.groups_for_action(:edit).order(:name)
+    render 'bulk_manage_query'
+  end
+
+  def do_bulk_manage
+    @result = []
+    @error = []
+    groups = get_groups_from_params.where(id: @current_user.groups_for_action(:edit).ids)
+
+    @toast = {title: "Bulk Manage #{groups.count} #{'group'.pluralize(groups.count)}"}
+    
+    if params[:change_enable] == '1'
+      groups.update_all(enabled: params[:enable] == 'yes')
+      @result << "Set \"Enabled\" to <strong>#{params[:enable]}</strong>"
+    end
+
+    if params[:change_allow_user_change_name] == '1'
+      groups.update_all(allow_user_change_name: params[:allow_user_change_name] == 'yes')
+      @result << "Set \"Allow member change name\" to <strong>#{params[:allow_user_change_name]}</strong>"
+    end
+
+    @toast[:body] = "<ul> #{@result.map { |x| "<li>#{x}</li>" }.join}  </ul>".html_safe
+    render 'turbo_toast'
+  end
+
   # GET /groups/1
   def show
   end
@@ -32,7 +66,7 @@ class GroupsController < ApplicationController
     # render json: {data: @group.groups_problems.joins(:problem).select(:id, :problem_id, :enabled, :name, :full_name, :date_added).order(date_added: :desc).order(:name)}
     @problems = Problem.joins(:groups_problems).where('groups_problems.group': @group).includes(:tags)
       .select(:id, 'groups_problems.enabled', 'groups_problems.problem_id', :name, :full_name, :date_added, :difficulty, :permitted_lang, :available, :view_testcase)
-      .order(date_added: :desc).order(:name)
+      .order(:number).order(:name)
   end
 
   # GET /groups/new
@@ -78,6 +112,12 @@ class GroupsController < ApplicationController
     @group.update(enabled:  !@group.enabled?)
     @toast = {title: "Group #{@group.name}", body: "Enabled updated"}
     render 'toggle'
+  end
+
+  def toggle_member_rename
+    @group.update(allow_user_change_name: !@group.allow_user_change_name?)
+    @toast = {title: "Group #{@group.name}", body: "Members can rename group updated"}
+    render 'toggle_member_rename'
   end
 
 
@@ -195,6 +235,21 @@ class GroupsController < ApplicationController
     end
   end
 
+  def add_problem_by_tag
+    begin
+      if params[:tag_ids].blank?
+        @toast = {title: "Group #{@group.name}", body: "No tags selected.", type: :alert}
+      else
+        problem_ids = Problem.joins(:tags).where(tags: { id: params[:tag_ids] }).where.not(id: @group.problems.ids).pluck(:id).uniq
+        @group.problems << Problem.where(id: problem_ids)
+        @toast = {title: "Group #{@group.name}", body: "#{problem_ids.count} problem(s) were added."}
+      end
+      render 'turbo_toast'
+    rescue => e
+      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Adding problems failed', body_msg: e.message}
+    end
+  end
+
   private
     def stimulus_controller
       @stimulus_controller = 'group'
@@ -221,10 +276,15 @@ class GroupsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def group_params
-      if @current_user.admin?
-        params.require(:group).permit(:name, :description, :enabled)
+      if @current_user.admin? || @current_user.problem_setter?
+        params.require(:group).permit(:name, :description, :enabled, :allow_user_change_name)
       else
-        params.require(:group).permit(:name, :description)
+        params.require(:group).permit(:name, :description, :allow_user_change_name)
       end
+    end
+
+    def get_groups_from_params
+      ids = params.keys.select { |k| k.start_with? 'group-' }.map { |k| k.split('-')[1].to_i }
+      return Group.where(id: ids)
     end
 end

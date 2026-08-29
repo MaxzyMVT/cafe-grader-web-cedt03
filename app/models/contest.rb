@@ -12,9 +12,7 @@ class Contest < ApplicationRecord
   # scope :active, -> (time = Time.zone.now) { where(enabled: true).where('start <= ? and stop >= ?',time,time)}
 
 
-  scope :editable_by_user, ->(user_id) {
-    joins(:contests_users).where(contests_users: { user_id: user_id, enabled: true, role: 'editor' })
-  }
+
 
   scope :submittable_by_user, ->(user_id) {
     joins(:contests_users).where(contests_users: { user_id: user_id, enabled: true })
@@ -38,7 +36,7 @@ class Contest < ApplicationRecord
     Users.where(id: user_ids, enabled: true)
   end
 
-  def add_users(new_users, role: 'user')
+  def add_users(new_users)
     return AddResult.new(added: 0, skipped: 0) if new_users.blank?
 
     # remove already existing users
@@ -49,7 +47,7 @@ class Contest < ApplicationRecord
     num_skipped = requested_user_ids.count - num_added
 
     user_ids_to_add.each do |user_id|
-      self.contests_users.build(user_id: user_id, role: role)
+      self.contests_users.build(user_id: user_id)
     end
     return AddResult.new(added: num_added, skipped: num_skipped)
   end
@@ -124,8 +122,13 @@ class Contest < ApplicationRecord
   # return :later, :pre, :during, :post, :ended
   def contest_status
     current_time = Time.zone.now
-    return :ended if current_time > self.stop
-    return :later if current_time < self.start
+    pre_start = self.start - (self.pre_contest_seconds || 0).seconds
+    post_stop = self.stop + (self.post_contest_seconds || 0).seconds
+
+    return :ended if current_time > post_stop
+    return :later if current_time < pre_start
+    return :pre if current_time < self.start
+    return :post if current_time > self.stop
     return :during
   end
 
@@ -179,7 +182,7 @@ class Contest < ApplicationRecord
       .select('COUNT(comments.id) as llm_count')
       .select('user_id', 'problem_id')
 
-    hint_reveal = Comment.hint_reveal_for_problems(self.problems, (self.start)..(self.stop))
+    hint_reveal = Comment.hint_reveal_for_problems(self.problems.where(available: true), (self.start)..(self.stop))
       .select('comment_reveals.user_id as user_id')
       .select('comments.commentable_id as problem_id')
       .select('SUM(comments.cost) as hint_cost')
@@ -203,7 +206,7 @@ class Contest < ApplicationRecord
       .select('submissions.user_id,users_submissions.login,users_submissions.full_name,users_submissions.remark')
       .select('problems.name')
       .select('max_score')
-      .select('LEAST(max_score,100.0-IFNULL(LLM_ASSIST.llm_cost,0.0)-IFNULL(HINT_REVEAL.hint_cost,0.0)) as final_score')
+      .select(GraderConfiguration.enable_penalty? ? 'LEAST(max_score,100.0-IFNULL(LLM_ASSIST.llm_cost,0.0)-IFNULL(HINT_REVEAL.hint_cost,0.0)) as final_score' : 'max_score as final_score')
       .select('submitted_at')
       .select('submissions.id as sub_id')
       .select('submissions.problem_id,submissions.user_id')

@@ -6,6 +6,7 @@ class ApplicationController < ActionController::Base
 
   before_action :read_grader_configuration
   before_action :current_user
+  before_action :rate_limit
   before_action :set_current_audit_context
   before_action :current_contest
   before_action :header_info
@@ -105,7 +106,7 @@ class ApplicationController < ActionController::Base
   end
 
   def header_info
-    @nav_announcement = Announcement.where(on_nav_bar: true)
+    @nav_announcement = []
     if @current_user && @current_user.admin?
       # if not admin, this info is not needed
       @backlog = Submission.where('graded_at is null').where('submitted_at < ?', 1.minutes.ago).count
@@ -135,17 +136,26 @@ class ApplicationController < ActionController::Base
     return true
   end
 
+  def admin_or_setter_authorization
+    return false unless check_valid_login
+    user = User.includes(:roles).find(session[:user_id])
+    unless user.admin? || user.problem_setter?
+      unauthorized_redirect
+      return false
+    end
+    return true
+  end
+
   # check whether the user is an editor of any group
   def group_editor_authorization
-    return true if @current_user.admin?
-    return true if @current_user.groups_for_action(:edit).any?
-    unauthorized_redirect(msg: "Permission Missing: You must have the <strong>Group Editor</strong> role to view this page.<br /> Please contact an editor of your group to request this role.")
+    return true if @current_user.admin? || @current_user.problem_setter?
+    unauthorized_redirect(msg: "Permission Missing: You must be an administrator or problem setter to view this page.")
   end
 
   # redirect when user does not have specific roles in any group
   # allowed_roles should be :xxx
   def group_action_authorization(action)
-    return true if @current_user.admin?
+    return true if @current_user.admin? || @current_user.problem_setter?
     return true if @current_user.groups_for_action(action).any?
     unauthorized_redirect(msg: "You cannot #{action} on any group")
   end
@@ -328,5 +338,21 @@ class ApplicationController < ActionController::Base
     md = text.match(/(\d+)\/(\d+)\/(\d+), (\d+):(\d+)/)
     result = Time.zone.local(md[3].to_i, md[2].to_i, md[1].to_i, md[4].to_i, md[5].to_i) rescue default
     return result
+  end
+
+  def rate_limit
+    return if @current_user&.admin? || @current_user&.problem_setter?
+
+    ip = request.remote_ip
+    cache_key = "rate_limit:#{ip}:#{Time.now.to_i / 60}"
+    
+    count = Rails.cache.fetch(cache_key, expires_in: 1.minute) { 0 } rescue 0
+    count += 1
+    Rails.cache.write(cache_key, count, expires_in: 1.minute) rescue nil
+
+    if count > 300
+      logger.warn "Rate limit exceeded for IP: #{ip}"
+      render plain: "Too Many Requests. Please wait a minute before retrying.", status: :too_many_requests
+    end
   end
 end

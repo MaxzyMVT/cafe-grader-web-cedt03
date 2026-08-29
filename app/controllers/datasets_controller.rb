@@ -8,7 +8,8 @@ class DatasetsController < ApplicationController
 
   before_action :set_dataset, only: %i[ edit update destroy
                                         file_delete file_view file_download
-                                        testcase_input testcase_sol testcase_delete
+                                        testcase_input testcase_sol testcase_delete testcase_delete_all
+                                        testcase_move_up testcase_move_down testcase_reorder
                                         view set_as_live rejudge set_weight
                                         settings files testcases
                                       ]
@@ -16,7 +17,7 @@ class DatasetsController < ApplicationController
   before_action :group_editor_authorization
   before_action :can_view_problem, only: VIEW_METHOD
   before_action :can_edit_problem, except: VIEW_METHOD
-  before_action :set_active_tab, only: %i[edit view testcase_delete set_weight set_as_live update
+  before_action :set_active_tab, only: %i[edit view testcase_delete testcase_delete_all testcase_move_up testcase_move_down testcase_reorder set_weight set_as_live update
                                           settings files testcases]
 
   # GET /datasets/new
@@ -120,7 +121,8 @@ class DatasetsController < ApplicationController
     begin
       tc = Testcase.find(params[:tc_id])
       text = ERB::Util.html_escape(tc.inp_file.download)
-      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Input', body_msg: "<pre>#{text}</pre>".html_safe }
+      header_btn = "<a href='#{download_input_testcase_path(tc)}' class='btn btn-sm btn-primary d-inline-flex align-items-center gap-1' data-turbo='false'><span class='mi' style='font-size: 1.1rem;'>file_download</span>Download #{tc.code_name}.in</a>".html_safe
+      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Input', body_msg: "<pre>#{text}</pre>".html_safe, header_content: header_btn }
     rescue  ActiveStorage::FileNotFoundError
       text = "<div class='alert alert-danger'>File NOT Found on the server!!!</div>".html_safe
       render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Input ERROR', body_msg: text }
@@ -132,7 +134,8 @@ class DatasetsController < ApplicationController
     begin
       tc = Testcase.find(params[:tc_id])
       text = ERB::Util.html_escape(tc.ans_file.download)
-      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Answer', body_msg: "<pre>#{text}</pre>".html_safe }
+      header_btn = "<a href='#{download_sol_testcase_path(tc)}' class='btn btn-sm btn-primary d-inline-flex align-items-center gap-1' data-turbo='false'><span class='mi' style='font-size: 1.1rem;'>download</span>Download #{tc.code_name}.sol</a>".html_safe
+      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Answer', body_msg: "<pre>#{text}</pre>".html_safe, header_content: header_btn }
     rescue  ActiveStorage::FileNotFoundError
       text = "<div class='alert alert-danger'>File NOT Found on the server!!!</div>".html_safe
       render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Answer ERROR', body_msg: text }
@@ -142,14 +145,78 @@ class DatasetsController < ApplicationController
   # as turbo
   def testcase_delete
     tc = Testcase.find(params[:tc_id])
+    dataset = tc.dataset
+    num = tc.num
     tc.destroy
+    dataset.resequence_testcases!
     # workers cache testcase files per dataset; without this they keep
     # grading against the deleted case
-    tc.dataset.invalidate_worker
+    dataset.invalidate_worker
 
+    @active_dataset_tab = '#testcases'
     @toast = {title: 'Testcase changed',
-              body: "Testcase ##{tc.num} is deleted."}
-    render :update
+              body: "Testcase ##{num} is deleted."}
+    
+    respond_to do |format|
+      format.turbo_stream { render :update }
+      format.html { render :update }
+    end
+  end
+
+  # as turbo
+  def testcase_delete_all
+    count = @dataset.testcases.count
+    @dataset.testcases.destroy_all
+
+    @active_dataset_tab = '#testcases'
+    @toast = {title: 'Testcase changed',
+              body: "All #{count} testcases are deleted."}
+    
+    respond_to do |format|
+      format.turbo_stream { render :update }
+      format.html { render :update }
+    end
+  end
+
+  # as turbo
+  def testcase_move_up
+    tc = @dataset.testcases.find(params[:tc_id])
+    old_num = tc.num || 2
+    Testcase.set_testcase_num(tc, old_num - 1.2)
+    @active_dataset_tab = '#testcases'
+    @toast = {title: 'Testcase reordered', body: "Testcase ##{tc.code_name} moved up."}
+    respond_to do |format|
+      format.turbo_stream { render :update }
+      format.html { redirect_to edit_problem_path(@problem), notice: 'Testcase moved up.' }
+    end
+  end
+
+  # as turbo
+  def testcase_move_down
+    tc = @dataset.testcases.find(params[:tc_id])
+    old_num = tc.num || 0
+    Testcase.set_testcase_num(tc, old_num + 1.2)
+    @active_dataset_tab = '#testcases'
+    @toast = {title: 'Testcase reordered', body: "Testcase ##{tc.code_name} moved down."}
+    respond_to do |format|
+      format.turbo_stream { render :update }
+      format.html { redirect_to edit_problem_path(@problem), notice: 'Testcase moved down.' }
+    end
+  end
+
+  # as turbo
+  def testcase_reorder
+    tc = @dataset.testcases.find(params[:tc_id])
+    target_pos = params[:target_position].to_i
+    if target_pos > 0
+      Testcase.set_testcase_num(tc, target_pos)
+      @toast = {title: 'Testcase reordered', body: "Testcase ##{tc.code_name} reordered to position #{target_pos}."}
+    end
+    @active_dataset_tab = '#testcases'
+    respond_to do |format|
+      format.turbo_stream { render :update }
+      format.html { redirect_to edit_problem_path(@problem), notice: 'Testcase reordered.' }
+    end
   end
 
   def set_weight

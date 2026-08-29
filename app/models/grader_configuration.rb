@@ -7,6 +7,12 @@ class GraderConfiguration < ApplicationRecord
   include Auditable
   audited
 
+  after_save :reload_cache
+
+  def reload_cache
+    GraderConfiguration.read_config
+  end
+
   SYSTEM_MODE_CONF_KEY = 'system.mode'
   TEST_REQUEST_EARLY_TIMEOUT_KEY = 'contest.test_request.early_timeout'
   MULTICONTESTS_KEY = 'system.multicontests'
@@ -16,6 +22,13 @@ class GraderConfiguration < ApplicationRecord
   SINGLE_USER_KEY = 'system.single_user_mode'
   SYSTEM_USE_PROBLEM_GROUP = 'system.use_problem_group'
   SYSTEM_MINIMUM_LAST_LOGIN_TIME = 'system.min_last_login_time'
+  SYSTEM_MESSAGE_ENABLED = 'system.message_enabled'
+  HINT_ENABLE_ALL_HINTS = 'gimmicks.enable_all_hints'
+  SYSTEM_ENABLE_PENALTY = 'gimmicks.enable_penalty'
+  SYSTEM_ENABLE_BONUS = 'gimmicks.enable_bonus'
+  GIMMICKS_ENABLE_FIRST_BLOODS = 'gimmicks.enable_first_bloods'
+  GIMMICKS_ENABLE_SUBMISSION_LIMITS = 'gimmicks.enable_submission_limits'
+
 
   # class_attribute :config_cache
   cattr_accessor :task_grading_info_cache
@@ -127,6 +140,32 @@ class GraderConfiguration < ApplicationRecord
 
   def self.single_user_mode?
     return get(SINGLE_USER_KEY)
+  end
+
+  def self.message_enabled?
+    res = get(SYSTEM_MESSAGE_ENABLED)
+    return true if res.nil?
+    return res
+  end
+
+  def self.enable_all_hints?
+    get(HINT_ENABLE_ALL_HINTS) == true
+  end
+
+  def self.enable_penalty?
+    get(SYSTEM_ENABLE_PENALTY) == true
+  end
+
+  def self.enable_bonus?
+    get(SYSTEM_ENABLE_BONUS) == true
+  end
+
+  def self.show_first_bloods?
+    get(GIMMICKS_ENABLE_FIRST_BLOODS) == true
+  end
+
+  def self.show_submission_limits?
+    get(GIMMICKS_ENABLE_SUBMISSION_LIMITS) == true
   end
 
   def self.contest_time_limit

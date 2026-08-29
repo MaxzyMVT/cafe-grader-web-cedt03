@@ -1,10 +1,17 @@
-.d-flex.justify-content-between.align-items-end.mb-3{data: {controller: 'init-ui-component'}}
+.d-flex.flex-column.flex-sm-row.justify-content-between.align-items-start.align-items-sm-end.gap-3.mb-3{data: {controller: 'init-ui-component'}}
   .d-flex.flex-column.gap-1
     %small.text-secondary.text-uppercase.fw-bold.ls-1 Report
     %h2.fw-bold.text-dark.mb-0 Hall of Fame
-  - if @current_user&.admin?
-    = link_to problem_hof_recompute_report_path, class: 'btn btn-sm bg-white shadow-sm border-0 text-secondary d-inline-flex align-items-center justify-content-center', data: { turbo: true, turbo_method: 'post', bs_toggle: 'tooltip', bs_title: 'Recompute statistics' } do
-      %span.mi sync
+  .d-flex.align-items-center.gap-2
+    - if @current_user&.admin?
+      = link_to problem_hof_recompute_report_path, class: 'btn btn-sm bg-white shadow-sm border-0 text-secondary d-inline-flex align-items-center justify-content-center', data: { turbo: true, turbo_method: 'post', bs_toggle: 'tooltip', bs_title: 'Recompute statistics' } do
+        %span.mi sync
+    - if GraderConfiguration['system.scoreboard_enabled']
+      - level = GraderConfiguration['system.scoreboard_view_level'] || 'user'
+      - if level == 'all' || level == 'public' || (level == 'user' && @current_user) || (level == 'admin' && (@current_user&.admin? || @current_user&.problem_setter?))
+        = link_to scoreboard_path, class: 'btn btn-sm btn-outline-primary shadow-sm d-inline-flex align-items-center justify-content-center gap-2' do
+          %span.mi leaderboard
+          Score Board
 
 .card.card-shadow
   .card-body
@@ -13,9 +20,9 @@
         %tr
           %th Name
           %th Full Name
-          %th.text-end Submissions
-          %th.text-end Solved / Attempted
-          %th.text-end Solve Rate
+          %th Submissions
+          %th Solved / Attempted
+          %th Solve Rate
 
 :javascript
   window.addEventListener("load", function() {
@@ -36,7 +43,7 @@
       if (type === 'display') {
         if (row.attempted === 0) return '<span class="text-muted">\u2014</span>'
         let bar_class = data >= 50 ? 'bg-success' : 'bg-warning'
-        return `<div class="d-flex align-items-center justify-content-end gap-2"><div class="progress" style="width:60px;height:6px"><div class="progress-bar ${bar_class}" style="width:${data}%" role="progressbar"></div></div><span style="min-width:3.5em;text-align:right">${data}%</span></div>`
+        return `<div class="d-flex align-items-center justify-content-center gap-2"><div class="progress" style="width:60px;height:6px"><div class="progress-bar ${bar_class}" style="width:${data}%" role="progressbar"></div></div><span style="min-width:3.5em;text-align:center">${data}%</span></div>`
       }
       return data
     }
@@ -54,9 +61,9 @@
       columns: [
         { data: 'name', render: name_render },
         { data: 'full_name' },
-        { data: 'sub_count', className: 'text-end' },
-        { data: 'solved', render: solve_render, className: 'text-end' },
-        { data: 'rate', render: rate_render, className: 'text-end' },
+        { data: 'sub_count', className: 'text-center' },
+        { data: 'solved', render: solve_render, className: 'text-center' },
+        { data: 'rate', render: rate_render, className: 'text-center' },
       ],
       order: [[2, 'desc']],
     });

@@ -6,6 +6,21 @@ The project started at Kasetsart University by @jittat and @pkhungurn. The curre
 
 *Primary development happens at Chulalongkorn University on the [`nattee/cafe-grader-web`](https://github.com/nattee/cafe-grader-web) fork. Stable cuts are published to upstream `cafe-grader-team/cafe-grader-web` periodically.*
 
+**This checkout** ([`MaxzyMVT/cafe-grader-web`](https://github.com/MaxzyMVT/cafe-grader-web)) is a further fork of `nattee/cafe-grader-web`, developed by CEDT03 students at Chulalongkorn University. Its version number is tracked separately from upstream — currently **`4.4.2-cedt03.1`** (base `nattee/cafe-grader-web` version `4.4.2`, plus the `-cedt03.1` fork suffix).
+
+### CEDT03 fork additions (on top of nattee v4.4.2)
+
+Gamification and reporting features layered on top of the upstream base, not present in `nattee/cafe-grader-web`:
+
+- **Submission limits** — per-problem cap on submission count (`Problem#max_submissions`), with remaining count shown to students; problem setters/admins exempt.
+- **Point-based hints with a loot-box mechanic** — hints have a point cost and a randomized `success_rate`; spending points isn't a guaranteed reveal, with success/failure feedback in the UI.
+- **Theme presets** — user-selectable UI themes (Dark, Ocean, Premium, Solarized) stored per-user, switchable from the profile page.
+- **Realtime scoreboard** — auto-refreshing scoreboard (individual/group views, CSV export, first-blood bonus display).
+- **First-blood bonus** — configurable bonus points for the first N correct submissions on a problem, surfaced on the scoreboard.
+- **Extended statistics report** — most-effort, latest-submissions, first-blood counts, shortest-code, and fastest-runtime breakdowns, filterable by language/tags/problems/time range.
+- **Group scoring modes** — `GraderConfiguration#group_score_type` toggles group totals between summed and max-per-problem scoring.
+- **Tag sorting and colors** — problem tags carry a display order and a hex color for UI rendering.
+
 ---
 
 ## Heads-up: v4.x is a major leap from what `master` has been since 2019
@@ -88,11 +103,36 @@ user a wildcard grant so all `grader_*` databases work, current and future:
 GRANT ALL PRIVILEGES ON `grader\_%`.* TO 'grader'@'localhost';
 ```
 
+Run the full test suite (minitest + RSpec API specs + swagger freshness) with:
+
+```bash
+bin/rails check
+```
+
+## Deployment (production)
+
+Ubuntu 22.04 automated installers live in `script/installation/` — see the
+**[Installation Guide](doc/guide/cafe_grader_installation.md)** for details:
+
+```bash
+bash script/installation/install_single_server.sh                       # all-in-one
+# or 3-server: web/db node, then each worker with a UNIQUE id
+bash script/installation/install_web_db_server.sh
+bash script/installation/install_worker_server.sh <WEB_DB_IP> 1
+```
+
+Add `--cloud` on AWS/GCP/Azure. Shared install steps live in `deploy/lib/common.sh`.
+
 ## Documentation
 
+- **[Overview](cafe_grader_overview.md)** — architecture, tech stack, file layout.
+- **[Installation Guide](doc/guide/cafe_grader_installation.md)** — single-server & 3-server production setup.
+- **[Local Setup Guide](doc/guide/cafe_grader_local_setup.md)** — dev environment (Ubuntu/WSL) via `script/installation/setup_local_wsl.sh`.
+- **[Administrator Guide](doc/guide/cafe_grader_admin_guide.md)** — users, problems, contests, grader diagnostics.
 - **[MIGRATION.md](MIGRATION.md)** — upgrading from v1.x to v4.x.
+- **[Backup & restore](deploy/backup/README.md)** — SSH-pull and Huawei OBS/CBR backups.
 - **`/api-docs`** (running app) — Swagger UI for the JSON API.
-- **Wiki** — installation, judge-worker setup, operational guides.
+- **Wiki** — upstream installation and operational guides.
 
 ## License
 

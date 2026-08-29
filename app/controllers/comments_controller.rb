@@ -66,7 +66,7 @@ class CommentsController < ApplicationController
   end
 
   def update
-    hint_params = params.require(:comment).permit(:body, :title, :cost, :kind)
+    hint_params = params.require(:comment).permit(:body, :title, :cost, :kind, :point_cost, :all_points, :success_rate, :available_after)
     if @hint.update(hint_params)
       @toast = {title: "Problem #{@problem.name}'s hint", body: "Hint #{@hint.title} updated"}
     else
@@ -81,12 +81,42 @@ class CommentsController < ApplicationController
   end
 
   def acquire
-    if @hint.acquirable_by?(@current_user)
-      @hint.comment_reveals.create(user: @current_user)
-      @toast = {title: "Hint acquired", body: "You received the hint. It can now be viewed at any time."}
+    unless @current_user.admin? || @current_user.problem_setter?
+      unless @hint.available_in_contest?(@current_contest, @current_contest_user)
+        render partial: 'msg_modal_show', locals: {do_popup: true,
+                                                   header_msg: 'Hint Locked',
+                                                   header_class: 'bg-warning-subtle',
+                                                   body_msg: "This hint is not available yet. It will release #{@hint.available_after} seconds after the contest start."}
+        return
+      end
+    end
+
+    if @hint.acquirable_by?(@current_user, @current_contest, @current_contest_user)
+      success = true
+      if (@hint.success_rate || 100.0) < 100.0
+        roll = rand(0.0..100.0)
+        success = roll <= @hint.success_rate
+      end
+
+      deduction = @hint.all_points ? @current_user.current_score : (@hint.point_cost || 0)
+      @hint.comment_reveals.create(user: @current_user, points_deducted: deduction, is_success: success)
+      
+      if success
+        @header_msg = "Hint acquired!"
+        @body_msg = "Success! You received the hint. It cost #{deduction} points."
+        @header_class = 'bg-success-subtle'
+      else
+        @header_msg = "Hint acquisition failed"
+        @body_msg = "Bad luck! You didn't get the hint, but it still cost you #{deduction} points. Better luck next time!"
+        @header_class = 'bg-danger-subtle'
+      end
+
       render turbo_stream: [
         turbo_stream.update('problem_hints', partial: 'problems/hints', locals: {problem: @problem}),
-        turbo_stream.append('toast-area', partial: 'toast', locals: {toast: @toast})
+        turbo_stream.update('msg_modal_main', partial: 'msg_modal', locals: {header_msg: @header_msg, body_msg: @body_msg, header_class: @header_class}),
+        turbo_stream.append('js-response') do
+          "<script>$('#msg_modal').modal('show')</script>".html_safe
+        end
       ]
     else
       render partial: 'msg_modal_show', locals: {do_popup: true,
@@ -98,9 +128,17 @@ class CommentsController < ApplicationController
 
   # show hint as a modal
   def show_hint
-    # TODO: need to check whether the user can view this hint
+    unless @current_user.admin? || @current_user.problem_setter?
+      unless @hint.available_in_contest?(@current_contest, @current_contest_user)
+        @header_msg = "Hint Locked"
+        @body_msg = "This hint is not available yet. It will release #{@hint.available_after} seconds after the contest start."
+        render :show and return
+      end
+    end
+
     @header_msg = "Hint: #{@hint.title}"
     @body_msg = (@hint.body || '-- blank --').html_safe
+    @submission_id = params[:submission_id]
     render :show
   end
 
@@ -113,6 +151,7 @@ class CommentsController < ApplicationController
     else
       @body_msg = (@comment.body.html_safe || '-- blank --')
     end
+    @submission_id = params[:submission_id]
     render :show
   end
 

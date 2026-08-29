@@ -32,6 +32,10 @@ class MainController < ApplicationController
 
     @groups = [['All', -1]] + @current_user.groups.pluck(:name, :id)
     @primary_tags = Tag.where(kind: 'topic')
+                       .joins(:problems)
+                       .where(problems: { id: @problems })
+                       .distinct
+                       .order(:number)
   end
 
   def prob_group
@@ -56,6 +60,11 @@ class MainController < ApplicationController
     # the problems_for_action already include the logic for admin privilege
     unless @current_user.problems_for_action(:submit).where(id: problem).any? || @current_user.problems_for_action(:edit).where(id: problem).any?
       redirect_to list_main_path, alert: "Problem #{problem.name} is currently not available for you" and return
+    end
+
+    # check submission limit
+    if problem.submission_limit_reached?(@current_user, @current_contest)
+      redirect_to list_main_path, alert: "Submission limit reached: this problem allows a maximum of #{problem.max_submissions_for(@current_user, @current_contest)} submissions" and return
     end
 
     # set language
@@ -179,7 +188,7 @@ class MainController < ApplicationController
 
   def prepare_list_information
     # list of problems for this user, considering the current mode
-    @problems = @current_user.problems_for_action(:submit, respect_admin: false).with_attached_statement.with_attached_attachment.includes(:public_tags).default_order
+    @problems = @current_user.problems_for_action(:submit, respect_admin: false, contest: @current_contest).with_attached_statement.with_attached_attachment.includes(:public_tags).default_order
 
     # calculate range of time (in contest mode)
     submissions = Submission.where(user: @current_user, problem: @problems)
@@ -190,10 +199,35 @@ class MainController < ApplicationController
     # shouldn't gate the "Start Viva" button for the same user-problem.
     # Non-viva submissions always have viva_archived_at = nil, so this is
     # a no-op for them.
-    @prob_submissions = Hash.new { |h, k| h[k] = {count: 0, submission: nil} }
+    @prob_submissions = Hash.new { |h, k| h[k] = {count: 0, submission: nil, best_submission: nil} }
     last_sub_ids = submissions.where(viva_archived_at: nil).group(:problem_id).pluck('max(id)')
     Submission.where(id: last_sub_ids).each do |sub|
-      @prob_submissions[sub.problem_id] = { count: sub.number, submission: sub }
+      @prob_submissions[sub.problem_id] = { count: sub.number, submission: sub, best_submission: nil }
+    end
+
+    # calculate best submission (highest score, or for 0-score problems the one passing all testcases)
+    submissions.where(viva_archived_at: nil).group_by(&:problem_id).each do |prob_id, prob_subs|
+      prob = @problems.find { |p| p.id == prob_id }
+      next unless prob
+      max_pts = prob_subs.map { |s| s.points || 0 }.max || 0
+      candidates = prob_subs.select { |s| (s.points || 0) == max_pts }
+      tc_count = prob.live_dataset&.testcases&.count || 0
+      full_pass_candidates = candidates.select do |s|
+        if s.status.to_s == 'done'
+          clean_gc = s.grader_comment.to_s.gsub(/[\[\]\s]/, '')
+          if tc_count == 0
+            true
+          elsif clean_gc.match?(/\A[PS]+\z/)
+            true
+          else
+            false
+          end
+        else
+          false
+        end
+      end
+      best_sub = full_pass_candidates.any? ? full_pass_candidates.max_by(&:id) : candidates.max_by(&:id)
+      @prob_submissions[prob_id][:best_submission] = best_sub
     end
 
     # calculate max score
@@ -209,13 +243,31 @@ class MainController < ApplicationController
 
     # calculate hint acquired
     Problem.joins(comments: :comment_reveals)
-      .where(id: @problems.ids, comment_reveals: {user: @current_user})
+      .where(id: @problems.ids, comment_reveals: {user: @current_user, is_success: true})
       .group(:id)
-      .select('problems.id', 'count(comments.id) as count', 'sum(comments.cost) as cost')
+      .select('problems.id', 'sum(comments.cost) as cost')
       .each do |row|
-        @prob_submissions[row.id][:hint_count] = row.count
         @prob_submissions[row.id][:hint_cost] = row.cost
       end
+
+    @group_max_scores = {}
+    if GraderConfiguration['system.group_score_type'] == 'group_max'
+      user_group_ids = @current_user.groups.where(enabled: true).pluck(:id)
+      if user_group_ids.any?
+        setter_admin_ids = User.joins(:roles).where(roles: { name: ['admin', 'problem_setter'] }).pluck(:id)
+        group_user_ids = User.joins(:groups)
+                             .where(groups: { id: user_group_ids })
+                             .where(enabled: true)
+                             .where.not(id: setter_admin_ids)
+                             .pluck(:id).uniq
+
+        if group_user_ids.any?
+          @group_max_scores = Submission.where(user_id: group_user_ids, problem_id: @problems.ids)
+                                        .group(:problem_id)
+                                        .maximum(:points)
+        end
+      end
+    end
   end
 
   def prepare_grading_result(submission)

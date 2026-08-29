@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_07_15_162807) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -51,6 +51,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.string "notes"
     t.boolean "on_nav_bar", default: false
     t.bigint "group_id"
+    t.integer "number", default: 0
     t.index ["group_id"], name: "index_announcements_on_group_id"
   end
 
@@ -74,6 +75,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.boolean "enabled", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.float "points_deducted"
+    t.boolean "is_success", default: true
     t.index ["comment_id"], name: "index_comment_reveals_on_comment_id"
     t.index ["user_id"], name: "index_comment_reveals_on_user_id"
   end
@@ -93,6 +96,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.text "llm_response", size: :medium
     t.string "llm_model"
     t.integer "status", default: 0
+    t.float "point_cost"
+    t.boolean "all_points", default: false
+    t.float "success_rate", default: 100.0
+    t.integer "available_after", default: 0
     t.index ["commentable_type", "commentable_id"], name: "index_comments_on_commentable"
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
@@ -135,6 +142,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.boolean "enabled", default: true
     t.datetime "last_heartbeat"
     t.integer "role", default: 0
+    t.integer "extra_sub_limit", default: 0
     t.index ["contest_id"], name: "index_contests_users_on_contest_id"
     t.index ["user_id"], name: "index_contests_users_on_user_id"
   end
@@ -214,6 +222,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.string "description"
     t.boolean "enabled", default: true
     t.boolean "hidden", default: false
+    t.boolean "allow_user_change_name", default: false
   end
 
   create_table "groups_problems", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -316,6 +325,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.text "log", size: :medium
     t.boolean "allow_hint", default: true
     t.boolean "view_submission", default: true
+    t.integer "max_submissions"
+    t.decimal "bonus_first_blood", precision: 16, scale: 6
+    t.integer "first_n_bloods", default: 0
+    t.integer "number", default: 0
     t.index ["live_dataset_id"], name: "index_problems_on_live_dataset_id"
   end
 
@@ -416,6 +429,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.string "color", default: "#6C757D"
     t.text "params", size: :medium
     t.integer "kind", default: 0
+    t.integer "number"
   end
 
   create_table "tasks", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -498,6 +512,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_10_120000) do
     t.string "section"
     t.integer "default_language_id"
     t.datetime "last_heartbeat"
+    t.string "theme", default: "default"
     t.index ["login"], name: "index_users_on_login", unique: true
   end
 

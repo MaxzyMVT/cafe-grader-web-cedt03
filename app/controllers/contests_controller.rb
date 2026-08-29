@@ -2,8 +2,8 @@ class ContestsController < ApplicationController
   before_action :set_contest, only: [:show, :edit, :update, :destroy, :view, :view_query,
                                      :add_users_from_csv, :clone, :set_active,
                                      :show_users_query, :show_problems_query,
-                                     :add_user, :add_user_by_group, :add_problem, :add_problem_by_group,
-                                     :do_all_users, :do_user, :extra_time_user, :do_all_problems, :do_problem,
+                                     :add_user, :add_user_by_group, :add_problem, :add_problem_by_group, :add_problem_by_tag,
+                                     :do_all_users, :do_user, :extra_time_user, :extra_sub_limit_user, :do_all_problems, :do_problem,
                                     ]
   before_action :set_user, only: [:do_user]
   before_action :set_problem, only: [:do_problem]
@@ -12,16 +12,18 @@ class ContestsController < ApplicationController
   EDITOR_ACTION = %i[show edit update destroy view view_query clone
                      show_users_query show_problems_query
                      add_users_from_csv add_user add_user_by_group
-                     add_problem add_problem_by_group
+                     add_problem add_problem_by_group add_problem_by_tag
                      do_all_users do_user do_all_problems do_problem
+                     extra_time_user extra_sub_limit_user
                     ]
   before_action :check_valid_login
   before_action :group_editor_authorization, except: USER_ACTION
   before_action :can_manage_contest, only: EDITOR_ACTION
 
   before_action :check_finalized, only: %i[add_user_by_group add_user add_users_from_csv
-                                           add_problem add_problem_by_group do_all_problems
+                                           add_problem add_problem_by_group add_problem_by_tag do_all_problems
                                            do_all_users do_user do_all_problems do_problem
+                                           extra_time_user extra_sub_limit_user
                                           ]
   delegate :pluralize, to: 'ActionController::Base.helpers'
 
@@ -116,7 +118,7 @@ class ContestsController < ApplicationController
   # POST /contests.xml
   def create
     @contest = Contest.new(contests_params)
-    @contest.add_users(User.where(id: @current_user.id), role: 'editor')
+    @contest.add_users(User.where(id: @current_user.id))
 
     respond_to do |format|
       if @contest.save
@@ -164,7 +166,7 @@ class ContestsController < ApplicationController
   # --- users & problems ---
   def show_users_query
     render json: {data: @contest.contests_users.joins(:user)
-      .select('contests_users.id', :user_id, :contest_id, :enabled, :full_name, :role, :login, :remark, :seat, :extra_time_second, :start_offset_second)}
+      .select('contests_users.id', :user_id, :contest_id, :enabled, :full_name, :role, :login, :remark, :seat, :extra_time_second, :start_offset_second, :extra_sub_limit)}
   end
 
   def show_problems_query
@@ -195,10 +197,15 @@ class ContestsController < ApplicationController
       audit_action = 'bulk_remove_users'
       audit_changes = { 'removed_count' => [nil, affected_count] }
     when 'clear_ip'
-      AuditLog.paused { @contest.users.update_all(last_ip: nil) }
-      @toast[:body] = "Device locks of all users are cleared. The user can now log in from a new device."
-      audit_action = 'bulk_clear_user_ips'
-      audit_changes = { 'affected_count' => [nil, affected_count] }
+      if @current_user.admin?
+        AuditLog.paused { @contest.users.update_all(last_ip: nil) }
+        @toast[:body] = "Device locks of all users are cleared. The user can now log in from a new device."
+        audit_action = 'bulk_clear_user_ips'
+        audit_changes = { 'affected_count' => [nil, affected_count] }
+      else
+        @toast[:body] = "ERROR: Only administrators can clear locks."
+        @toast[:type] = :alert
+      end
     else
       @toast[:body] = "ERROR: Unknown command"
       @toast[:type] = :alert
@@ -226,16 +233,11 @@ class ContestsController < ApplicationController
       gu.update(enabled: !gu.enabled?)
       @toast[:body] = 'User was updated.'
     when 'clear_ip'
-      @user.update(last_ip: nil)
-      @toast[:body] = 'User session was cleared.'
-    when 'make_editor', 'make_user'
-      target_role = params[:command].split('_')[1]
-
-      if @user != @current_user || @user.admin? || target_role == 'editor'
-        ContestUser.where(user: @user, contest: @contest).update(role: target_role)
-        @toast[:body] = "#{@user.login}'s role changed to #{target_role}."
+      if @current_user.admin?
+        @user.update(last_ip: nil)
+        @toast[:body] = 'User session was cleared.'
       else
-        @toast[:body] = "Cannot demote yourself"
+        @toast[:body] = 'ERROR: Only administrators can clear user sessions.'
         @toast[:type] = :alert
       end
     else
@@ -252,6 +254,15 @@ class ContestsController < ApplicationController
     start_offset = params[:start_offset]
     cu.update(extra_time_second: params[:end_offset], start_offset_second: params[:start_offset])
     @toast = {title: "Contest #{@contest.name}", body: "Set extra times of #{cu.user.login} to #{start_offset} : #{end_offset}"}
+    @event_dispatcher = {event_name: 'datatable:reload', event_detail: { "table": 'user_table'}}
+    render 'turbo_toast'
+  end
+
+  def extra_sub_limit_user
+    cu = ContestUser.find(params[:row_id])
+    extra_sub_limit = params[:extra_sub_limit].to_i
+    cu.update(extra_sub_limit: extra_sub_limit)
+    @toast = {title: "Contest #{@contest.name}", body: "Set extra submission limit of #{cu.user.login} to #{extra_sub_limit}"}
     @event_dispatcher = {event_name: 'datatable:reload', event_detail: { "table": 'user_table'}}
     render 'turbo_toast'
   end
@@ -300,6 +311,9 @@ class ContestsController < ApplicationController
       gp.update(enabled: !gp.enabled?)
     when 'toggle_llm'
       gp.update(allow_llm: !gp.allow_llm?)
+    when 'toggle_available'
+      @problem.update(available: !@problem.available)
+      @toast[:body] = "Problem #{@problem.name} availability was updated."
     when 'moveup', 'movedown'
       old_number = gp.number
       delta = params[:command] == 'moveup' ? -1.2 : 1.2
@@ -314,6 +328,19 @@ class ContestsController < ApplicationController
         object_changes: { 'problem' => [nil, @problem.name], 'number' => [old_number, new_number] }
       )
       @toast[:body] = "Problem #{@problem.name} was #{params[:command] == 'moveup' ? 'moved up' : 'moved down'}."
+    when 'reorder'
+      old_number = gp.number
+      target_pos = params[:target_position].to_i
+      AuditLog.paused do
+        @contest.set_problem_number(@problem, target_pos)
+      end
+      new_number = @contest.contests_problems.where(problem: @problem).first&.number
+      AuditLog.record!(
+        auditable:      @contest,
+        action:         'reorder',
+        object_changes: { 'problem' => [nil, @problem.name], 'number' => [old_number, new_number] }
+      )
+      @toast[:body] = "Problem #{@problem.name} was reordered to position #{new_number}."
     else
       @toast[:body] = "Unknown command"
       @toast[:type] = 'alert'
@@ -444,6 +471,31 @@ class ContestsController < ApplicationController
     end
   end
 
+  def add_problem_by_tag
+    begin
+      problem_ids = Problem.joins(:tags).where(tags: { id: params[:tag_ids] }).where.not(id: @contest.problems.ids).pluck(:id).uniq
+      problems = @current_user.problems_for_action(:edit).where(id: problem_ids)
+      result = nil
+      AuditLog.paused do
+        result = @contest.add_problems_and_assign_number(problems)
+        @toast = save_adding_and_build_toast(result, Problem.name.downcase)
+      end
+      AuditLog.record!(
+        auditable:      @contest,
+        action:         'bulk_add_problems_by_tag',
+        object_changes: {
+          'tag_ids'       => [nil, Array(params[:tag_ids])],
+          'added_count'   => [nil, result.added],
+          'skipped_count' => [nil, result.skipped]
+        }
+      )
+      @event_dispatcher = {event_name: 'datatable:reload', event_detail: { "table": 'problem_table'}}
+      render 'turbo_toast'
+    rescue => e
+      render partial: 'msg_modal_show', locals: {do_popup: true, header_msg: 'Adding problems failed', body_msg: e.message}
+    end
+  end
+
 
 
   # DELETE /contests/1
@@ -456,6 +508,10 @@ class ContestsController < ApplicationController
   end
 
   def set_system_mode
+    unless @current_user.admin?
+      redirect_to contests_path, alert: 'Only admins can switch grader modes.' and return
+    end
+
     unless ['standard', 'contest', 'indv-contest', 'analysis'].include? params[:mode]
       redirect_to contests_path, notice: 'Unrecognized mode' and return
     end
@@ -531,7 +587,7 @@ class ContestsController < ApplicationController
       if @contest && @contest.finalized?
         params.require(:contest).permit(:finalized)
       else
-        params.require(:contest).permit(:name, :description, :enabled, :lock, :start, :stop, :finalized)
+        params.require(:contest).permit(:name, :description, :enabled, :lock, :start, :stop, :finalized, :pre_contest_seconds, :post_contest_seconds)
       end
     end
 
