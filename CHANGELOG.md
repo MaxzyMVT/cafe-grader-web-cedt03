@@ -12,7 +12,8 @@ When a release is cut: rename it to `[X.Y.Z] — YYYY-MM-DD`, bump
 
 ### Fixed
 
-- **Announcement modal in Premium theme** — fixed a bug where clicking "Read More" on the main page in the "Premium" theme trapped the modal behind a black `.modal-backdrop` and clipped it to the card container by removing `isolation: isolate` and `overflow: hidden !important` from `.card` in `_premium.scss`, and relocating opened modals to `document.body` in `setup_bootstrap.js`.
+- **Testcase input/solution modal popups** — fixed a bug where clicking the "In" or "Sol" button multiple times in the Datasets section of the problem edit page triggered multiple stacked popup modals by ensuring Turbo-managed message modals remain inside `msg_modal_main`, disposing previous modal instances, and clearing `js-response`.
+- **Announcement modal in Premium theme** — fixed a bug where clicking "Read More" on the main page in the "Premium" theme trapped the modal behind a black `.modal-backdrop` and clipped it to the card container by removing `isolation: isolate` and `overflow: hidden !important` from `.card` in `_premium.scss`, and rendering the announcement modal in `content_for :modals`.
 
 ## [4.4.2-cedt03.1] — 2026-07-15
 

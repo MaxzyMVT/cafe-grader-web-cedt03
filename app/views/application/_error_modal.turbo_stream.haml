@@ -1,6 +1,6 @@
 -# replace the modal (and show it if necessary)
 :ruby
-  modal_opts  = { do_popup: true,
+  modal_opts  = { do_popup: false,
                   header_class: 'bg-danger-subtle',
                   header_msg: title,
                   body_msg: body
@@ -8,6 +8,28 @@
 = turbo_stream.update :msg_modal_main, partial: 'msg_modal', locals: modal_opts
 
 - id = local_assigns.fetch(:id, 'msg_modal')
-= turbo_stream.append 'js-response' do
+= turbo_stream.update 'js-response' do
   :javascript
-    $("##{id}").modal('show')
+    (function() {
+      document.querySelectorAll('##{id}').forEach(el => {
+        if (el.closest('turbo-frame#msg_modal_main') === null) {
+          const inst = bootstrap.Modal.getInstance(el);
+          if (inst) inst.dispose();
+          el.remove();
+        }
+      });
+      document.querySelectorAll('.modal.show').forEach(el => {
+        const inst = bootstrap.Modal.getInstance(el);
+        if (inst) inst.hide();
+      });
+      document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
+
+      const modalEl = document.getElementById('#{id}');
+      if (modalEl) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+    })();

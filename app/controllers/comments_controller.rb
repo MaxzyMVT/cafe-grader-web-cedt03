@@ -114,8 +114,8 @@ class CommentsController < ApplicationController
       render turbo_stream: [
         turbo_stream.update('problem_hints', partial: 'problems/hints', locals: {problem: @problem}),
         turbo_stream.update('msg_modal_main', partial: 'msg_modal', locals: {header_msg: @header_msg, body_msg: @body_msg, header_class: @header_class}),
-        turbo_stream.append('js-response') do
-          "<script>$('#msg_modal').modal('show')</script>".html_safe
+        turbo_stream.update('js-response') do
+          "<script>bootstrap.Modal.getOrCreateInstance(document.getElementById('msg_modal')).show();</script>".html_safe
         end
       ]
     else
