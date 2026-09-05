@@ -12,6 +12,7 @@ When a release is cut: rename it to `[X.Y.Z] — YYYY-MM-DD`, bump
 
 ### Fixed
 
+- **Message reply info icon** — fixed broken `info_outline` glyph rendering as literal text on the message reply page (`/messages/:id`) by using Material Symbol `info`.
 - **Testcase input/solution modal popups** — fixed a bug where clicking the "In" or "Sol" button multiple times in the Datasets section of the problem edit page triggered multiple stacked popup modals by ensuring Turbo-managed message modals remain inside `msg_modal_main`, disposing previous modal instances, and clearing `js-response`.
 - **Announcement modal in Premium theme** — fixed a bug where clicking "Read More" on the main page in the "Premium" theme trapped the modal behind a black `.modal-backdrop` and clipped it to the card container by removing `isolation: isolate` and `overflow: hidden !important` from `.card` in `_premium.scss`, and rendering the announcement modal in `content_for :modals`.
 
