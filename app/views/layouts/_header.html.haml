@@ -5,9 +5,7 @@
         = image_tag 'icon.svg', alt: '', height: 28, width: 28, class: 'rounded'
         %span.site-name-text= GraderConfiguration.site_name&.html_safe || 'MAIN'
 
-      -# Hamburger — opens the right-side offcanvas drawer below xl breakpoint
-      %button.navbar-toggler.border-0.d-xl-none{ type: :button, data: {bs: {toggle: 'offcanvas', target: '#navOffcanvas'}}, 'aria-label': 'Toggle navigation' }
-        %span.navbar-toggler-icon
+
 
       -# Desktop collapse — shown by navbar-expand-xl at xl+
       .collapse.navbar-collapse#navbar-collapse
@@ -98,26 +96,11 @@
               %a.nav-link.link-flex.gap-2{href: login_main_path}
                 %span.mi.md-18 exit_to_app
                 Login
-        -# Mode indicator — desktop
-        .d-flex.align-items-center.ms-2
-          - if GraderConfiguration.analysis_mode?
-            %div.btn.btn-success#countdown= "ANALYSIS MODE"
-          - elsif GraderConfiguration.time_limit_mode?
-            - if @current_contest
-              - if @current_contest.stop + (@current_contest_user&.extra_time_second || 0) < Time.zone.now
-                %div.btn.btn-danger#countdown= "Contest is over"
-              - elsif @current_contest&.contest_status == :later
-                %div.btn.btn-primary#countdown= (t 'title_bar.contest_not_started')
-              - else
-                %div.btn.btn-dark#countdown
-                :javascript
-                  window.addEventListener("load", function() {
-                    too_early_count = 0
-                    setInterval(updateRemainingTime,500)
-                    setTimeout(checkInLoop,1000)
-                  })
-            - else
-              %div.btn.btn-dark#countdown NO CONTEST
+      -# Right-side controls: contest indicator (always visible in top bar) + hamburger toggle (below xl)
+      .d-flex.align-items-center.gap-2.ms-auto.ms-xl-2
+        = render 'layouts/contest_indicator'
+        %button.navbar-toggler.border-0.d-xl-none{ type: :button, data: {bs: {toggle: 'offcanvas', target: '#navOffcanvas'}}, 'aria-label': 'Toggle navigation' }
+          %span.navbar-toggler-icon
 
 -# Offcanvas drawer — outside %header so it has no impact on navbar height
 .offcanvas.offcanvas-end#navOffcanvas{ tabindex: '-1', 'aria-labelledby': 'navOffcanvasLabel' }
@@ -127,6 +110,8 @@
       %strong#navOffcanvasLabel= GraderConfiguration.site_name&.html_safe || 'MAIN'
     %button.btn-close.btn-close-white{ type: 'button', data: {bs: {dismiss: 'offcanvas'}}, 'aria-label': 'Close' }
   .offcanvas-body.d-flex.flex-column.p-0
+    .px-3.py-2.border-bottom.bg-body-secondary.bg-opacity-25
+      = render 'layouts/contest_indicator', extra_class: 'w-100 text-center'
     %ul.navbar-nav.flex-column.px-2.pt-2
       - if (@current_user!=nil) and (GraderConfiguration.show_tasks_to?(@current_user))
         %li.nav-item
@@ -289,15 +274,28 @@
     const extraTime = #{ @current_user&.contests_users&.where(contest: @current_contest)&.take&.extra_time_second || 0}
     const remainingTime = contestEndTime - now + server_time_offset_ms + (extraTime * 1000)
 
+    const countdownElements = document.querySelectorAll('.countdown-timer, #countdown');
+    if (countdownElements.length === 0) return;
+
     if (remainingTime > 0) {
       const hours = Math.floor(remainingTime / (1000 * 60 * 60));
       const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
-      document.getElementById('countdown').textContent = `${hours}h ${minutes}m ${seconds}s remaining`;
+      const text = `${hours}h ${minutes}m ${seconds}s remaining`;
+      countdownElements.forEach(el => el.textContent = text);
     } else {
-      document.getElementById('countdown').textContent = 'Contest ended';
+      countdownElements.forEach(el => el.textContent = 'Contest ended');
     }
   }
+
+  - if GraderConfiguration.time_limit_mode? && @current_contest
+    window.addEventListener("load", function() {
+      too_early_count = 0;
+      updateRemainingTime();
+      setInterval(updateRemainingTime, 500);
+      setTimeout(checkInLoop, 1000);
+    });
+    document.addEventListener("turbo:load", updateRemainingTime);
 
   function humanizeTime(time_iso8601, prepend_text_before = 'in ', prepend_text_after = '') {
     const time = Date.parse(time_iso8601)

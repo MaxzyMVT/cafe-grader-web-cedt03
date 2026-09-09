@@ -1,0 +1,14 @@
+- extra_class ||= ''
+.contest-indicator-wrapper{class: extra_class}
+  - if GraderConfiguration.analysis_mode?
+    %span.btn.btn-success.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= "ANALYSIS MODE"
+  - elsif GraderConfiguration.time_limit_mode?
+    - if @current_contest
+      - if @current_contest.stop + (@current_contest_user&.extra_time_second || 0) < Time.zone.now
+        %span.btn.btn-danger.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= "Contest is over"
+      - elsif @current_contest&.contest_status == :later
+        %span.btn.btn-primary.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= (t 'title_bar.contest_not_started')
+      - else
+        %span.btn.btn-dark.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}
+    - else
+      %span.btn.btn-dark.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)} NO CONTEST
