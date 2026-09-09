@@ -449,7 +449,11 @@ class ContestsController < ApplicationController
   def add_problem_by_group
     begin
       problem_ids = GroupProblem.where(group_id: params[:problem_group_ids]).where.not(problem_id: @contest.problems.ids).pluck :problem_id
-      problems = Problem.group_editable_by_user(@current_user).where(id: problem_ids)
+      problems = if @current_user.admin? || @current_user.problem_setter?
+        Problem.where(id: problem_ids)
+      else
+        Problem.group_editable_by_user(@current_user.id).where(id: problem_ids)
+      end
       result = nil
       AuditLog.paused do
         result = @contest.add_problems_and_assign_number(problems)
