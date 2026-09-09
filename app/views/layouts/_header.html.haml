@@ -267,24 +267,46 @@
   }
 
   function updateRemainingTime() {
-    const contestEndTime = Date.parse('#{@current_contest&.stop&.iso8601}')
-    if (!contestEndTime) return;
+    const contestStartTime = Date.parse('#{@current_contest&.start&.iso8601}');
+    const contestEndTime = Date.parse('#{@current_contest&.stop&.iso8601}');
+    if (!contestEndTime || !contestStartTime) return;
 
-    const now = (new Date())
-    const extraTime = #{ @current_user&.contests_users&.where(contest: @current_contest)&.take&.extra_time_second || 0}
-    const remainingTime = contestEndTime - now + server_time_offset_ms + (extraTime * 1000)
+    const now = (new Date());
+    const extraTime = #{ @current_user&.contests_users&.where(contest: @current_contest)&.take&.extra_time_second || 0};
+    const currentServerTime = now.getTime() + server_time_offset_ms;
+    const effectiveEndTime = contestEndTime + (extraTime * 1000);
 
     const countdownElements = document.querySelectorAll('.countdown-timer, #countdown');
     if (countdownElements.length === 0) return;
 
-    if (remainingTime > 0) {
+    if (currentServerTime < contestStartTime) {
+      const timeToStart = Math.max(0, contestStartTime - currentServerTime);
+      const hours = Math.floor(timeToStart / (1000 * 60 * 60));
+      const minutes = Math.floor((timeToStart % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeToStart % (1000 * 60)) / 1000);
+      const text = `Starts in ${hours}h ${minutes}m ${seconds}s`;
+      countdownElements.forEach(el => {
+        el.textContent = text;
+        el.classList.remove('btn-dark', 'btn-danger');
+        el.classList.add('btn-primary');
+      });
+    } else if (currentServerTime < effectiveEndTime) {
+      const remainingTime = Math.max(0, effectiveEndTime - currentServerTime);
       const hours = Math.floor(remainingTime / (1000 * 60 * 60));
       const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
       const text = `${hours}h ${minutes}m ${seconds}s remaining`;
-      countdownElements.forEach(el => el.textContent = text);
+      countdownElements.forEach(el => {
+        el.textContent = text;
+        el.classList.remove('btn-primary', 'btn-danger');
+        el.classList.add('btn-dark');
+      });
     } else {
-      countdownElements.forEach(el => el.textContent = 'Contest ended');
+      countdownElements.forEach(el => {
+        el.textContent = 'Contest ended';
+        el.classList.remove('btn-primary', 'btn-dark');
+        el.classList.add('btn-danger');
+      });
     }
   }
 

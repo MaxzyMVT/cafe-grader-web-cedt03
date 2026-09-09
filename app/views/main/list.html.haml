@@ -39,6 +39,12 @@
       columnDefs: [
         { targets: [4,5], sortable: false }, // latest result & action
         { targets: [6], visible: false }, // hidden tags column
+        { targets: 1, responsivePriority: 1 }, // Name
+        { targets: 5, responsivePriority: 1 }, // Action
+        { targets: 3, responsivePriority: 2 }, // Best Score
+        { targets: 0, responsivePriority: 3 }, // No.
+        { targets: 2, responsivePriority: 4 }, // Full Score
+        { targets: 4, responsivePriority: 10000 } // Latest Results
       ],
       paging: false,
       responsive: true,

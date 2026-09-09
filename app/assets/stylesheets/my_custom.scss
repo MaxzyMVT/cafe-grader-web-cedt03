@@ -954,12 +954,6 @@ table.dataTable thead td.dt-ordering-desc span.dt-column-order:after {
   content: "\25bc" !important;
 }
 
-// Ensure DataTables responsive collapsed columns stay hidden even when Bootstrap responsive display utilities (e.g. .d-lg-table-cell) use !important
-table.dataTable th.dtr-hidden,
-table.dataTable td.dtr-hidden {
-  display: none !important;
-}
-
 // ---- Mobile Responsiveness and Component Fitting ----
 .select2-container {
   width: 100% !important;
