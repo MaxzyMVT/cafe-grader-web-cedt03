@@ -8,35 +8,27 @@
         %span.mi.md-24.fill help
 
       .flex-grow-1{style: "min-width: 200px;"}
-        %h5.fw-bold.text-dark.mb-0 How Groups & Problem Visibility Work
-        %small.text-secondary Comprehensive guide to problem visibility, Group Mode, and Group status effects.
+        %h5.fw-bold.text-dark.mb-0 How Groups Work
+        %small.text-secondary Grouping users and problems, Group Mode, and group status effects.
 
-    -# --- Section 1: Problem Visibility & Group Association ---
-    %h6.fw-bold.text-dark.small.text-uppercase.mb-2 Problem Visibility Rules
-    .row.g-3.mb-3
+    -# --- Section 1: Core Concept: What Groups Do ---
+    %h6.fw-bold.text-dark.small.text-uppercase.mb-2 What Groups Do
+    .row.g-2.mb-3
       .col-12.col-md-6
-        .p-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
+        .p-2.px-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
           .d-flex.align-items-center.gap-2.mb-1
-            %span.mi.md-20.text-primary.flex-shrink-0 group
-            %span.fw-bold.text-dark Grouped Problems
+            %span.mi.md-20.text-primary.flex-shrink-0 hub
+            %span.fw-bold.text-dark.small Linking Users & Problems
           %p.small.text-secondary.mb-0
-            When a problem is in any group, it is 
-            %strong strictly hidden from non-members.
-            This restriction applies 
-            %strong even when Problem Group Mode is disabled.
-            Only active members of that group can see and submit to it.
+            A group serves as a bridge, grouping and linking specific <strong>users</strong> with specific <strong>problems</strong>.
 
       .col-12.col-md-6
-        .p-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
+        .p-2.px-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
           .d-flex.align-items-center.gap-2.mb-1
-            %span.mi.md-20.text-success.flex-shrink-0 public
-            %span.fw-bold.text-dark Ungrouped Problems
+            %span.mi.md-20.text-info.flex-shrink-0 visibility
+            %span.fw-bold.text-dark.small Scoped Access & Cohorts
           %p.small.text-secondary.mb-0
-            Problems with 
-            %strong no group
-            are visible to 
-            %strong all users
-            when Problem Group Mode is disabled. When Problem Group Mode is enabled, ungrouped problems are hidden from regular students.
+            Controls problem access, targeted announcements, and dedicated scoreboards for distinct classes or cohorts.
 
     -# --- Section 2: Problem Group Mode (Enabled vs Disabled) ---
     %hr.text-secondary-subtle.my-3/
@@ -52,26 +44,22 @@
           %span.mi.md-14 settings
           Config
 
-    .row.g-3.mb-3
+    .row.g-2.mb-3
       .col-12.col-md-6
-        .p-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'bg-light' : 'border-primary-subtle bg-primary-subtle bg-opacity-10', style: "min-width: 0; word-break: break-word;"}
+        .p-2.px-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'bg-light' : 'border-primary-subtle bg-primary-subtle bg-opacity-10', style: "min-width: 0; word-break: break-word;"}
           .d-flex.align-items-center.gap-2.mb-1
-            %span.badge.bg-secondary Off (Disabled — Default)
-            %span.fw-bold.text-dark Open Ungrouped Problems
-          %ul.small.text-secondary.mb-0.ps-3
-            %li Problems with <strong>no group</strong> are publicly visible to all logged-in students.
-            %li Problems assigned to a group remain <strong>scoped only to that group's members</strong>.
-            %li Best for standard classes where general problems are open, with special problem sets restricted to specific cohorts.
+            %span.badge.bg-secondary Off (Default)
+            %span.fw-bold.text-dark.small Open Ungrouped Problems
+          %p.small.text-secondary.mb-0
+            Ungrouped problems are public to all students. Grouped problems stay member-only.
 
       .col-12.col-md-6
-        .p-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'border-success-subtle bg-success-subtle bg-opacity-10' : 'bg-light', style: "min-width: 0; word-break: break-word;"}
+        .p-2.px-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'border-success-subtle bg-success-subtle bg-opacity-10' : 'bg-light', style: "min-width: 0; word-break: break-word;"}
           .d-flex.align-items-center.gap-2.mb-1
-            %span.badge.bg-success On (Enabled)
-            %span.fw-bold.text-dark Strict Group Isolation
-          %ul.small.text-secondary.mb-0.ps-3
-            %li Students <strong>only see problems in groups they belong to</strong>.
-            %li Ungrouped problems are <strong>completely hidden</strong> from regular students (only Admins/Setters see them).
-            %li Best for multi-course setups or segregated sections where students must only access their own curriculum.
+            %span.badge.bg-success On
+            %span.fw-bold.text-dark.small Strict Isolation
+          %p.small.text-secondary.mb-0
+            Ungrouped problems are hidden from students; students only see problems in their assigned groups.
 
     -# --- Section 3: Group Status (Enabled vs Disabled) ---
     %hr.text-secondary-subtle.my-3/
@@ -86,7 +74,6 @@
             %li <strong>Problem Access:</strong> Members can view and submit to enabled problems in the group.
             %li <strong>Announcements:</strong> Group-targeted announcements are visible on members' dashboard.
             %li <strong>Scoreboard & Reports:</strong> Scores and rankings appear on group scoreboards and reports.
-            %li <strong>Bulk Actions:</strong> Eligible for selection in contest/group bulk assignments.
 
       .col-12.col-md-6
         .p-3.rounded-3.border.h-100.border-danger-subtle.bg-danger-subtle.bg-opacity-10{style: "min-width: 0; word-break: break-word;"}
@@ -97,7 +84,6 @@
             %li <strong>Problem Access Revoked:</strong> Members lose access to problems scoped solely by this group.
             %li <strong>Announcements Hidden:</strong> Group-targeted announcements are hidden from students.
             %li <strong>Scoreboard Excluded:</strong> Members are removed from group scoreboard rankings and totals.
-            %li <strong>Settings Preserved:</strong> All member roles and problem mappings remain intact for re-enabling.
 
     -# --- Section 4: Fine-Grained Controls ---
     %hr.text-secondary-subtle.my-3/
