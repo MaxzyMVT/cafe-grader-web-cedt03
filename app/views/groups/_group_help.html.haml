@@ -1,34 +1,34 @@
--# The Knowledge Card
+-# The Knowledge Card: Groups & Problem Visibility
 .card.border-0.shadow-sm.border-start.border-4.border-info
-  .card-body.p-4
+  .card-body.p-3.p-md-4
 
     -# --- Header ---
-    .d-flex.align-items-center.mb-3
-      .bg-info-subtle.text-info-emphasis.rounded-circle.d-flex.align-items-center.justify-content-center.me-3.lh-1{style: "width: 48px; height: 48px"}
+    .d-flex.align-items-center.flex-wrap.gap-3.mb-3
+      .bg-info-subtle.text-info-emphasis.rounded-circle.d-flex.align-items-center.justify-content-center.lh-1.flex-shrink-0{style: "width: 44px; height: 44px"}
         %span.mi.md-24.fill help
 
-      %div
+      .flex-grow-1{style: "min-width: 200px;"}
         %h5.fw-bold.text-dark.mb-0 How Groups & Problem Visibility Work
         %small.text-secondary Comprehensive guide to problem visibility, Group Mode, and Group status effects.
 
     -# --- Section 1: Problem Visibility & Group Association ---
     %h6.fw-bold.text-dark.small.text-uppercase.mb-2 Problem Visibility Rules
-    .row.g-3.mb-4
-      .col-md-6
-        .p-3.rounded-3.border.bg-light.h-100
-          .d-flex.align-items-start.gap-2.mb-1
+    .row.g-3.mb-3
+      .col-12.col-md-6
+        .p-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
+          .d-flex.align-items-center.gap-2.mb-1
             %span.mi.md-20.text-primary.flex-shrink-0 group
             %span.fw-bold.text-dark Grouped Problems
           %p.small.text-secondary.mb-0
-            When a problem is assigned to any group, it is 
-            %strong strictly hidden from users not in that group.
+            When a problem is in any group, it is 
+            %strong strictly hidden from non-members.
             This restriction applies 
             %strong even when Problem Group Mode is disabled.
-            Only active members of that group (and staff) can see and submit to it.
+            Only active members of that group can see and submit to it.
 
-      .col-md-6
-        .p-3.rounded-3.border.bg-light.h-100
-          .d-flex.align-items-start.gap-2.mb-1
+      .col-12.col-md-6
+        .p-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
+          .d-flex.align-items-center.gap-2.mb-1
             %span.mi.md-20.text-success.flex-shrink-0 public
             %span.fw-bold.text-dark Ungrouped Problems
           %p.small.text-secondary.mb-0
@@ -36,25 +36,25 @@
             %strong no group
             are visible to 
             %strong all users
-            when Problem Group Mode is disabled. If Problem Group Mode is enabled, ungrouped problems are hidden from regular students.
+            when Problem Group Mode is disabled. When Problem Group Mode is enabled, ungrouped problems are hidden from regular students.
 
     -# --- Section 2: Problem Group Mode (Enabled vs Disabled) ---
     %hr.text-secondary-subtle.my-3/
-    .d-flex.align-items-center.justify-content-between.mb-2
+    .d-flex.align-items-center.justify-content-between.flex-wrap.gap-2.mb-2
       %h6.fw-bold.text-dark.small.text-uppercase.mb-0 Problem Group Mode Configuration
-      .d-flex.align-items-center.gap-2
+      .d-flex.align-items-center.gap-2.flex-wrap
         %small.text-secondary Current Status:
         - if GraderConfiguration.use_problem_group?
           %span.badge.bg-success-subtle.text-success.border.border-success-subtle On (Enabled)
         - else
           %span.badge.bg-secondary-subtle.text-secondary.border.border-secondary-subtle Off (Disabled)
-        = link_to grader_configuration_index_path, class: 'btn btn-outline-secondary btn-xs py-0 px-2' do
+        = link_to grader_configuration_index_path, class: 'btn btn-outline-secondary btn-sm py-0 px-2' do
           %span.mi.md-14 settings
           Config
 
-    .row.g-3.mb-4
-      .col-md-6
-        .p-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'bg-light' : 'border-primary-subtle bg-primary-subtle bg-opacity-10'}
+    .row.g-3.mb-3
+      .col-12.col-md-6
+        .p-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'bg-light' : 'border-primary-subtle bg-primary-subtle bg-opacity-10', style: "min-width: 0; word-break: break-word;"}
           .d-flex.align-items-center.gap-2.mb-1
             %span.badge.bg-secondary Off (Disabled — Default)
             %span.fw-bold.text-dark Open Ungrouped Problems
@@ -63,8 +63,8 @@
             %li Problems assigned to a group remain <strong>scoped only to that group's members</strong>.
             %li Best for standard classes where general problems are open, with special problem sets restricted to specific cohorts.
 
-      .col-md-6
-        .p-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'border-success-subtle bg-success-subtle bg-opacity-10' : 'bg-light'}
+      .col-12.col-md-6
+        .p-3.rounded-3.border.h-100{class: GraderConfiguration.use_problem_group? ? 'border-success-subtle bg-success-subtle bg-opacity-10' : 'bg-light', style: "min-width: 0; word-break: break-word;"}
           .d-flex.align-items-center.gap-2.mb-1
             %span.badge.bg-success On (Enabled)
             %span.fw-bold.text-dark Strict Group Isolation
@@ -76,43 +76,44 @@
     -# --- Section 3: Group Status (Enabled vs Disabled) ---
     %hr.text-secondary-subtle.my-3/
     %h6.fw-bold.text-dark.small.text-uppercase.mb-2 Group Status: Effects of Enabling & Disabling a Group
-    .d-flex.flex-column.gap-2.mb-4
-      .p-3.rounded-3.border.bg-light
-        .row.g-3
-          .col-md-6
-            .d-flex.align-items-start.gap-2
-              %span.mi.md-20.text-success.flex-shrink-0 check_circle
-              %div
-                %span.fw-bold.text-dark When a Group is Enabled (Active)
-                %ul.small.text-secondary.mb-0.ps-3
-                  %li <strong>Problem Access:</strong> Members can see and submit to enabled problems in the group.
-                  %li <strong>Announcements:</strong> Group-targeted announcements are displayed on members' main page.
-                  %li <strong>Scoreboard & Reports:</strong> Member scores are calculated and displayed on group scoreboards and reports.
-                  %li <strong>Bulk Actions:</strong> Can be used to bulk-add users or problems in contests and management tools.
-          .col-md-6
-            .d-flex.align-items-start.gap-2
-              %span.mi.md-20.text-danger.flex-shrink-0 cancel
-              %div
-                %span.fw-bold.text-dark When a Group is Disabled (Inactive)
-                %ul.small.text-secondary.mb-0.ps-3
-                  %li <strong>Problem Access Revoked:</strong> Members lose access to problems scoped solely by this group (cannot view or submit).
-                  %li <strong>Announcements Hidden:</strong> Group-specific announcements are hidden from students.
-                  %li <strong>Scoreboard Excluded:</strong> Group members and rankings are removed from the group scoreboard and excluded from totals.
-                  %li <strong>Settings Intact:</strong> Problems, users, and editor roles are preserved. Admins/editors can safely re-enable the group at any time.
+    .row.g-3.mb-3
+      .col-12.col-md-6
+        .p-3.rounded-3.border.h-100.border-success-subtle.bg-success-subtle.bg-opacity-10{style: "min-width: 0; word-break: break-word;"}
+          .d-flex.align-items-center.gap-2.mb-2
+            %span.mi.md-20.text-success.flex-shrink-0 check_circle
+            %span.fw-bold.text-dark When a Group is Enabled (Active)
+          %ul.small.text-secondary.mb-0.ps-3
+            %li <strong>Problem Access:</strong> Members can view and submit to enabled problems in the group.
+            %li <strong>Announcements:</strong> Group-targeted announcements are visible on members' dashboard.
+            %li <strong>Scoreboard & Reports:</strong> Scores and rankings appear on group scoreboards and reports.
+            %li <strong>Bulk Actions:</strong> Eligible for selection in contest/group bulk assignments.
+
+      .col-12.col-md-6
+        .p-3.rounded-3.border.h-100.border-danger-subtle.bg-danger-subtle.bg-opacity-10{style: "min-width: 0; word-break: break-word;"}
+          .d-flex.align-items-center.gap-2.mb-2
+            %span.mi.md-20.text-danger.flex-shrink-0 cancel
+            %span.fw-bold.text-dark When a Group is Disabled (Inactive)
+          %ul.small.text-secondary.mb-0.ps-3
+            %li <strong>Problem Access Revoked:</strong> Members lose access to problems scoped solely by this group.
+            %li <strong>Announcements Hidden:</strong> Group-targeted announcements are hidden from students.
+            %li <strong>Scoreboard Excluded:</strong> Members are removed from group scoreboard rankings and totals.
+            %li <strong>Settings Preserved:</strong> All member roles and problem mappings remain intact for re-enabling.
 
     -# --- Section 4: Fine-Grained Controls ---
     %hr.text-secondary-subtle.my-3/
     %h6.fw-bold.text-dark.small.text-uppercase.mb-2 Fine-Grained Controls Inside a Group
     .row.g-3
-      .col-md-6
-        .d-flex.align-items-start.gap-2
-          %span.mi.md-18.text-warning.flex-shrink-0 toggle_on
-          %small.text-secondary
-            %strong Problem-level Enabled Toggle:
-            Within a group's problem list, you can individually enable or disable specific problems without disabling the whole group.
-      .col-md-6
-        .d-flex.align-items-start.gap-2
-          %span.mi.md-18.text-info.flex-shrink-0 person_off
-          %small.text-secondary
-            %strong Member-level Enabled Toggle:
-            Individual user memberships in a group can be toggled on or off to suspend a specific user's group privileges without removing them.
+      .col-12.col-md-6
+        .p-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
+          .d-flex.align-items-start.gap-2
+            %span.mi.md-18.text-warning.flex-shrink-0 toggle_on
+            %small.text-secondary
+              %strong.text-dark Problem-level Enabled Toggle:
+              Within a group's problem list, you can individually enable or disable specific problems without disabling the whole group.
+      .col-12.col-md-6
+        .p-3.rounded-3.border.bg-light.h-100{style: "min-width: 0; word-break: break-word;"}
+          .d-flex.align-items-start.gap-2
+            %span.mi.md-18.text-info.flex-shrink-0 person_off
+            %small.text-secondary
+              %strong.text-dark Member-level Enabled Toggle:
+              Individual user memberships in a group can be toggled on or off to suspend a specific user's group privileges without removing them.

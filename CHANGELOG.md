@@ -17,6 +17,8 @@ When a release is cut: rename it to `[X.Y.Z] — YYYY-MM-DD`, bump
 
 ### Fixed
 
+- **Contest timer display & initialization** — fixed active contest remaining time not rendering on top menu and sidebar by pre-rendering the initial remaining time in Ruby, repairing the conditional JavaScript execution syntax error inside the header script, and triggering immediate updates on DOMContentLoaded and Turbo load events.
+- **Group guide responsiveness** — made the `/groups` guide knowledge card and index layout fully responsive across viewports with fluid wrapping, proportional grid columns, and mobile-friendly spacing adhering to design principles.
 - **Contest bulk problem addition by group** — authorized administrators and problem setters to bulk add problems from any group into a contest without requiring an explicit editor membership in the group.
 - **DataTables responsive duplicate column display** — added `display: none !important` to `.dtr-hidden` elements to ensure collapsed columns (such as Latest Results on the main problem list) stay hidden from table rows on intermediate viewports where Bootstrap's `.d-lg-table-cell` previously overrode DataTables inline styles.
 - **Message reply info icon** — fixed broken `info_outline` glyph rendering as literal text on the message reply page (`/messages/:id`) by using Material Symbol `info`.

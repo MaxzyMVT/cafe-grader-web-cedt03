@@ -1,5 +1,5 @@
 .row.my-2{data: {controller: 'group'}}
-  .col-md-5.mb-3
+  .col-12.col-lg-4.col-xl-3.mb-3
     .d-flex.flex-column.gap-1.mb-3
       %small.text-secondary.text-uppercase.fw-bold.ls-1 Access Control
       %h2.fw-bold.text-dark.mb-0 Groups
@@ -7,7 +7,7 @@
     .d-flex.flex-wrap.gap-2
       = link_to mdi(:add, 'me-1') + 'New Group', new_group_path, class: 'btn btn-flex btn-success'
       = link_to mdi('checklist', 'me-1') + 'Bulk Manage', bulk_manage_groups_path, class: 'btn btn-flex btn-outline-secondary'
-  .col-md-7.mb-3
+  .col-12.col-lg-8.col-xl-9.mb-3
     = render partial: 'group_help'
 
 .card.shadow-sm
