@@ -288,14 +288,24 @@
     }
   }
 
-  - if GraderConfiguration.time_limit_mode? && @current_contest
-    window.addEventListener("load", function() {
+  const isTimeLimitContest = #{ (GraderConfiguration.time_limit_mode? && @current_contest) ? 'true' : 'false' };
+  if (isTimeLimitContest) {
+    function initContestTimer() {
       too_early_count = 0;
       updateRemainingTime();
-      setInterval(updateRemainingTime, 500);
+      if (!window.contestTimerInterval) {
+        window.contestTimerInterval = setInterval(updateRemainingTime, 500);
+      }
       setTimeout(checkInLoop, 1000);
-    });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener("DOMContentLoaded", initContestTimer);
+    } else {
+      initContestTimer();
+    }
+    window.addEventListener("load", updateRemainingTime);
     document.addEventListener("turbo:load", updateRemainingTime);
+  }
 
   function humanizeTime(time_iso8601, prepend_text_before = 'in ', prepend_text_after = '') {
     const time = Date.parse(time_iso8601)

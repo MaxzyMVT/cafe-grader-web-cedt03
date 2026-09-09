@@ -4,11 +4,18 @@
     %span.btn.btn-success.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= "ANALYSIS MODE"
   - elsif GraderConfiguration.time_limit_mode?
     - if @current_contest
-      - if @current_contest.stop + (@current_contest_user&.extra_time_second || 0) < Time.zone.now
+      - extra_secs = @current_contest_user&.extra_time_second || 0
+      - stop_time = @current_contest.stop + extra_secs
+      - if stop_time < Time.zone.now
         %span.btn.btn-danger.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= "Contest is over"
       - elsif @current_contest&.contest_status == :later
         %span.btn.btn-primary.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= (t 'title_bar.contest_not_started')
       - else
-        %span.btn.btn-dark.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}
+        - remaining_secs = [0, (stop_time - Time.zone.now).to_i].max
+        - hours = remaining_secs / 3600
+        - minutes = (remaining_secs % 3600) / 60
+        - seconds = remaining_secs % 60
+        - initial_time_text = "#{hours}h #{minutes}m #{seconds}s remaining"
+        %span.btn.btn-dark.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= initial_time_text
     - else
-      %span.btn.btn-dark.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)} NO CONTEST
+      %span.btn.btn-dark.btn-sm.countdown-timer.text-nowrap{class: extra_class, id: ('countdown' if extra_class.blank?)}= "NO CONTEST"
