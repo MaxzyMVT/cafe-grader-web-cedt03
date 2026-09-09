@@ -10,8 +10,15 @@ When a release is cut: rename it to `[X.Y.Z] — YYYY-MM-DD`, bump
 
 ## [Unreleased]
 
+### Added
+
+- **Always show contest identifier** — displayed contest status/countdown timer (`NO CONTEST` or remaining time) in the top navbar across all screen sizes and inside the mobile offcanvas sidebar when collapsed.
+- **Comprehensive group & problem visibility guide** — updated the `/groups` help card to clarify problem visibility mechanics, open vs strict problem group mode differences, and group enable/disable effects across problem access, announcements, and scoreboards.
+
 ### Fixed
 
+- **Contest bulk problem addition by group** — authorized administrators and problem setters to bulk add problems from any group into a contest without requiring an explicit editor membership in the group.
+- **DataTables responsive duplicate column display** — added `display: none !important` to `.dtr-hidden` elements to ensure collapsed columns (such as Latest Results on the main problem list) stay hidden from table rows on intermediate viewports where Bootstrap's `.d-lg-table-cell` previously overrode DataTables inline styles.
 - **Message reply info icon** — fixed broken `info_outline` glyph rendering as literal text on the message reply page (`/messages/:id`) by using Material Symbol `info`.
 - **Testcase input/solution modal popups** — fixed a bug where clicking the "In" or "Sol" button multiple times in the Datasets section of the problem edit page triggered multiple stacked popup modals by ensuring Turbo-managed message modals remain inside `msg_modal_main`, disposing previous modal instances, and clearing `js-response`.
 - **Announcement modal in Premium theme** — fixed a bug where clicking "Read More" on the main page in the "Premium" theme trapped the modal behind a black `.modal-backdrop` and clipped it to the card container by removing `isolation: isolate` and `overflow: hidden !important` from `.card` in `_premium.scss`, and rendering the announcement modal in `content_for :modals`.
