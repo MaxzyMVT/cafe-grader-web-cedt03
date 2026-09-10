@@ -954,6 +954,40 @@ table.dataTable thead td.dt-ordering-desc span.dt-column-order:after {
   content: "\25bc" !important;
 }
 
+// Suppress native Edge/IE password reveal and clear buttons so custom toggle works consistently
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
+
+// Password toggle button in input groups
+.password-toggle-btn {
+  border-color: var(--bs-border-color);
+  color: var(--bs-secondary-color, #6c757d);
+  background-color: var(--bs-body-bg, #fff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+
+  &:hover {
+    color: var(--color-primary, #0d6efd);
+    background-color: var(--color-surface-hover, rgba(0, 0, 0, 0.05));
+    border-color: var(--bs-border-color);
+  }
+
+  &:focus {
+    box-shadow: none;
+    border-color: var(--bs-border-color);
+  }
+}
+
+.input-group:focus-within > .password-toggle-btn {
+  border-color: var(--bs-primary-border-subtle, #86b7fe);
+}
+
 // ---- Mobile Responsiveness and Component Fitting ----
 .select2-container {
   width: 100% !important;

@@ -17,7 +17,10 @@
               = f.text_field :login, class: 'form-control'
             .mb-3
               = f.label :password, "Password", class: 'form-label'
-              = f.password_field :password, class: 'form-control'
+              .input-group{"data-controller" => "password-toggle"}
+                = f.password_field :password, class: 'form-control', autocomplete: 'current-password', "data-password-toggle-target" => "input"
+                %button.btn.btn-outline-secondary.password-toggle-btn{type: 'button', "data-action" => "click->password-toggle#toggle", "data-password-toggle-target" => "button", tabindex: '-1', title: 'Show password', aria: {label: 'Show password'}}
+                  %span.mi.md-20{"data-password-toggle-target" => "icon"} visibility
             - unless GraderConfiguration['right.bypass_agreement']
               .form-check.mb-3
                 %input#accept-agree.form-check-input{type: :checkbox, name: :accept_agree, required: true}

@@ -15,3 +15,7 @@ application.register("report-filter", ReportFilterController)
 
 import CardPaginationController from "controllers/card_pagination_controller"
 application.register("card-pagination", CardPaginationController)
+
+import PasswordToggleController from "controllers/password_toggle_controller"
+application.register("password-toggle", PasswordToggleController)
+
