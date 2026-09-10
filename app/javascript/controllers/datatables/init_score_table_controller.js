@@ -32,7 +32,7 @@ export default class extends DatatableInitController {
         json.problem.map( (a) => {
           return {
             label: a.name,
-            data: json.data.map( (b) => b[`final_score_${a.id}`] || 0).sort( (a,b) => a-b )
+            data: json.data.map( (b) => parseFloat(b[`final_score_${a.id}`]) || 0).sort( (a,b) => a-b )
           }
         })
     }
@@ -70,7 +70,7 @@ export default class extends DatatableInitController {
       datasets: [
         {
           label: 'Total Score',
-          data: json.data.map( (a) => a.sum_final ).sort( (a,b) => a-b )
+          data: json.data.map( (a) => parseFloat(a.sum_final) || 0 ).sort( (a,b) => a-b )
         }
       ]
     }
@@ -317,23 +317,23 @@ function processScore(json) {
       json.data[i][`raw_score_${prob.id}`] = probScore
       json.data[i][`total_cost_${prob.id}`] = null
       json.data[i][`final_score_${prob.id}`] = null
-      if (probScore.length > 0) {
+      if (probScore != null && probScore !== '') {
 
         probScore = parseFloat(probScore).toFixed(1)
-        json.data[i][`sub_${prob.id}`] = scoreResult[`sub_${prob.id}`]
-        json.data[i][`time_${prob.id}`] = scoreResult[`time_${prob.id}`]
-        json.data[i][`llm_count_${prob.id}`] = scoreResult[`llm_count_${prob.id}`]
-        json.data[i][`llm_cost_${prob.id}`] = scoreResult[`llm_cost_${prob.id}`]
-        json.data[i][`hint_count_${prob.id}`] = scoreResult[`hint_count_${prob.id}`]
-        json.data[i][`hint_cost_${prob.id}`] = scoreResult[`hint_cost_${prob.id}`]
-        json.data[i][`final_score_${prob.id}`] = scoreResult[`final_score_${prob.id}`]
-        json.data[i][`total_cost_${prob.id}`] = scoreResult[`total_cost_${prob.id}`]
+        json.data[i][`sub_${prob.id}`] = scoreResult?.[`sub_${prob.id}`]
+        json.data[i][`time_${prob.id}`] = scoreResult?.[`time_${prob.id}`]
+        json.data[i][`llm_count_${prob.id}`] = scoreResult?.[`llm_count_${prob.id}`]
+        json.data[i][`llm_cost_${prob.id}`] = scoreResult?.[`llm_cost_${prob.id}`]
+        json.data[i][`hint_count_${prob.id}`] = scoreResult?.[`hint_count_${prob.id}`]
+        json.data[i][`hint_cost_${prob.id}`] = scoreResult?.[`hint_cost_${prob.id}`]
+        json.data[i][`final_score_${prob.id}`] = scoreResult?.[`final_score_${prob.id}`]
+        json.data[i][`total_cost_${prob.id}`] = scoreResult?.[`total_cost_${prob.id}`]
       }
 
       //also sum the score of this user
       const thisRaw = parseFloat(probScore || 0.0)
-      const thisDeduction = parseFloat(scoreResult[`total_cost_${prob.id}`] || 0)
-      const thisFinal = parseFloat(scoreResult[`final_score_${prob.id}`] || 0)
+      const thisDeduction = parseFloat(scoreResult?.[`total_cost_${prob.id}`] || 0)
+      const thisFinal = parseFloat(scoreResult?.[`final_score_${prob.id}`] || 0)
       sumRaw += thisRaw
       sumDeduction += thisDeduction
       sumFinal += thisFinal

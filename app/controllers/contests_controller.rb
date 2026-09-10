@@ -62,7 +62,6 @@ class ContestsController < ApplicationController
 
     render json: {
       data: @contest.contests_users.joins(:user)
-        .where(role: 'user')
         .select(:id, :user_id, :login, :full_name, :remark, :seat, :last_heartbeat),
       result: @result,
       problem: @contest.problems.select(:id, :name).order(:number)

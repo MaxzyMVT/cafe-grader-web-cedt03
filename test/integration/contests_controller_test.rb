@@ -93,6 +93,11 @@ class ContestsControllerTest < ActionDispatch::IntegrationTest
     sign_in_as("admin", "admin")
     post view_query_contest_path(contests(:contest_a))
     assert_response :success
+    json = JSON.parse(response.body)
+    assert_includes json.keys, "data"
+    assert_includes json.keys, "result"
+    assert_includes json.keys, "problem"
+    assert_equal contests(:contest_a).users.count, json["data"].length
   end
 
   test "admin can query contest users as JSON" do
