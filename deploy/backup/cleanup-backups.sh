@@ -3,15 +3,23 @@
 # Clean up backups older than N days by parsing the date in the filename.
 # This prevents deletion errors if file metadata timestamps changed during transfer.
 #
+# Also enforces a hard size cap (MAX_SIZE_GB) on the backup directory: if the
+# day-based prune above still leaves the set over the cap, the oldest backups
+# are removed next regardless of age. Day-based retention alone assumes each
+# day's backup stays roughly the same size - if the underlying app data grows,
+# a fixed KEEP_DAYS window grows right along with it and can still run the
+# disk to 100%. The size cap is the backstop for that.
+#
 # Usage:
-#   ./cleanup-backups.sh [backup_directory] [days_to_keep]
+#   ./cleanup-backups.sh [backup_directory] [days_to_keep] [max_size_gb]
 # Example:
-#   ./cleanup-backups.sh ~/cafe-grader-backups 3
+#   ./cleanup-backups.sh ~/cafe-grader-backups 2 35
 
 set -euo pipefail
 
 TARGET_DIR="${1:-$HOME/cafe-grader-backups}"
 KEEP_DAYS="${2:-3}"
+MAX_SIZE_GB="${3:-20}"
 
 if [ ! -d "$TARGET_DIR" ]; then
   echo "Error: Directory $TARGET_DIR does not exist."
@@ -40,6 +48,29 @@ find "$TARGET_DIR" -type f \( -name "db_*.gz" -o -name "files_*.gz" -o -name "wo
     fi
   fi
 done
+
+# Size cap: even backups still within KEEP_DAYS get pruned oldest-first if the
+# backup set as a whole has grown past MAX_SIZE_GB.
+MAX_SIZE_KB=$(( MAX_SIZE_GB * 1024 * 1024 ))
+CURRENT_SIZE_KB=$(du -sk "$TARGET_DIR" 2>/dev/null | awk '{print $1}')
+CURRENT_SIZE_KB="${CURRENT_SIZE_KB:-0}"
+
+if [ "$CURRENT_SIZE_KB" -gt "$MAX_SIZE_KB" ]; then
+  echo "=== Backup set is $((CURRENT_SIZE_KB/1024))MB, over the ${MAX_SIZE_GB}GB cap - pruning oldest first ==="
+  find "$TARGET_DIR" -type f \( -name "db_*.gz" -o -name "files_*.gz" -o -name "worker_*.gz" -o -name "judge_*.gz" \) | while read -r file; do
+    filename=$(basename "$file")
+    # Sort key = the date_time embedded in the filename (fixed-width, so lexical sort == chronological)
+    if [[ "$filename" =~ ([0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{6}) ]]; then
+      echo "${BASH_REMATCH[1]} $file"
+    fi
+  done | sort | while read -r _ file; do
+    [ "$CURRENT_SIZE_KB" -le "$MAX_SIZE_KB" ] && break
+    SIZE_KB=$(du -sk "$file" 2>/dev/null | awk '{print $1}')
+    echo "  Size-pruning: $file"
+    rm -f "$file"
+    CURRENT_SIZE_KB=$(( CURRENT_SIZE_KB - ${SIZE_KB:-0} ))
+  done
+fi
 
 # Cleanup local /tmp/cafebk files older than 1 day
 if [ -d "/tmp/cafebk" ]; then

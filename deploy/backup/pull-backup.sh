@@ -25,6 +25,9 @@
 #   APP_DIR          (Cafe-Grader path on the servers, if auto-detect fails)
 #   SCOPE            (full = DB+files+workers [default] ; db = database only, for hourly)
 #   SSH_KEY          (key CONTENTS, not a path - lets it run unattended for cron)
+#   MAX_SIZE_GB      (20) - hard cap on total size of DEST_DIR; cleanup-backups.sh
+#                    prunes the oldest backups past this even if still within KEEP_DAYS,
+#                    so growth in daily backup size can't silently outrun day-based retention
 
 set -euo pipefail
 
@@ -38,6 +41,7 @@ DB_USER="${DB_USER:-}"
 DB_PASS="${DB_PASS:-}"
 APP_DIR="${APP_DIR:-}"   # path to Cafe-Grader ON THE SERVERS (blank = auto-detect common paths)
 SCOPE="${SCOPE:-full}"   # full = DB + files + workers ; db = database only (small/fast, for hourly)
+MAX_SIZE_GB="${MAX_SIZE_GB:-20}"   # hard cap (GB) on $DEST_DIR; oldest backups pruned past this regardless of KEEP_DAYS
 
 # --- prerequisites -----------------------------------------------------------
 for t in ssh scp mktemp grep; do
@@ -141,7 +145,7 @@ if [ "$AVAILABLE_KB" -lt "$REQUIRED_KB" ]; then
   DIR=$(dirname "$0")
   if [ -f "$DIR/cleanup-backups.sh" ]; then
     # Dynamically prune backups down to 1 day early to free up space
-    bash "$DIR/cleanup-backups.sh" "$DEST_DIR" 1
+    bash "$DIR/cleanup-backups.sh" "$DEST_DIR" 1 "$MAX_SIZE_GB"
   fi
 fi
 
@@ -213,7 +217,7 @@ if [ -d "$DEST_DIR" ]; then
   # Run the updated cleanup script to purge old backups and manage space
   DIR=$(dirname "$0")
   if [ -f "$DIR/cleanup-backups.sh" ]; then
-    bash "$DIR/cleanup-backups.sh" "$DEST_DIR" "$KEEP_DAYS"
+    bash "$DIR/cleanup-backups.sh" "$DEST_DIR" "$KEEP_DAYS" "$MAX_SIZE_GB"
   else
     find "$DEST_DIR" -type f -name '*.gz' -mtime "+$KEEP_DAYS" -print -delete 2>/dev/null \
       | sed 's/^/    prune /' || true
