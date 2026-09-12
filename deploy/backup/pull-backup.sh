@@ -127,9 +127,16 @@ if [ "$REMOTE_AVAIL_MEM" -lt 102400 ]; then # less than 100MB
 fi
 
 # --- Check space before taking backup to prevent hitting 100% capacity -----------
-# Estimate backup size: database size (rough estimate ~100MB) + /storage directory size on remote server
-echo "Estimating backup size from remote storage..."
-DETECT_SCRIPT='
+# SCOPE=db (hourly) never touches storage/ - it's a ~10-20MB mysqldump only, so
+# sizing the check off storage/ would (and did) block legitimate tiny db-only
+# runs once the margin below was widened for the self-backup case. Only pay
+# for the storage/ probe, and only apply the storage-sized estimate, when this
+# run will actually pack storage/ into the backup.
+if [ "$SCOPE" = db ]; then
+  ESTIMATED_BACKUP_KB=204800   # ~200MB: ample headroom for a db-only dump
+else
+  echo "Estimating backup size from remote storage..."
+  DETECT_SCRIPT='
 APP=""
 for d in /root/cafe_grader/web /home/*/cafe_grader/web /opt/cafe_grader/web /root/cafe-grader-web /home/*/cafe-grader-web /var/www/cafe-grader-web /opt/cafe-grader-web; do
   [ -d "$d" ] && { APP="$d"; break; }
@@ -140,11 +147,12 @@ else
   echo 0
 fi
 '
-STORAGE_SIZE_KB=$(run_remote "$WEB_DB_HOST" "$DETECT_SCRIPT" || echo 0)
-STORAGE_SIZE_KB=$(echo "$STORAGE_SIZE_KB" | tr -d '\r\n' | grep -E '^[0-9]+$' || echo 0)
+  STORAGE_SIZE_KB=$(run_remote "$WEB_DB_HOST" "$DETECT_SCRIPT" || echo 0)
+  STORAGE_SIZE_KB=$(echo "$STORAGE_SIZE_KB" | tr -d '\r\n' | grep -E '^[0-9]+$' || echo 0)
 
-# Conservative estimated backup size in KB (compressed to ~50% average)
-ESTIMATED_BACKUP_KB=$(( (STORAGE_SIZE_KB + 204800) / 2 ))
+  # Conservative estimated backup size in KB (compressed to ~50% average)
+  ESTIMATED_BACKUP_KB=$(( (STORAGE_SIZE_KB + 204800) / 2 ))
+fi
 # Available space on backup drive in KB
 AVAILABLE_KB=$(df "$DEST_DIR" | tail -1 | awk '{print $4}')
 
