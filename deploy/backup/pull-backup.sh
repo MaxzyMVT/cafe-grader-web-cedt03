@@ -91,16 +91,28 @@ run_remote() {  # run_remote <host> <script> [env-prefix]
 }
 
 # --- copy listed remote files back, then delete them on the server -----------
+# A failed scp (eg. ENOSPC) must NOT skip the remote cleanup below - an
+# orphaned multi-GB temp file left in /tmp/cafebk is exactly what fills the
+# disk on the next run. So failures here are caught, not left to `set -e`.
 fetch() {  # fetch <host> <localdir> <file>...
   local h="$1" ld="$2"; shift 2
   [ "$#" -gt 0 ] || return 0
   mkdir -p "$ld"
-  local rf
+  local rf failed=0
   for rf in "$@"; do
     echo "    pull $(basename "$rf")"
-    "${SCP[@]}" "$SSH_USER@$h:$rf" "$ld/"
+    if ! "${SCP[@]}" "$SSH_USER@$h:$rf" "$ld/"; then
+      echo "    ERROR: failed to pull $(basename "$rf") - removing any partial local copy"
+      rm -f "$ld/$(basename "$rf")"
+      failed=1
+    fi
   done
+  # Always clean up the remote temp copies, whether or not every pull above succeeded.
   "${SSH[@]}" "$SSH_USER@$h" "rm -f $*" >/dev/null 2>&1 || true
+  if [ "$failed" -ne 0 ]; then
+    echo "ERROR: one or more backup files failed to transfer from $h (remote temp copies were still cleaned up)"
+    exit 1
+  fi
 }
 
 # --- Check remote memory before taking backup to prevent OOM crash -----------
@@ -136,9 +148,15 @@ ESTIMATED_BACKUP_KB=$(( (STORAGE_SIZE_KB + 204800) / 2 ))
 # Available space on backup drive in KB
 AVAILABLE_KB=$(df "$DEST_DIR" | tail -1 | awk '{print $4}')
 
-# If available space is less than estimated backup size + 2GB safety margin, trigger early cleanup
-SAFETY_MARGIN_KB=2097152
-REQUIRED_KB=$(( ESTIMATED_BACKUP_KB + SAFETY_MARGIN_KB ))
+# The backup is staged in /tmp on WEB_DB_HOST, then scp'd into DEST_DIR. When
+# this script runs ON WEB_DB_HOST itself (self-backup - the common case here),
+# both copies briefly exist on the SAME disk, so the real peak need is ~2x the
+# estimate, not 1x. Always budget for 2x: on a genuine separate control box
+# this just makes the check a bit more conservative than strictly necessary,
+# which is safe; on a self-backup it's the difference between catching a
+# looming ENOSPC early and hitting it mid-transfer (which is what happened).
+SAFETY_MARGIN_KB=5242880  # 5GB
+REQUIRED_KB=$(( ESTIMATED_BACKUP_KB * 2 + SAFETY_MARGIN_KB ))
 
 if [ "$AVAILABLE_KB" -lt "$REQUIRED_KB" ]; then
   echo "WARNING: Low disk space detected ($((AVAILABLE_KB/1024)) MB available). Running pre-backup cleanup..."
@@ -146,6 +164,15 @@ if [ "$AVAILABLE_KB" -lt "$REQUIRED_KB" ]; then
   if [ -f "$DIR/cleanup-backups.sh" ]; then
     # Dynamically prune backups down to 1 day early to free up space
     bash "$DIR/cleanup-backups.sh" "$DEST_DIR" 1 "$MAX_SIZE_GB"
+  fi
+  # Re-check: if cleanup didn't free enough, skip this run rather than start
+  # a multi-GB transfer that's mathematically guaranteed to hit ENOSPC partway
+  # through and leave debris behind. A skipped backup is recoverable next
+  # cron tick; a disk run to 100% takes the live site down with it.
+  AVAILABLE_KB=$(df "$DEST_DIR" | tail -1 | awk '{print $4}')
+  if [ "$AVAILABLE_KB" -lt "$REQUIRED_KB" ]; then
+    echo "ERROR: still only $((AVAILABLE_KB/1024)) MB available after cleanup, need ~$((REQUIRED_KB/1024)) MB (2x estimated backup size + margin). Skipping this run."
+    exit 1
   fi
 fi
 
