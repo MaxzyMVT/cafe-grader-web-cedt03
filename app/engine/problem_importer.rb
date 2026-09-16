@@ -113,7 +113,19 @@ class ProblemImporter
         ans = File.read(@tc[codename][:sol]).gsub(/\r$/, '')
         new_tc.inp_file.attach(io: StringIO.new(input), filename: 'input.txt', content_type: 'text/plain',  identify: false)
         new_tc.ans_file.attach(io: StringIO.new(ans),   filename: 'answer.txt', content_type: 'text/plain',  identify: false)
-        new_tc.save!
+        begin
+          new_tc.save!
+        rescue => e
+          # attach() above already wrote the blob + file to disk immediately,
+          # regardless of whether this record ends up saved. If save! fails
+          # (bad data, validation error, duplicate code_name, stale target
+          # dataset, etc.) those files would otherwise be orphaned forever -
+          # with no DB row, nothing ever finds them again to clean up (see
+          # 2026-09 storage audit: 31GB/20,839 files traced to this exact gap).
+          new_tc.inp_file.blob&.purge
+          new_tc.ans_file.blob&.purge
+          raise
+        end
         @log << "  #{@tc[codename][:input]} is the input"
         @log << "  #{@tc[codename][:sol]} is the sol"
       end
