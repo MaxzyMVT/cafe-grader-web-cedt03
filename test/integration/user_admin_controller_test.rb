@@ -61,6 +61,19 @@ class UserAdminControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "bulk_manage preview preserves filter_group checkbox and selection" do
+    sign_in_as("admin", "admin")
+    group = groups(:group_a)
+    post bulk_manage_user_admin_index_path, params: {
+      filter_group: "group",
+      filter_group_id: group.id.to_s,
+      commit: "Preview Result"
+    }
+    assert_response :success
+    assert_select "input[name='filter_group'][checked='checked']"
+    assert_select "select[name='filter_group_id'] option[selected='selected'][value='#{group.id}']"
+  end
+
   test "admin can access active page" do
     sign_in_as("admin", "admin")
     get active_user_admin_index_path

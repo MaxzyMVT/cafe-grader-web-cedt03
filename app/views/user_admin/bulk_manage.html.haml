@@ -38,10 +38,10 @@
 
         .row.row-cols-lg-auto.align-items-center.my-3.g-3
           .col-auto
-            = check_box_tag :filter_group, :group, false, class: 'form-check-input'
+            = check_box_tag :filter_group, :group, params[:filter_group].present?, class: 'form-check-input'
             = label_tag :filter_group, 'Only users from this group', class: 'form-check-label'
           .col-auto
-            = select_tag :filter_group_id, options_from_collection_for_select( Group.all.order('id DESC'), 'id','name',params[:group_id]), class: 'select2', style: 'width: 20em';
+            = select_tag :filter_group_id, options_from_collection_for_select( Group.all.order('id DESC'), 'id','name', params[:filter_group_id] || params[:group_id]), class: 'select2', style: 'width: 20em';
   .col-md-6
     .card
       .card-header
