@@ -265,7 +265,19 @@ class Grader
   def self.cleanup_judge(ago_min = 60*24)
     # delete old submission dir, default: anything older than 24 hours (ago_min = 60*24)
     isolate_sub_path = Pathname.new(Rails.configuration.worker[:directory][:judge_path]) + Grader::JudgeSubmissionPath
-    cmd = "find #{isolate_sub_path} -maxdepth 1 -mmin +#{ago_min} -exec rm -rf {} \\;"
+    unless isolate_sub_path.directory?
+      # e.g. the web server, which has no isolate_submission dir (the grader recreates it via mkpath)
+      JudgeLogger.logger.info("cleanup_judge: #{isolate_sub_path} does not exist, nothing to do")
+      return true
+    end
+    # -mindepth 1: without it find also matches isolate_submission itself once it is >24h idle and
+    #   rm -rf wipes every entry, including a re-judge that is running right now.
+    # find | xargs rm, not `-exec rm -rf {} \;`: find exits 0 even when rm fails (EACCES on files or
+    #   dirs owned by isolate sandbox uids), so the old form logged "completed successfully" for a
+    #   cleanup that deleted nothing. xargs exits 123 if any rm failed.
+    # On workers the real work is done by deploy/worker/cleanup-judge.sh (root cron), which can also
+    # remove sandbox-owned entries; this method is the fallback.
+    cmd = "find #{Shellwords.escape(isolate_sub_path.to_s)} -mindepth 1 -maxdepth 1 -mmin +#{ago_min.to_i} -print0 | xargs -0 -r rm -rf --"
     JudgeLogger.logger.info("cleanup_judge: executing #{cmd}")
     # system (not spawn) so cron waits for completion and we can check/log the exit status --
     # a silently-failing or fire-and-forget cleanup here previously let isolate_submission grow

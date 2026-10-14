@@ -1,0 +1,13 @@
+# cafe_grader worker: remove stale per-submission sandbox dirs under
+# /var/local/cafe_grader/judge/isolate_submission (source: deploy/worker/cleanup-judge.sh).
+# Hourly. Normal age 24h; when the disk is >=80% used the age drops to 3h.
+# Log: /var/log/cafe-cleanup-judge.log   Disable: remove this file.
+#
+# Install on EACH grader worker (as root):
+#   install -m 755 deploy/worker/cleanup-judge.sh /usr/local/sbin/cafe-cleanup-judge
+#   install -m 644 deploy/worker/cafe-cleanup-judge.cron /etc/cron.d/cafe-cleanup-judge
+# It lives in /etc/cron.d on purpose: the `whenever`-managed grader_admin crontab is rewritten on
+# every deploy, and that is how the cleanup silently disappeared in July.
+SHELL=/bin/bash
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+17 * * * * root /usr/local/sbin/cafe-cleanup-judge >/dev/null 2>&1
