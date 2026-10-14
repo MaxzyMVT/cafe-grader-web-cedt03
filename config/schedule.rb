@@ -27,9 +27,12 @@ every 1.minute do
   runner "Grader.watchdog"
 end
 
-# The two cleanup_* tasks moved to config/recurring.yml so they live
-# next to AuditLog.cleanup! and viva_turn_failsafe.
-#
+# Clean up isolate submission directories older than 24 hours on judge workers daily.
+# Kept in whenever cron because worker nodes run standalone judges without solid_queue.
+every 1.day, at: '2:00 am' do
+  runner "Grader.cleanup_judge"
+end
+
 # Deploy propagation is handled by the CI/CD pipeline
 # (gitlab.nattee.net/nattee/cafe-grader-automation), which runs:
 #   bundle exec whenever --update-crontab     # rewrites crontab from this file
