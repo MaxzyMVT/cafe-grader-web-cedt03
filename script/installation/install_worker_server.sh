@@ -74,6 +74,7 @@ cg_python_venv
 cg_write_startup_service        # no mysql on this node
 cg_write_workers_service        # no mysql on this node
 cg_install_isolate_cleanup_cron
+cg_setup_logrotate
 
 # Worker nodes need no inbound ports (they dial out to the Web/DB server).
 if [ -n "$CLOUD" ]; then

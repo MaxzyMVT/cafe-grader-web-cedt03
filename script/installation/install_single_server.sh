@@ -56,6 +56,7 @@ cg_install_passenger_apache
 cg_write_solid_queue_service
 cg_write_startup_service mysql
 cg_write_workers_service mysql
+cg_setup_logrotate
 
 echo
 echo "============================================================"

@@ -559,3 +559,21 @@ cg_install_isolate_cleanup_cron() {
     ( crontab -l 2>/dev/null; echo "$job" ) | crontab -
   echo "  isolate_submission cleanup cron installed (daily 02:00)."
 }
+
+# Install logrotate rule for Cafe-Grader application and judge logs.
+cg_setup_logrotate() {
+  cg_section "Configuring logrotate for Cafe-Grader logs"
+  sudo tee /etc/logrotate.d/cafe-grader > /dev/null <<EOF
+$APP_DIR/log/*.log {
+    weekly
+    missingok
+    rotate 4
+    compress
+    delaycompress
+    notifempty
+    copytruncate
+}
+EOF
+  sudo chmod 644 /etc/logrotate.d/cafe-grader
+  echo "  logrotate rule installed in /etc/logrotate.d/cafe-grader."
+}
