@@ -535,6 +535,8 @@ class User < ApplicationRecord
       end
     end
 
+    return true if GraderConfiguration['right.user_view_submission']
+
     return false
   end
 

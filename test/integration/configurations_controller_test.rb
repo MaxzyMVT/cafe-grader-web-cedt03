@@ -22,10 +22,20 @@ class ConfigurationsControllerTest < ActionDispatch::IntegrationTest
 
   # --- Index/edit/update/toggle ---
 
-  test "admin can access index" do
+  test "admin can access index and sees reorganized system parameters and gimmicks" do
     sign_in_as("admin", "admin")
     get grader_configuration_index_path
     assert_response :success
+    assert_select ".card[data-group='gimmicks']" do
+      assert_select ".config-item[data-key='gimmicks.theme_selector_enabled']"
+    end
+    assert_select ".card[data-group='system']" do
+      assert_select ".config-subgroup-header", minimum: 4
+      assert_select ".config-subgroup-header", text: /Mode & Access Control/
+      assert_select ".config-subgroup-header", text: /Scoreboard & Scoring/
+      assert_select ".config-subgroup-header", text: /Student Features & Assistance/
+      assert_select ".config-subgroup-header", text: /Registration & Administration/
+    end
   end
 
   test "admin can update configuration" do

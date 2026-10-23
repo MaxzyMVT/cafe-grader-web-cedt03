@@ -28,6 +28,7 @@ class GraderConfiguration < ApplicationRecord
   SYSTEM_ENABLE_BONUS = 'gimmicks.enable_bonus'
   GIMMICKS_ENABLE_FIRST_BLOODS = 'gimmicks.enable_first_bloods'
   GIMMICKS_ENABLE_SUBMISSION_LIMITS = 'gimmicks.enable_submission_limits'
+  THEME_SELECTOR_ENABLED = 'gimmicks.theme_selector_enabled'
 
 
   # class_attribute :config_cache
@@ -43,12 +44,21 @@ class GraderConfiguration < ApplicationRecord
       self.read_config
     end
 
-    # return GraderConfiguration.config_cache[key]
+    if key == 'system.theme_selector_enabled' && !@config_cache.key?(key)
+      return @config_cache['gimmicks.theme_selector_enabled']
+    elsif key == 'gimmicks.theme_selector_enabled' && !@config_cache.key?(key)
+      return @config_cache['system.theme_selector_enabled']
+    end
+
     return @config_cache[key]
   end
 
   def self.[](key)
     self.get(key)
+  end
+
+  def self.theme_selector_enabled?
+    get(THEME_SELECTOR_ENABLED) == true
   end
 
   def self.minimum_last_login_time

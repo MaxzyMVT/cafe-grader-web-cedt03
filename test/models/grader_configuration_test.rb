@@ -76,4 +76,15 @@ class GraderConfigurationTest < ActiveSupport::TestCase
     assert_not GraderConfiguration["right.bypass_agreement"]
     assert_not GraderConfiguration["right.multiple_ip_login"]
   end
+
+  # --- theme_selector_enabled ---
+
+  test "theme_selector_enabled? returns true when configured" do
+    assert GraderConfiguration.theme_selector_enabled?
+    assert GraderConfiguration["gimmicks.theme_selector_enabled"]
+  end
+
+  test "theme_selector_enabled backward compatibility lookup" do
+    assert_equal GraderConfiguration["gimmicks.theme_selector_enabled"], GraderConfiguration["system.theme_selector_enabled"]
+  end
 end

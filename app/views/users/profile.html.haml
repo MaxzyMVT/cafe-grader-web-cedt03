@@ -59,11 +59,11 @@
             Preferences
           .text-secondary.small.mb-3 Defaults applied when you open a problem.
           = f.association :default_language, collection: Language.all, include_blank: '— No default language —'.html_safe, label: 'Default language'
-          - if GraderConfiguration['system.theme_selector_enabled']
+          - if GraderConfiguration.theme_selector_enabled?
             = f.input :theme, collection: User::THEMES.map { |t| [t.titleize, t] }, include_blank: false, label: 'UI Theme', hint: 'Choose your preferred visual theme for the grader interface.', input_html: { id: 'user_theme' }
 
       -# Theme Previews
-      - if GraderConfiguration['system.theme_selector_enabled']
+      - if GraderConfiguration.theme_selector_enabled?
         .card.shadow-sm.mb-4
           .card-body.p-4
             %h6.fw-bold.text-dark.mb-3.d-flex.align-items-center

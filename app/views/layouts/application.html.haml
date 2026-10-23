@@ -1,5 +1,5 @@
 - user_theme = (@current_user&.theme.presence || 'default')
-- user_theme = 'default' unless GraderConfiguration['system.theme_selector_enabled']
+- user_theme = 'default' unless GraderConfiguration.theme_selector_enabled?
 - user_theme = nil if user_theme == 'default'
 <!DOCTYPE html>
 %html{ 'data-theme': user_theme }

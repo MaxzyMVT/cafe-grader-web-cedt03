@@ -192,4 +192,11 @@ GraderConfiguration_32:
   value_type: boolean
   value: 'true'
 
+GraderConfiguration_theme_selector:
+  key: gimmicks.theme_selector_enabled
+  value_type: boolean
+  value: 'true'
+  description: If true, contestants can change their UI theme from the settings page. If false, all users see the default theme.
+
+
 
