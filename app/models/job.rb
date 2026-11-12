@@ -84,6 +84,37 @@ class Job < ApplicationRecord
     Job.where(parent_job_id: job.parent_job_id, job_type: :evaluate).where.not(status: [:success, :error]).count == 0
   end
 
+  MAX_RECLAIMS = 3
+
+  # A grader that dies (crash, kill -9, host reboot) while holding a job leaves it in "process"
+  # forever: take_oldest_waiting_job only ever picks "wait" jobs. Requeue such jobs, or fail them
+  # after MAX_RECLAIMS so a job that keeps killing graders cannot loop forever.
+  # A job is only touched when it has been untouched for +stale_after+ AND the grader process that
+  # took it has not sent a heartbeat for +stale_after+, so a slow but live grader is never robbed.
+  # Returns the number of jobs reclaimed.
+  def self.reclaim_stale_jobs(stale_after = 15.minutes)
+    cutoff = Time.zone.now - stale_after
+    reclaimed = 0
+    Job.where(status: :process).where('jobs.updated_at < ?', cutoff).includes(:grader_process).find_each do |job|
+      gp = job.grader_process
+      next if gp&.last_heartbeat && gp.last_heartbeat >= cutoff
+
+      job.with_lock do
+        next unless job.process? # another host's watchdog got there first
+
+        n = job.result.to_s[/reclaim (\d+)/, 1].to_i + 1
+        if n > MAX_RECLAIMS
+          job.update(status: :error, result: "gave up after #{MAX_RECLAIMS} reclaims: the grader holding it keeps dying")
+          Submission.find_by(id: job.arg)&.set_grading_error("Internal grading error, please rejudge.")
+        else
+          job.update(status: :wait, result: "reclaim #{n}: grader process died while holding this job")
+        end
+        reclaimed += 1
+      end
+    end
+    reclaimed
+  end
+
   # delete successful jobs older than x (errors are kept until admin clears them)
   def self.clean_old_job(x = 1.day)
     Job.where(status: :success).where('updated_at < ?', Time.zone.now - x).delete_all

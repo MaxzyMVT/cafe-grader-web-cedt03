@@ -61,4 +61,46 @@ class JobTest < ActiveSupport::TestCase
       Job.clean_old_job(1.day)
     end
   end
+
+  # --- reclaim_stale_jobs: a grader that died holding a job must not strand it in "process" ---
+
+  def stuck_job(heartbeat:, job_age:, result: nil)
+    gp = GraderProcess.create!(worker_id: 99, box_id: GraderProcess.maximum(:box_id).to_i + 1, enabled: true, last_heartbeat: heartbeat)
+    job = Job.create!(job_type: :evaluate, arg: submissions(:add1_by_admin).id, status: :process, grader_process: gp, result: result)
+    job.update_columns(updated_at: job_age)
+    job
+  end
+
+  test "reclaim_stale_jobs requeues a job whose grader has stopped heartbeating" do
+    job = stuck_job(heartbeat: 1.hour.ago, job_age: 1.hour.ago)
+    assert_equal 1, Job.reclaim_stale_jobs
+    assert job.reload.wait?
+    assert_match(/reclaim 1/, job.result)
+  end
+
+  test "reclaim_stale_jobs leaves a job alone while its grader is still alive" do
+    job = stuck_job(heartbeat: 1.minute.ago, job_age: 1.hour.ago)
+    assert_equal 0, Job.reclaim_stale_jobs
+    assert job.reload.process?
+  end
+
+  test "reclaim_stale_jobs leaves a recently claimed job alone even if the grader looks dead" do
+    job = stuck_job(heartbeat: 1.hour.ago, job_age: 1.minute.ago)
+    assert_equal 0, Job.reclaim_stale_jobs
+    assert job.reload.process?
+  end
+
+  test "reclaim_stale_jobs gives up after MAX_RECLAIMS and marks the submission as a grading error" do
+    job = stuck_job(heartbeat: 1.hour.ago, job_age: 1.hour.ago,
+                    result: "reclaim #{Job::MAX_RECLAIMS}: grader process died while holding this job")
+    assert_equal 1, Job.reclaim_stale_jobs
+    assert job.reload.error?
+    assert_equal "grader_error", submissions(:add1_by_admin).reload.status
+  end
+
+  test "reclaim_stale_jobs does not touch finished or waiting jobs" do
+    jobs(:job_waiting).update_columns(updated_at: 1.day.ago)
+    jobs(:job_success).update_columns(updated_at: 1.day.ago)
+    assert_equal 0, Job.reclaim_stale_jobs
+  end
 end

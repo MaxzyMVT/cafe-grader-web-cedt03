@@ -103,14 +103,22 @@ class Grader
           # we don't know how to process this job, report so
           @job.report({status: :error, result_description: 'grader does not have handler for this job_type'})
         end
-      rescue GraderError, ActiveRecord::RecordNotFound => ge
+      rescue ActiveRecord::RecordNotFound => nf
+        # The record this job points at (normally the submission) was deleted after the job was queued,
+        # so the job can never succeed. This used to share the GraderError clause below, but
+        # RecordNotFound has no #end_job, so that clause raised NoMethodError, killed the whole grader
+        # process and left this job stuck in "process" (worker 2 box 3, 2026-11-12). End the job instead.
+        judge_log Rainbow('(RecordNotFound)').bg(COLOR_ERROR).color(:yellow) + " #{nf.message}", Logger::ERROR
+        @job.update(status: :error, result: nf.message)
+      rescue GraderError => ge
         # When the job raise an error, log the error and set
         # the main comment to the error message (so that the user can see it)
         judge_log Rainbow('(GraderError)').bg(COLOR_ERROR).color(:yellow) + " " + ge.message, Logger::ERROR
         @job.update(status: :error, result: ge.message) if ge.end_job
         if ge.update_submission
-          s = Submission.find(ge.submission_id)
-          s.set_grading_error(ge.message_for_user)
+          # find_by: the submission may itself be gone, and raising here would kill the grader
+          s = Submission.find_by(id: ge.submission_id)
+          s&.set_grading_error(ge.message_for_user)
         end
       rescue => e
         judge_log Rainbow('(ERROR)').bg(COLOR_ERROR).color(:black) + " #{e.class}: #{e.message}", Logger::ERROR
@@ -204,7 +212,11 @@ class Grader
           stdout_file = Rails.configuration.worker[:directory][:grader_stdout_base_file] + gp.box_id.to_s + '.txt'
           cmd = "#{RbConfig.ruby} #{Rails.root.join('bin', 'rails')} runner \"Grader.start(#{gp.box_id},:#{server_key})\""
           Bundler.with_unbundled_env do
-            spawn(cmd, [:out, :err] => [stdout_file, 'a'], pgroup: true)
+            # RAILS_ENV has to be passed explicitly. This process was started by `rails runner -e production`,
+            # which does not export RAILS_ENV, so the child used to boot in development and die on
+            # `debug/prelude` (a dev-group gem excluded by BUNDLE_WITHOUT). The watchdog could therefore never
+            # restart a dead grader: box 3 on worker 2 failed this way every minute for 3+ hours.
+            spawn({'RAILS_ENV' => Rails.env.to_s}, cmd, [:out, :err] => [stdout_file, 'a'], pgroup: true)
           end
 
           puts "spawning new grader main loop with #{cmd}, redirecting :out,:err to #{stdout_file}"
@@ -223,6 +235,16 @@ class Grader
           end
         end
       end
+    end
+
+    # A grader that dies while holding a job leaves it in "process" forever (nothing else ever picks it
+    # up, and the submission shows as grading indefinitely). Put such jobs back in the queue. This runs
+    # on every host each minute, and must never break the respawn logic above.
+    begin
+      reclaimed = Job.reclaim_stale_jobs
+      puts "reclaimed #{reclaimed} stale job(s)" if reclaimed > 0
+    rescue => e
+      puts "reclaim_stale_jobs failed: #{e.class}: #{e.message}"
     end
   end
 
