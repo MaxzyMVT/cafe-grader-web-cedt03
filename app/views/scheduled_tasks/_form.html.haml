@@ -125,11 +125,11 @@
         %label.form-label.fw-semibold{for: 'scheduled_task_config_text_value'} New Value
         %input#scheduled_task_config_text_value.form-control.font-monospace{type: 'text', name: 'scheduled_task[config_text_value]', value: selected_conf_text, placeholder: 'Enter target value...', data: { 'scheduled-task-form-target': 'configTextInput' }}
 
-    -# Payload: Announcement Group
+    -# Payload: Target Group (for Announcement, Problem, or User)
     .col-12.d-none{data: { 'scheduled-task-form-target': 'announcementGroupSection' }}
       %label.form-label.fw-semibold{for: 'scheduled_task_announcement_group_id'} Set Group To
       %select#scheduled_task_announcement_group_id.form-select.select2{name: 'scheduled_task[announcement_group_id]'}
-        %option{value: '', selected: selected_ann_group_id.nil?} Public (All users)
+        %option{value: '', selected: selected_ann_group_id.nil?} Public / None (No group)
         - @groups.each do |group|
           - status_label = group.enabled? ? 'Enabled' : 'Disabled'
           %option{value: group.id, selected: selected_ann_group_id == group.id}

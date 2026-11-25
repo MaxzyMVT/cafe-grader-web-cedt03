@@ -235,7 +235,7 @@ class ScheduledTask < ApplicationRecord
       description: 'Change an announcement\'s target group (or set to Public for everyone).',
       icon: 'group_work',
       target_type: 'Announcement',
-      payload_kind: :announcement_group
+      payload_kind: :target_group
     },
 
     # --- Problem ---
@@ -287,6 +287,14 @@ class ScheduledTask < ApplicationRecord
       target_type: 'Problem',
       payload_kind: nil
     },
+    'set_problem_group' => {
+      category: 'problem',
+      label: 'Set Problem Group',
+      description: 'Set a problem\'s group membership (or Public / no group).',
+      icon: 'group_work',
+      target_type: 'Problem',
+      payload_kind: :target_group
+    },
 
     # --- User ---
     'enable_user' => {
@@ -312,6 +320,14 @@ class ScheduledTask < ApplicationRecord
       icon: 'lock_reset',
       target_type: 'User',
       payload_kind: nil
+    },
+    'set_user_group' => {
+      category: 'user',
+      label: 'Set User Group',
+      description: 'Set a user\'s group membership (or clear all groups).',
+      icon: 'group_work',
+      target_type: 'User',
+      payload_kind: :target_group
     }
   }.freeze
 
@@ -396,9 +412,9 @@ class ScheduledTask < ApplicationRecord
     when :config_value
       val = payload_hash['value']
       parts << "= #{val}" unless val.nil?
-    when :announcement_group
+    when :target_group
       gid = payload_hash['group_id'].presence
-      group_label = gid ? (Group.find_by(id: gid)&.name || "Group ##{gid}") : 'Public'
+      group_label = gid ? (Group.find_by(id: gid)&.name || "Group ##{gid}") : 'Public / None'
       parts << "-> #{group_label}"
     end
     parts.join(': ')
@@ -490,7 +506,7 @@ class ScheduledTask < ApplicationRecord
       self.payload = { 'mode' => raw_payload['mode'].to_s.strip }
     when :config_value
       self.payload = { 'value' => raw_payload['value'].to_s }
-    when :announcement_group
+    when :target_group
       self.payload = { 'group_id' => raw_payload['group_id'].presence&.to_i }
     else
       self.payload = {}
@@ -533,7 +549,7 @@ class ScheduledTask < ApplicationRecord
       elsif conf.is_a?(GraderConfiguration) && conf.value_type == 'integer' && !val.match?(/\A-?\d+\z/)
         errors.add(:payload, 'integer configuration value must be a valid integer')
       end
-    when :announcement_group
+    when :target_group
       gid = payload_hash['group_id'].presence
       if gid && !Group.exists?(id: gid)
         errors.add(:payload, "group ##{gid} was not found")
@@ -712,6 +728,28 @@ class ScheduledTask < ApplicationRecord
       prob = require_target!(Problem)
       prob.update!(view_testcase: false)
       "Disabled view_testcase on problem \"#{prob.name}\"."
+    when 'set_problem_group'
+      prob = require_target!(Problem)
+      new_group_id = payload_hash['group_id'].presence&.to_i
+      new_group = new_group_id ? Group.find(new_group_id) : nil
+      old_group_ids = GroupProblem.where(problem_id: prob.id).pluck(:group_id)
+      ActiveRecord::Base.transaction do
+        if new_group
+          GroupProblem.where(problem_id: prob.id).where.not(group_id: new_group.id).delete_all
+          gp = GroupProblem.find_or_initialize_by(problem_id: prob.id, group_id: new_group.id)
+          gp.enabled = true
+          gp.save!
+        else
+          GroupProblem.where(problem_id: prob.id).delete_all
+        end
+      end
+      AuditLog.record!(
+        auditable: prob,
+        action: 'scheduled_set_group',
+        object_changes: { 'group_ids' => [old_group_ids, new_group ? [new_group.id] : []] }
+      )
+      target_label = new_group ? "group \"#{new_group.name}\"" : 'Public (no group)'
+      "Set problem \"#{prob.name}\" to #{target_label}."
     when 'enable_user'
       user = require_target!(User)
       user.update!(enabled: true)
@@ -726,6 +764,28 @@ class ScheduledTask < ApplicationRecord
       user = require_target!(User)
       user.update!(last_ip: nil)
       "Cleared session lock for user \"#{user.login}\"."
+    when 'set_user_group'
+      user = require_target!(User)
+      new_group_id = payload_hash['group_id'].presence&.to_i
+      new_group = new_group_id ? Group.find(new_group_id) : nil
+      old_group_ids = GroupUser.where(user_id: user.id).pluck(:group_id)
+      ActiveRecord::Base.transaction do
+        if new_group
+          GroupUser.where(user_id: user.id).where.not(group_id: new_group.id).delete_all
+          gu = GroupUser.find_or_initialize_by(user_id: user.id, group_id: new_group.id)
+          gu.enabled = true
+          gu.save!
+        else
+          GroupUser.where(user_id: user.id).delete_all
+        end
+      end
+      AuditLog.record!(
+        auditable: user,
+        action: 'scheduled_set_group',
+        object_changes: { 'group_ids' => [old_group_ids, new_group ? [new_group.id] : []] }
+      )
+      target_label = new_group ? "group \"#{new_group.name}\"" : 'None (no group)'
+      "Set user \"#{user.login}\" to #{target_label}."
     else
       raise "Unsupported action_type: #{action_type}"
     end

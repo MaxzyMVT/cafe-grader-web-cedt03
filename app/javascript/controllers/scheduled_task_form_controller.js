@@ -95,7 +95,7 @@ export default class extends Controller {
     }
 
     if (this.hasAnnouncementGroupSectionTarget) {
-      const showAnnGroup = payloadKind === "announcement_group"
+      const showAnnGroup = payloadKind === "target_group"
       this.announcementGroupSectionTarget.classList.toggle("d-none", !showAnnGroup)
       this.announcementGroupSectionTarget.querySelectorAll("select, input").forEach((field) => {
         field.disabled = !showAnnGroup

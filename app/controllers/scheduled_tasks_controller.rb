@@ -157,7 +157,7 @@ class ScheduledTasksController < ApplicationController
                          else
                            p[:config_text_value].to_s
                          end
-    when :announcement_group
+    when :target_group
       payload['group_id'] = p[:announcement_group_id].presence&.to_i
     end
 

@@ -125,4 +125,51 @@ class ScheduledTaskTest < ActiveSupport::TestCase
     assert task_to_public.execute!
     assert_nil ann.reload.group_id
   end
+
+  test "set_problem_group and set_user_group update group memberships" do
+    prob = problems(:prob_add)
+    user = users(:john)
+    g1 = Group.create!(name: "sched_grp_1", enabled: true)
+    g2 = Group.create!(name: "sched_grp_2", enabled: true)
+
+    t_prob = ScheduledTask.create!(
+      action_type: "set_problem_group",
+      target_id: prob.id,
+      payload: { "group_id" => g1.id },
+      scheduled_at: 1.minute.ago,
+      created_by: users(:admin)
+    )
+    assert t_prob.execute!
+    assert_equal [g1.id], GroupProblem.where(problem_id: prob.id).pluck(:group_id)
+
+    t_prob_clear = ScheduledTask.create!(
+      action_type: "set_problem_group",
+      target_id: prob.id,
+      payload: { "group_id" => nil },
+      scheduled_at: 1.minute.ago,
+      created_by: users(:admin)
+    )
+    assert t_prob_clear.execute!
+    assert_empty GroupProblem.where(problem_id: prob.id)
+
+    t_user = ScheduledTask.create!(
+      action_type: "set_user_group",
+      target_id: user.id,
+      payload: { "group_id" => g2.id },
+      scheduled_at: 1.minute.ago,
+      created_by: users(:admin)
+    )
+    assert t_user.execute!
+    assert_equal [g2.id], GroupUser.where(user_id: user.id).pluck(:group_id)
+
+    t_user_clear = ScheduledTask.create!(
+      action_type: "set_user_group",
+      target_id: user.id,
+      payload: { "group_id" => nil },
+      scheduled_at: 1.minute.ago,
+      created_by: users(:admin)
+    )
+    assert t_user_clear.execute!
+    assert_empty GroupUser.where(user_id: user.id)
+  end
 end
