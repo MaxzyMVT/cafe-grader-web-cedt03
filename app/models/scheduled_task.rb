@@ -512,6 +512,8 @@ class ScheduledTask < ApplicationRecord
       val = payload_hash['value']
       if val.blank?
         errors.add(:payload, 'configuration value cannot be blank')
+      elsif conf.is_a?(GraderConfiguration) && GraderConfiguration.gimmick_key?(conf.key) && conf.value_type == 'string' && !GraderConfiguration::GIMMICK_STATES.include?(val)
+        errors.add(:payload, "gimmick configuration value must be one of: #{GraderConfiguration::GIMMICK_STATES.join(', ')}")
       elsif conf.is_a?(GraderConfiguration) && conf.value_type == 'boolean' && !%w[true false].include?(val)
         errors.add(:payload, 'boolean configuration value must be true or false')
       elsif conf.is_a?(GraderConfiguration) && conf.value_type == 'integer' && !val.match?(/\A-?\d+\z/)

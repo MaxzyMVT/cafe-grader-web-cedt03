@@ -27,8 +27,10 @@ class ConfigurationsControllerTest < ActionDispatch::IntegrationTest
     get grader_configuration_index_path
     assert_response :success
     assert_select ".card[data-group='gimmicks']" do
-      assert_select ".config-item[data-key='gimmicks.theme_selector_enabled']"
+      assert_select ".config-item[data-key='gimmicks.theme_selector_enabled'] .gimmick-state-group"
     end
+    assert_select ".config-item[data-key='system.scoreboard_enabled'] .gimmick-state-group"
+    assert_select ".config-item[data-key='right.user_hall_of_fame'] .gimmick-state-group"
     assert_select ".card[data-group='system']" do
       assert_select ".config-subgroup-header", minimum: 4
       assert_select ".config-subgroup-header", text: /Mode & Access Control/
@@ -76,6 +78,18 @@ class ConfigurationsControllerTest < ActionDispatch::IntegrationTest
     post clear_user_ip_grader_configuration_index_path, as: :turbo_stream
     assert_response :success
     assert_nil users(:john).reload.last_ip
+  end
+
+  test "admin can update 3-state gimmick, scoreboard, and hall of fame configs" do
+    sign_in_as("admin", "admin")
+    %w[gimmicks.enable_bonus system.scoreboard_enabled right.user_hall_of_fame].each do |key|
+      config = GraderConfiguration.find_by!(key: key)
+      patch grader_configuration_path(config), params: {
+        grader_configuration: { value: "outside_contest" }
+      }, as: :turbo_stream
+      assert_response :success
+      assert_equal "outside_contest", config.reload.value
+    end
   end
 
   test "admin can set exam right which cascades to system mode" do

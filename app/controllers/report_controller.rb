@@ -1005,7 +1005,7 @@ ORDER BY submitted_at
 
     def hall_of_fame_authorization
       return true if @current_user.admin?
-      unauthorized_redirect(msg: 'Hall of fame is disabled') unless GraderConfiguration["right.user_hall_of_fame"]
+      unauthorized_redirect(msg: 'Hall of fame is disabled') unless GraderConfiguration.hall_of_fame_enabled?
     end
 
     def set_problem

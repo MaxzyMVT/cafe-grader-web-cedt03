@@ -124,7 +124,7 @@ class ScheduledTasksController < ApplicationController
     params.require(:scheduled_task).permit(
       :title, :action_type, :scheduled_at,
       :contest_id, :group_id, :problem_id, :announcement_id, :user_id, :configuration_id,
-      :system_mode, :config_boolean_value, :config_text_value
+      :system_mode, :config_boolean_value, :config_gimmick_value, :config_text_value
     )
   end
 
@@ -149,7 +149,9 @@ class ScheduledTasksController < ApplicationController
       payload['mode'] = p[:system_mode].to_s
     when :config_value
       conf = GraderConfiguration.find_by(id: target_id)
-      payload['value'] = if conf&.value_type == 'boolean'
+      payload['value'] = if conf && GraderConfiguration.gimmick_key?(conf.key) && conf.value_type == 'string'
+                           p[:config_gimmick_value].to_s
+                         elsif conf&.value_type == 'boolean'
                            p[:config_boolean_value].to_s
                          else
                            p[:config_text_value].to_s

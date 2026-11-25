@@ -9,9 +9,9 @@ CONFIGURATIONS =
 
    {
      key: 'system.scoreboard_enabled',
-     value_type: 'boolean',
-     default_value: 'true',
-     description: 'Enable the Real-time Score Board feature'
+     value_type: 'string',
+     default_value: 'always_on',
+     description: 'Enable the Real-time Scoreboard (Always on, Outside contest, or Off).'
    },
 
    {
@@ -51,37 +51,37 @@ CONFIGURATIONS =
 
     {
       key: 'gimmicks.enable_all_hints',
-      value_type: 'boolean',
-      default_value: 'false',
-      description: "If true, users can view all hints even if they haven't unlocked them with points."
+      value_type: 'string',
+      default_value: 'off',
+      description: "Allow users to view all hints even if they haven't unlocked them with points."
     },
 
     {
       key: 'gimmicks.enable_penalty',
-      value_type: 'boolean',
-      default_value: 'true',
-      description: 'If true, the scoreboard will show scores with deductions (penalties).'
+      value_type: 'string',
+      default_value: 'always_on',
+      description: 'Show scores with deductions (penalties) on scoreboard and reports.'
     },
 
     {
       key: 'gimmicks.enable_bonus',
-      value_type: 'boolean',
-      default_value: 'true',
-      description: 'If true, the scoreboard and header will calculate and show bonus points.'
+      value_type: 'string',
+      default_value: 'always_on',
+      description: 'Calculate and show bonus points on scoreboard and header.'
     },
 
     {
       key: 'gimmicks.enable_first_bloods',
-      value_type: 'boolean',
-      default_value: 'true',
-      description: 'Enable/Disable First Bloods globally'
+      value_type: 'string',
+      default_value: 'always_on',
+      description: 'Enable First Blood bonuses and indicators globally.'
     },
 
     {
       key: 'gimmicks.enable_submission_limits',
-      value_type: 'boolean',
-      default_value: 'true',
-      description: 'Enable/Disable Submission Limits globally'
+      value_type: 'string',
+      default_value: 'always_on',
+      description: 'Enable submission limits globally.'
     },
 
    {
@@ -141,9 +141,9 @@ CONFIGURATIONS =
    #---------------------------- right --------------------------------
    {
      key: 'right.user_hall_of_fame',
-     value_type: 'boolean',
-     default_value: 'false',
-     description: 'If true, any user can access hall of fame page.'
+     value_type: 'string',
+     default_value: 'outside_contest',
+     description: 'Allow users to access the Hall of Fame page (Always on, Outside contest, or Off).'
    },
 
    {
@@ -290,16 +290,16 @@ CONFIGURATIONS =
     #---------------------------- gimmicks --------------------------------
     {
       key: 'gimmicks.show_user_points',
-      value_type: 'boolean',
-      default_value: 'true',
-      description: 'If true, shows the total user points on the top menu bar.'
+      value_type: 'string',
+      default_value: 'always_on',
+      description: 'Show the total user points badge on the top navigation bar.'
     },
 
     {
       key: 'gimmicks.theme_selector_enabled',
-      value_type: 'boolean',
-      default_value: 'true',
-      description: 'If true, contestants can change their UI theme from the settings page. If false, all users see the default theme.'
+      value_type: 'string',
+      default_value: 'always_on',
+      description: 'Allow users to change their UI theme from the settings page.'
     },
 
   ]

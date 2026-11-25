@@ -39,6 +39,11 @@ class ConfigurationsController < ApplicationController
       if @config.update(configuration_params)
         format.json { head :ok }
         format.turbo_stream
+        format.html { redirect_to grader_configuration_index_path }
+      else
+        format.json { render json: @config.errors, status: :unprocessable_entity }
+        format.turbo_stream { render :edit, status: :unprocessable_entity }
+        format.html { redirect_to grader_configuration_index_path, alert: @config.errors.full_messages.to_sentence }
       end
     end
   end

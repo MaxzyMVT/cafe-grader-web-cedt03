@@ -1,4 +1,10 @@
 module ConfigurationsHelper
+  GIMMICK_STATE_OPTIONS = [
+    ['Always on', 'always_on'],
+    ['Outside contest', 'outside_contest'],
+    ['Off', 'off']
+  ].freeze
+
   DYNAMIC_DESCRIPTIONS = {
     'system.mode' => {
       'base' => 'Determines the operation mode of the system.',
@@ -76,6 +82,21 @@ module ConfigurationsHelper
     base = cfg['base']
     choice_desc = cfg['choices'][current_value] || current_value
     "#{base} Currently: #{choice_desc}"
+  end
+
+  def gimmick_state_for(conf)
+    GraderConfiguration.normalize_gimmick_state(conf.value)
+  end
+
+  def gimmick_button_class(current_state, button_state)
+    base = 'btn btn-sm gimmick-state-btn'
+    return "#{base} btn-outline-secondary" unless current_state == button_state
+
+    case button_state
+    when 'always_on' then "#{base} btn-success active"
+    when 'outside_contest' then "#{base} btn-primary active"
+    else "#{base} btn-secondary active"
+    end
   end
 
   def config_group_for(conf)

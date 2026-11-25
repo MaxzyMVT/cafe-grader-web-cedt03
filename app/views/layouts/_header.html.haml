@@ -16,9 +16,9 @@
                 = "#{I18n.t 'menu.submissions'}"
               %ul.dropdown-menu
                 %li= link_to 'View', submissions_path, class: 'dropdown-item '+active_class_when(controller: :submissions)
-          - if GraderConfiguration['right.user_hall_of_fame']
+          - if GraderConfiguration.hall_of_fame_enabled?
             %li.nav-item= link_to "#{I18n.t 'menu.hall_of_fame'}", problem_hof_report_path, class: 'nav-link mx-2'+active_class_when(controller: :report, action: :problem_hof)
-          - if GraderConfiguration['system.scoreboard_enabled']
+          - if GraderConfiguration.scoreboard_enabled?
             - level = GraderConfiguration['system.scoreboard_view_level'] || 'user'
             - if level == 'all' || level == 'public' || (level == 'user' && @current_user) || (level == 'admin' && (@current_user&.admin? || @current_user&.problem_setter?))
               %li.nav-item= link_to "Scoreboard", scoreboard_path, class: 'nav-link mx-2'+active_class_when(controller: :scoreboard)
@@ -82,6 +82,7 @@
             %li.nav-item.d-flex.align-items-center
               %a.nav-link.link-flex{href: profile_users_path, 'data-user-id': @current_user.id}
                 %span.mi.md-18 settings
+          - if GraderConfiguration.show_user_points? && @current_user
             %li.nav-item.d-flex.align-items-center.mx-2
               %span.badge.bg-success.rounded-pill.d-inline-flex.align-items-center.gap-2.px-3{style: 'height: 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);'}
                 %span.mi.md-18{style: 'line-height: 1; color: inherit !important;'} stars
@@ -119,9 +120,9 @@
           %a.nav-link.d-flex.align-items-center.gap-2{ href: submissions_path }
             %span.mi.md-18 assignment
             = I18n.t 'menu.submissions'
-      - if GraderConfiguration['right.user_hall_of_fame']
+      - if GraderConfiguration.hall_of_fame_enabled?
         %li.nav-item= link_to "#{I18n.t 'menu.hall_of_fame'}", problem_hof_report_path, class: 'nav-link d-flex align-items-center gap-2 '+active_class_when(controller: :report, action: :problem_hof)
-      - if GraderConfiguration['system.scoreboard_enabled']
+      - if GraderConfiguration.scoreboard_enabled?
         - level = GraderConfiguration['system.scoreboard_view_level'] || 'user'
         - if level == 'all' || level == 'public' || (level == 'user' && @current_user) || (level == 'admin' && (@current_user&.admin? || @current_user&.problem_setter?))
           %li.nav-item= link_to "Scoreboard", scoreboard_path, class: 'nav-link d-flex align-items-center gap-2 '+active_class_when(controller: :scoreboard)
@@ -169,6 +170,7 @@
           %a.nav-link.d-flex.align-items-center.gap-2{href: profile_users_path}
             %span.mi.md-18 settings
             Settings
+      - if GraderConfiguration.show_user_points? && @current_user
         %li.nav-item.px-2.py-1
           %span.badge.bg-success.rounded-pill.d-inline-flex.align-items-center.gap-2.px-3{style: 'height: 32px;'}
             %span.mi.md-18{style: 'line-height: 1; color: inherit !important;'} stars

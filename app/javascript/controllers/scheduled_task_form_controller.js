@@ -19,8 +19,10 @@ export default class extends Controller {
     "configCurrentValue",
     "configDescription",
     "configBooleanWrapper",
+    "configGimmickWrapper",
     "configTextWrapper",
     "configBooleanInput",
+    "configGimmickInput",
     "configTextInput",
     "scheduledAtInput",
     "serverClock"
@@ -109,18 +111,27 @@ export default class extends Controller {
       this.configDescriptionTarget.textContent = meta.description || ""
     }
 
-    const isBoolean = meta && meta.value_type === "boolean"
+    const isGimmick = Boolean(meta && meta.is_gimmick)
+    const isBoolean = Boolean(meta && !isGimmick && meta.value_type === "boolean")
+    const isText = !isGimmick && !isBoolean
+
     if (this.hasConfigBooleanWrapperTarget) {
       this.configBooleanWrapperTarget.classList.toggle("d-none", !isBoolean)
     }
+    if (this.hasConfigGimmickWrapperTarget) {
+      this.configGimmickWrapperTarget.classList.toggle("d-none", !isGimmick)
+    }
     if (this.hasConfigTextWrapperTarget) {
-      this.configTextWrapperTarget.classList.toggle("d-none", isBoolean)
+      this.configTextWrapperTarget.classList.toggle("d-none", !isText)
     }
     if (this.hasConfigBooleanInputTarget) {
       this.configBooleanInputTarget.disabled = !isBoolean
     }
+    if (this.hasConfigGimmickInputTarget) {
+      this.configGimmickInputTarget.disabled = !isGimmick
+    }
     if (this.hasConfigTextInputTarget) {
-      this.configTextInputTarget.disabled = isBoolean
+      this.configTextInputTarget.disabled = !isText
     }
   }
 

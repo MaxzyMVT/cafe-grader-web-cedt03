@@ -87,4 +87,52 @@ class GraderConfigurationTest < ActiveSupport::TestCase
   test "theme_selector_enabled backward compatibility lookup" do
     assert_equal GraderConfiguration["gimmicks.theme_selector_enabled"], GraderConfiguration["system.theme_selector_enabled"]
   end
+
+  # --- 3-state configs (gimmicks, scoreboard, hall of fame) ---
+
+  test "gimmicks 3-state: always_on, outside_contest, and off behave properly across modes" do
+    set_grader_config("gimmicks.enable_bonus", "always_on")
+    set_grader_config("system.mode", "standard")
+    assert GraderConfiguration.enable_bonus?
+    set_grader_config("system.mode", "contest")
+    assert GraderConfiguration.enable_bonus?
+
+    set_grader_config("gimmicks.enable_bonus", "outside_contest")
+    set_grader_config("system.mode", "standard")
+    assert GraderConfiguration.enable_bonus?
+    set_grader_config("system.mode", "analysis")
+    assert GraderConfiguration.enable_bonus?
+    set_grader_config("system.mode", "contest")
+    assert_not GraderConfiguration.enable_bonus?
+    set_grader_config("system.mode", "indv-contest")
+    assert_not GraderConfiguration.enable_bonus?
+
+    set_grader_config("gimmicks.enable_bonus", "off")
+    set_grader_config("system.mode", "standard")
+    assert_not GraderConfiguration.enable_bonus?
+  end
+
+  test "scoreboard_enabled? and hall_of_fame_enabled? support 3 states" do
+    set_grader_config("system.scoreboard_enabled", "outside_contest")
+    set_grader_config("right.user_hall_of_fame", "outside_contest")
+
+    set_grader_config("system.mode", "standard")
+    assert GraderConfiguration.scoreboard_enabled?
+    assert GraderConfiguration.hall_of_fame_enabled?
+
+    set_grader_config("system.mode", "contest")
+    assert_not GraderConfiguration.scoreboard_enabled?
+    assert_not GraderConfiguration.hall_of_fame_enabled?
+
+    set_grader_config("system.scoreboard_enabled", "always_on")
+    set_grader_config("right.user_hall_of_fame", "always_on")
+    assert GraderConfiguration.scoreboard_enabled?
+    assert GraderConfiguration.hall_of_fame_enabled?
+
+    set_grader_config("system.scoreboard_enabled", "off")
+    set_grader_config("right.user_hall_of_fame", "off")
+    set_grader_config("system.mode", "standard")
+    assert_not GraderConfiguration.scoreboard_enabled?
+    assert_not GraderConfiguration.hall_of_fame_enabled?
+  end
 end

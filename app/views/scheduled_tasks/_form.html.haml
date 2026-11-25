@@ -4,6 +4,7 @@
 - current_payload = @scheduled_task.payload_hash
 - selected_mode = current_payload['mode'].presence || 'contest'
 - selected_conf_bool = current_payload['value'].presence || 'true'
+- selected_conf_gimmick = GraderConfiguration::GIMMICK_STATES.include?(current_payload['value']) ? current_payload['value'] : 'always_on'
 - selected_conf_text = current_payload['value'].to_s
 - formatted_scheduled_at = (@scheduled_task.scheduled_at || 10.minutes.from_now.change(sec: 0)).in_time_zone.strftime('%Y-%m-%dT%H:%M')
 
@@ -111,6 +112,13 @@
         %select#scheduled_task_config_boolean_value.form-select{name: 'scheduled_task[config_boolean_value]', data: { 'scheduled-task-form-target': 'configBooleanInput' }}
           %option{value: 'true', selected: selected_conf_bool == 'true'} true (Enable / On)
           %option{value: 'false', selected: selected_conf_bool == 'false'} false (Disable / Off)
+
+      .d-none{data: { 'scheduled-task-form-target': 'configGimmickWrapper' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_config_gimmick_value'} New Value
+        %select#scheduled_task_config_gimmick_value.form-select{name: 'scheduled_task[config_gimmick_value]', data: { 'scheduled-task-form-target': 'configGimmickInput' }}
+          %option{value: 'always_on', selected: selected_conf_gimmick == 'always_on'} Always on
+          %option{value: 'outside_contest', selected: selected_conf_gimmick == 'outside_contest'} Outside contest
+          %option{value: 'off', selected: selected_conf_gimmick == 'off'} Off
 
       .d-none{data: { 'scheduled-task-form-target': 'configTextWrapper' }}
         %label.form-label.fw-semibold{for: 'scheduled_task_config_text_value'} New Value

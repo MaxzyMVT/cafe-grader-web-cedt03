@@ -1,4 +1,5 @@
 = turbo_frame_tag dom_id(conf,"config"), class: 'w-100' do
+  - is_gimmick = GraderConfiguration.gimmick_key?(conf.key)
   .config-main
     .config-info
       %span.config-key= conf.key
@@ -7,9 +8,32 @@
           = dynamic_description_for(conf.key, conf.value)
         - else
           = conf.description
-      %span.badge.bg-body-tertiary.text-secondary=conf.value_type.upcase
+      - if is_gimmick
+        - g_state = gimmick_state_for(conf)
+        - g_active = GraderConfiguration.gimmick_active?(conf.key)
+        .d-flex.flex-wrap.align-items-center.gap-1.mt-1
+          %span.badge.bg-body-tertiary.text-secondary 3-STATE
+          - if g_state == 'outside_contest'
+            - if g_active
+              %span.badge.bg-success-subtle.text-success.border.border-success-subtle Active (non-contest)
+            - else
+              %span.badge.bg-warning-subtle.text-warning-emphasis.border.border-warning-subtle Paused in contest
+      - else
+        %span.badge.bg-body-tertiary.text-secondary= conf.value_type.upcase
     .config-value-wrapper
-      - if conf.value_type.downcase == 'boolean'
+      - if is_gimmick
+        - g_state = gimmick_state_for(conf)
+        .d-flex.align-items-center.gap-1.flex-wrap.justify-content-end
+          .btn-group.btn-group-sm.gimmick-state-group{role: 'group', 'aria-label': "State for #{conf.key}"}
+            - ConfigurationsHelper::GIMMICK_STATE_OPTIONS.each do |label, state_val|
+              = link_to label,
+                grader_configuration_path(conf, grader_configuration: { value: state_val }),
+                class: gimmick_button_class(g_state, state_val),
+                data: { turbo: true, 'turbo-method': :patch },
+                aria: { pressed: (g_state == state_val).to_s }
+          = link_to audit_logs_path(auditable_type: 'GraderConfiguration', auditable_id: conf.id), class: 'edit-link', title: 'Change history', data: { turbo_frame: '_top' } do
+            %span.mi.md-18 history
+      - elsif conf.value_type.downcase == 'boolean'
         .form-check.form-switch
           %a{href: toggle_grader_configuration_path(conf), 'data-turbo': "true", 'data-turbo-method': :patch}
             %input.form-check-input{id: dom_id(conf,"config_switch"), type: :checkbox, checked: conf.value.downcase == 'true'}
@@ -17,5 +41,5 @@
         %span.config-value-text= conf.value.presence || '-'
         = link_to edit_grader_configuration_path(conf), class: 'edit-link', data: {turbo: "true"} do
           %span.mi.md-18 edit
-        = link_to audit_logs_path(auditable_type: 'GraderConfiguration', auditable_id: conf.id), class: 'edit-link', title: 'Change history' do
+        = link_to audit_logs_path(auditable_type: 'GraderConfiguration', auditable_id: conf.id), class: 'edit-link', title: 'Change history', data: { turbo_frame: '_top' } do
           %span.mi.md-18 history

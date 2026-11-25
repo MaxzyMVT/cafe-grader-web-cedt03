@@ -11,7 +11,9 @@
         %span.badge.bg-body-tertiary.text-secondary=@config.value_type.upcase
       .config-value-wrapper.d-flex.align-items-center.gap-2
         - choices = nil
-        - if @config.key == 'system.mode'
+        - if GraderConfiguration.gimmick_key?(@config.key)
+          - choices = ConfigurationsHelper::GIMMICK_STATE_OPTIONS
+        - elsif @config.key == 'system.mode'
           - choices = [['Standard', 'standard'], ['Contest', 'contest'], ['Individual Contest', 'indv-contest'], ['Analysis', 'analysis']]
         - elsif @config.key == 'system.group_score_type'
           - choices = [['Group Sum', 'group_sum'], ['Group Max', 'group_max']]

@@ -23,12 +23,53 @@ class GraderConfiguration < ApplicationRecord
   SYSTEM_USE_PROBLEM_GROUP = 'system.use_problem_group'
   SYSTEM_MINIMUM_LAST_LOGIN_TIME = 'system.min_last_login_time'
   SYSTEM_MESSAGE_ENABLED = 'system.message_enabled'
+  SYSTEM_SCOREBOARD_ENABLED = 'system.scoreboard_enabled'
+  RIGHT_USER_HALL_OF_FAME = 'right.user_hall_of_fame'
   HINT_ENABLE_ALL_HINTS = 'gimmicks.enable_all_hints'
   SYSTEM_ENABLE_PENALTY = 'gimmicks.enable_penalty'
   SYSTEM_ENABLE_BONUS = 'gimmicks.enable_bonus'
   GIMMICKS_ENABLE_FIRST_BLOODS = 'gimmicks.enable_first_bloods'
   GIMMICKS_ENABLE_SUBMISSION_LIMITS = 'gimmicks.enable_submission_limits'
+  GIMMICKS_SHOW_USER_POINTS = 'gimmicks.show_user_points'
   THEME_SELECTOR_ENABLED = 'gimmicks.theme_selector_enabled'
+
+  GIMMICK_STATES = %w[always_on outside_contest off].freeze
+  THREE_STATE_EXTRA_KEYS = [
+    SYSTEM_SCOREBOARD_ENABLED,
+    RIGHT_USER_HALL_OF_FAME,
+    'system.theme_selector_enabled'
+  ].freeze
+
+  before_validation :normalize_gimmick_value
+  validates :value, inclusion: { in: GIMMICK_STATES },
+                    if: -> { GraderConfiguration.gimmick_key?(key) && value_type.to_s.downcase == 'string' }
+
+  def self.gimmick_key?(key)
+    k = key.to_s
+    k.start_with?('gimmicks.') || THREE_STATE_EXTRA_KEYS.include?(k)
+  end
+
+  def self.normalize_gimmick_state(val)
+    case val
+    when true, 'true', 'always_on'
+      'always_on'
+    when 'outside_contest'
+      'outside_contest'
+    else
+      'off'
+    end
+  end
+
+  def self.gimmick_active?(key)
+    case normalize_gimmick_state(get(key))
+    when 'always_on'
+      true
+    when 'outside_contest'
+      !time_limit_mode?
+    else
+      false
+    end
+  end
 
 
   # class_attribute :config_cache
@@ -58,7 +99,7 @@ class GraderConfiguration < ApplicationRecord
   end
 
   def self.theme_selector_enabled?
-    get(THEME_SELECTOR_ENABLED) == true
+    gimmick_active?(THEME_SELECTOR_ENABLED)
   end
 
   def self.minimum_last_login_time
@@ -159,23 +200,37 @@ class GraderConfiguration < ApplicationRecord
   end
 
   def self.enable_all_hints?
-    get(HINT_ENABLE_ALL_HINTS) == true
+    gimmick_active?(HINT_ENABLE_ALL_HINTS)
   end
 
   def self.enable_penalty?
-    get(SYSTEM_ENABLE_PENALTY) == true
+    gimmick_active?(SYSTEM_ENABLE_PENALTY)
   end
 
   def self.enable_bonus?
-    get(SYSTEM_ENABLE_BONUS) == true
+    gimmick_active?(SYSTEM_ENABLE_BONUS)
   end
 
   def self.show_first_bloods?
-    get(GIMMICKS_ENABLE_FIRST_BLOODS) == true
+    gimmick_active?(GIMMICKS_ENABLE_FIRST_BLOODS)
   end
 
   def self.show_submission_limits?
-    get(GIMMICKS_ENABLE_SUBMISSION_LIMITS) == true
+    gimmick_active?(GIMMICKS_ENABLE_SUBMISSION_LIMITS)
+  end
+
+  def self.show_user_points?
+    val = get(GIMMICKS_SHOW_USER_POINTS)
+    return true if val.nil?
+    gimmick_active?(GIMMICKS_SHOW_USER_POINTS)
+  end
+
+  def self.scoreboard_enabled?
+    gimmick_active?(SYSTEM_SCOREBOARD_ENABLED)
+  end
+
+  def self.hall_of_fame_enabled?
+    gimmick_active?(RIGHT_USER_HALL_OF_FAME)
   end
 
   def self.contest_time_limit
@@ -204,7 +259,7 @@ class GraderConfiguration < ApplicationRecord
 
     GraderConfiguration.where(key: "right.bypass_agreement").update(value: value)
     GraderConfiguration.where(key: "right.multiple_ip_login").update(value: value)
-    GraderConfiguration.where(key: "right.user_hall_of_fame").update(value: value)
+    # right.user_hall_of_fame uses 3-state (always_on / outside_contest / off) and adapts automatically
     GraderConfiguration.where(key: "right.user_view_submission").update(value: value)
     GraderConfiguration.where(key: "right.view_testcase").update(value: value)
 
@@ -212,6 +267,16 @@ class GraderConfiguration < ApplicationRecord
   end
 
   protected
+
+  def normalize_gimmick_value
+    return unless GraderConfiguration.gimmick_key?(key) && value_type.to_s.downcase == 'string'
+    case value.to_s.downcase
+    when 'true'
+      self.value = 'always_on'
+    when 'false'
+      self.value = 'off'
+    end
+  end
 
   def self.convert_type(val, type)
     case type

@@ -72,7 +72,8 @@ module ScheduledTasksHelper
         key: conf.key,
         value_type: conf.value_type,
         value: conf.value,
-        description: conf.description
+        description: conf.description,
+        is_gimmick: GraderConfiguration.gimmick_key?(conf.key) && conf.value_type == 'string'
       }
     end.to_json
   end

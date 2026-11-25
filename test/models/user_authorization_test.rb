@@ -464,7 +464,7 @@ class UserAuthorizationTest < ActiveSupport::TestCase
 
     assert_not GraderConfiguration["right.bypass_agreement"]
     assert_not GraderConfiguration["right.multiple_ip_login"]
-    assert_not GraderConfiguration["right.user_hall_of_fame"]
+    assert_not GraderConfiguration.hall_of_fame_enabled?
     assert_not GraderConfiguration["right.user_view_submission"]
     assert_not GraderConfiguration["right.view_testcase"]
   end
