@@ -8,6 +8,7 @@ import "chart" // UMD build: sets window.Chart as side effect
 export default class extends DatatableInitController {
   static values = { 
     showDeduction: {type: Boolean, default: true},
+    enableAbsentFilter: {type: Boolean, default: false},
     problemIds: Array,
     submissionPath: String,
     submissionDownloadPath: String,
@@ -15,15 +16,43 @@ export default class extends DatatableInitController {
     refreshSubmitFormId: String,
   }
 
-  static targets = [ "showLoad", "showDeduction", "problemScore", "totalScore",
+  static targets = [ "showLoad", "showDeduction", "hideAbsent", "problemScore", "totalScore",
                      "problemScoreChartContainer", "totalScoreChartContainer",
                      "probHeader"]
+
+  connect() {
+    this._absentFilterFn = (settings, _searchData, dataIndex, rowData) => {
+      if (!this.tables || !this.tables.some(t => t.settings()[0] === settings)) {
+        return true
+      }
+      if (this.hasHideAbsentTarget && this.hideAbsentTarget.checked) {
+        const data = rowData || settings.aoData[dataIndex]?._aData
+        return !!(data && data.last_heartbeat)
+      }
+      return true
+    }
+    $.fn.dataTable.ext.search.push(this._absentFilterFn)
+    super.connect()
+  }
+
+  disconnect() {
+    if (this._absentFilterFn) {
+      const idx = $.fn.dataTable.ext.search.indexOf(this._absentFilterFn)
+      if (idx !== -1) $.fn.dataTable.ext.search.splice(idx, 1)
+    }
+    if (typeof this.problemScoreChart !== 'undefined') { this.problemScoreChart.destroy() }
+    if (typeof this.totalScoreChart !== 'undefined') { this.totalScoreChart.destroy() }
+  }
 
   // -------   draw graph -----------
   // call chart.js
   // json is the response from the controller {data: ..., result:..., problem: ...}
   _drawGraph(json) {
     window.graphData = json
+    const styles = getComputedStyle(document.body)
+    const textColor = styles.getPropertyValue('--bs-body-color').trim() || '#333333'
+    const gridColor = styles.getPropertyValue('--bs-border-color').trim() || 'rgba(128,128,128,0.2)'
+
     //build dataset
     const usersCount = json.data.length
     let data = {
@@ -51,12 +80,27 @@ export default class extends DatatableInitController {
       type: 'line',
       data: data,
       options: {
-        responstive: true,
+        responsive: true,
         maintainAspectRatio: false,
         elements: {
           point: {
             pointStyle: false
           },
+        },
+        plugins: {
+          legend: {
+            labels: { color: textColor }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: textColor },
+            grid: { color: gridColor }
+          },
+          y: {
+            ticks: { color: textColor },
+            grid: { color: gridColor }
+          }
         }
       },
     }
@@ -142,7 +186,8 @@ export default class extends DatatableInitController {
     // post request processing
     ajaxOptions.dataSrc = (json) => {
       const processedJson = processScore(json)
-      this._drawGraph(processedJson)
+      this._lastProcessedJson = processedJson
+      this._refreshChartsAndTotals()
       return processedJson.data
     }
     return ajaxOptions
@@ -158,26 +203,58 @@ export default class extends DatatableInitController {
       finalConfig.buttons[0].action = (e,dt,node,config) => { document.getElementById(this.refreshSubmitFormIdValue).requestSubmit() }
     }
 
-    finalConfig.layout = {
-      topStart: [
-        'buttons',
-        {
-          div: {
-            html: '<input class="form-check-input" id="show-load" name="show-load" type="checkbox" data-datatables--init-score-table-target="showLoad" data-action="datatables--init-score-table#redraw">' +
-                  '<label class="ms-2 form-check-label" for="show-load">Show submission time & download link</label>'
-          }
-        },
-        {
-          div: {
-            html: `<input class="form-check-input" id="show-deduction" name="show-deduction" type="checkbox" data-datatables--init-score-table-target="showDeduction" data-action="datatables--init-score-table#redraw" ${ this.showDeductionValue ? 'checked' : ''}>` +
-                  '<label class="ms-2 form-check-label" for="show-deduction">Show full score deduction (by Hint & LLM)</label>'
-          }
+    const topStart = [
+      'buttons',
+      {
+        div: {
+          className: 'form-check d-inline-flex align-items-center mb-0',
+          html: '<input class="form-check-input mt-0" id="show-load" name="show-load" type="checkbox" data-datatables--init-score-table-target="showLoad" data-action="datatables--init-score-table#redraw">' +
+                '<label class="ms-2 form-check-label" for="show-load">Show submission time & download link</label>'
         }
-      ],
+      },
+      {
+        div: {
+          className: 'form-check d-inline-flex align-items-center mb-0',
+          html: `<input class="form-check-input mt-0" id="show-deduction" name="show-deduction" type="checkbox" data-datatables--init-score-table-target="showDeduction" data-action="datatables--init-score-table#redraw" ${ this.showDeductionValue ? 'checked' : ''}>` +
+                '<label class="ms-2 form-check-label" for="show-deduction">Show full score deduction (by Hint & LLM)</label>'
+        }
+      }
+    ]
+
+    if (this.enableAbsentFilterValue) {
+      topStart.push({
+        div: {
+          className: 'form-check d-inline-flex align-items-center mb-0',
+          html: '<input class="form-check-input mt-0" id="hide-absent" name="hide-absent" type="checkbox" data-datatables--init-score-table-target="hideAbsent" data-action="datatables--init-score-table#toggleAbsent">' +
+                '<label class="ms-2 form-check-label" for="hide-absent">Hide absent contestants (no Last Seen)</label>'
+        }
+      })
+    }
+
+    finalConfig.layout = {
+      topStart: topStart,
       topEnd: 'search'
     }
 
     return finalConfig
+  }
+
+  toggleAbsent() {
+    this._refreshChartsAndTotals()
+    this.tables.forEach(table => {
+      table.draw()
+    })
+  }
+
+  _refreshChartsAndTotals() {
+    if (!this._lastProcessedJson) return
+    const hideAbsent = this.hasHideAbsentTarget && this.hideAbsentTarget.checked
+    const filteredData = hideAbsent
+      ? this._lastProcessedJson.data.filter(row => Boolean(row.last_heartbeat))
+      : this._lastProcessedJson.data
+
+    updateFooterTotals(this._lastProcessedJson.problem, filteredData)
+    this._drawGraph({ ...this._lastProcessedJson, data: filteredData })
   }
 
   // generate a renderer function for rendering score / time / link for problem prob_id
@@ -353,14 +430,42 @@ function processScore(json) {
     json.data[i]['sum_final'] = sumFinal.toFixed(1)
   }
 
-  // set the footer
-  json.problem.forEach ( (prob) => { 
-    $(`#sum-raw-${prob.id}`).text( Number(problemSumRaw[prob.id]).toLocaleString(undefined, {minimumFractionDigits: 1}) )
-    $(`#sum-deduction-${prob.id}`).text( Number(problemSumDeduction[prob.id]).toLocaleString(undefined, {minimumFractionDigits: 1}) )
-    $(`#sum-final-${prob.id}`).text( Number(problemSumFinal[prob.id]).toLocaleString(undefined, {minimumFractionDigits: 1}) )
-  })
-  $(`#grand-total-raw`).text( Number(grandTotalRaw).toLocaleString(undefined, {minimumFractionDigits: 1}) )
-  $(`#grand-total-final`).text( Number(grandTotalFinal).toLocaleString(undefined, {minimumFractionDigits: 1}) )
+  updateFooterTotals(json.problem, json.data)
   return json;
+}
+
+function updateFooterTotals(problems, rows) {
+  let grandTotalRaw = 0
+  let grandTotalFinal = 0
+  let problemSumRaw = {}
+  let problemSumDeduction = {}
+  let problemSumFinal = {}
+
+  problems.forEach((prob) => {
+    problemSumRaw[prob.id] = 0.0
+    problemSumDeduction[prob.id] = 0.0
+    problemSumFinal[prob.id] = 0.0
+  })
+
+  rows.forEach((row) => {
+    problems.forEach((prob) => {
+      const thisRaw = parseFloat(row[`raw_score_${prob.id}`] || 0.0)
+      const thisDeduction = parseFloat(row[`total_cost_${prob.id}`] || 0.0)
+      const thisFinal = parseFloat(row[`final_score_${prob.id}`] || 0.0)
+      problemSumRaw[prob.id] += thisRaw
+      problemSumDeduction[prob.id] += thisDeduction
+      problemSumFinal[prob.id] += thisFinal
+    })
+    grandTotalRaw += parseFloat(row['sum_raw'] || 0.0)
+    grandTotalFinal += parseFloat(row['sum_final'] || 0.0)
+  })
+
+  problems.forEach((prob) => {
+    $(`#sum-raw-${prob.id}`).text(Number(problemSumRaw[prob.id]).toLocaleString(undefined, { minimumFractionDigits: 1 }))
+    $(`#sum-deduction-${prob.id}`).text(Number(problemSumDeduction[prob.id]).toLocaleString(undefined, { minimumFractionDigits: 1 }))
+    $(`#sum-final-${prob.id}`).text(Number(problemSumFinal[prob.id]).toLocaleString(undefined, { minimumFractionDigits: 1 }))
+  })
+  $('#grand-total-raw').text(Number(grandTotalRaw).toLocaleString(undefined, { minimumFractionDigits: 1 }))
+  $('#grand-total-final').text(Number(grandTotalFinal).toLocaleString(undefined, { minimumFractionDigits: 1 }))
 }
 
