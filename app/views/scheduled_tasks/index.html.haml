@@ -1,0 +1,197 @@
+= render 'application/breadcrumb', steps: [{ label: 'Scheduled Tasks', icon: 'schedule_send' }]
+
+%div{data: { controller: 'scheduled-task-form init-ui-component',
+             'scheduled-task-form-actions-value': scheduled_task_actions_metadata_json,
+             'scheduled-task-form-configs-value': scheduled_task_configs_metadata_json(@configurations),
+             'scheduled-task-form-server-now-ms-value': (Time.current.to_f * 1000).to_i }}
+
+  -# Page header
+  .d-flex.flex-column.flex-md-row.justify-content-between.align-items-start.align-items-md-center.gap-3.mb-4
+    .d-flex.flex-column.gap-1
+      %small.text-secondary.text-uppercase.fw-bold.ls-1 Automation
+      .d-flex.flex-wrap.align-items-center.gap-2
+        %h2.fw-bold.text-body-emphasis.mb-0 Scheduled Tasks
+        %span.badge.bg-primary-subtle.text-primary.border.border-primary-subtle.rounded-pill.fw-medium
+          %small Solid Queue
+
+    .d-flex.flex-wrap.align-items-center.gap-2
+      .d-inline-flex.align-items-center.gap-2.px-3.py-2.rounded-3.border.small{style: 'background-color: var(--color-inner-surface);'}
+        %span.mi.md-18.text-primary schedule
+        %span.text-secondary Server Time:
+        %span.fw-bold.font-monospace.text-body-emphasis{data: { 'scheduled-task-form-target': 'serverClock' }}= Time.current.strftime('%Y-%m-%d %H:%M:%S')
+        %span.badge.bg-secondary-subtle.text-secondary= Time.zone.formatted_offset
+      = link_to audit_logs_path(auditable_type: 'ScheduledTask'), class: 'btn btn-sm btn-outline-secondary btn-flex' do
+        %span.mi.md-18 history
+        %span History
+
+  -# KPI Summary Strip
+  .row.g-3.mb-4
+    .col-6.col-lg-3
+      .card.card-shadow.h-100
+        .card-body.d-flex.align-items-center.gap-3.py-3
+          .bg-primary-subtle.text-primary.rounded-3.d-flex.align-items-center.justify-content-center.flex-shrink-0{style: 'width: 44px; height: 44px;'}
+            %span.mi.md-24.fill pending_actions
+          .min-w-0
+            .fw-bold.h4.mb-0.text-body-emphasis= @counts[:pending]
+            .small.text-secondary Pending
+
+    .col-6.col-lg-3
+      .card.card-shadow.h-100
+        .card-body.d-flex.align-items-center.gap-3.py-3
+          .bg-info-subtle.text-info-emphasis.rounded-3.d-flex.align-items-center.justify-content-center.flex-shrink-0{style: 'width: 44px; height: 44px;'}
+            %span.mi.md-24.fill timer
+          .min-w-0
+            - if @next_task
+              .fw-bold.font-monospace.text-truncate.text-body-emphasis= @next_task.scheduled_at.strftime('%H:%M')
+              .small.text-secondary.text-truncate= "#{@next_task.scheduled_at.strftime('%b %d')} · in #{distance_of_time_in_words(Time.current, @next_task.scheduled_at)}"
+            - else
+              .fw-bold.h5.mb-0.text-secondary —
+              .small.text-secondary Next Upcoming
+
+    .col-6.col-lg-3
+      .card.card-shadow.h-100
+        .card-body.d-flex.align-items-center.gap-3.py-3
+          .bg-success-subtle.text-success.rounded-3.d-flex.align-items-center.justify-content-center.flex-shrink-0{style: 'width: 44px; height: 44px;'}
+            %span.mi.md-24.fill check_circle
+          .min-w-0
+            .fw-bold.h4.mb-0.text-body-emphasis= @counts[:completed]
+            .small.text-secondary Completed
+
+    .col-6.col-lg-3
+      .card.card-shadow.h-100
+        .card-body.d-flex.align-items-center.gap-3.py-3
+          .bg-danger-subtle.text-danger.rounded-3.d-flex.align-items-center.justify-content-center.flex-shrink-0{style: 'width: 44px; height: 44px;'}
+            %span.mi.md-24.fill error
+          .min-w-0
+            .fw-bold.h4.mb-0.text-body-emphasis= @counts[:failed]
+            .small.text-secondary Failed
+
+  -# Form + Help Grid
+  .row.g-4.mb-4
+    .col-xl-7
+      .card.card-shadow.h-100
+        .card-header.d-flex.align-items-center.gap-2.py-3
+          %span.mi.md-20.text-primary add_alarm
+          %h5.fw-bold.mb-0 Schedule a New Task
+        .card-body
+          = render 'form'
+
+    .col-xl-5
+      = render 'help'
+
+  -# Task List Card
+  .card.card-shadow.mb-4
+    .card-header.py-3
+      .d-flex.flex-column.flex-md-row.justify-content-between.align-items-start.align-items-md-center.gap-2
+        .d-flex.align-items-center.gap-2
+          %span.mi.md-20.text-primary event_note
+          %h5.fw-bold.mb-0 Scheduled Task Queue & History
+
+        .d-flex.flex-wrap.gap-1
+          - %w[all pending completed failed cancelled].each do |st|
+            - active = (@filter == st)
+            = link_to scheduled_tasks_path(status: st), class: "btn btn-sm rounded-pill #{active ? 'btn-primary' : 'btn-outline-secondary'}" do
+              = st.capitalize
+              %span.badge.rounded-pill.ms-1{class: active ? 'bg-light text-dark' : 'bg-secondary-subtle text-secondary'}= @counts[st.to_sym]
+
+    .card-body.p-0
+      .table-responsive
+        %table.table.table-hover.align-middle.mb-0
+          %thead
+            %tr
+              %th.text-nowrap Scheduled For
+              %th Category
+              %th Task & Target
+              %th Status
+              %th Created By
+              %th Result / Output
+              %th.text-end{style: 'width: 72px;'} Actions
+          %tbody
+            - if @scheduled_tasks.empty?
+              %tr
+                %td.text-center.text-muted.py-5{colspan: 7}
+                  %span.mi.md-36.d-block.mb-2.opacity-50 event_available
+                  No scheduled tasks match this filter.
+            - else
+              - @scheduled_tasks.each do |task|
+                %tr
+                  %td.text-nowrap
+                    .fw-semibold.font-monospace= task.scheduled_at.strftime('%Y-%m-%d %H:%M')
+                    .small.text-secondary
+                      - if task.pending?
+                        - if task.scheduled_at > Time.current
+                          = "in #{distance_of_time_in_words(Time.current, task.scheduled_at)}"
+                        - else
+                          %span.text-warning.fw-semibold Due now
+                      - elsif task.executed_at.present?
+                        = "Ran #{time_ago_in_words(task.executed_at)} ago"
+                      - else
+                        = "#{time_ago_in_words(task.scheduled_at)} ago"
+                  %td.text-nowrap
+                    = scheduled_task_category_badge(task.action_category)
+                  %td
+                    .d-flex.align-items-start.gap-2
+                      %span.mi.md-20.text-primary.mt-1.flex-shrink-0= task.action_icon
+                      %div
+                        - if task.title.present?
+                          .fw-bold.text-body-emphasis= task.title
+                          .small.text-secondary
+                            = task.action_label
+                            - if (target_link = scheduled_task_target_link(task))
+                              %span.mx-1 &middot;
+                              = target_link
+                        - else
+                          .fw-semibold.text-body-emphasis
+                            = task.action_label
+                            - if (target_link = scheduled_task_target_link(task))
+                              %span.mx-1 &middot;
+                              = target_link
+                        - case task.action_definition[:payload_kind]
+                        - when :system_mode
+                          .small.mt-1
+                            %span.badge.bg-warning-subtle.text-warning-emphasis.border.border-warning-subtle
+                              = "Mode: #{task.payload_hash['mode']}"
+                        - when :config_value
+                          .small.mt-1
+                            %code= "= #{task.payload_hash['value']}"
+                  %td.text-nowrap
+                    = scheduled_task_status_badge(task.status)
+                  %td.small.text-nowrap
+                    - if task.created_by
+                      = task.created_by.full_name.presence || task.created_by.login
+                    - else
+                      %span.text-muted.fst-italic system
+                  %td.small{style: 'max-width: 280px;'}
+                    - if task.result_message.present?
+                      .text-success= task.result_message
+                    - elsif task.error_message.present?
+                      .text-danger.text-break= task.error_message
+                    - else
+                      %span.text-muted —
+                  %td.text-end.py-1
+                    .dropdown
+                      %button.btn.btn-sm.btn-outline-secondary.border-0.d-inline-flex.align-items-center.justify-content-center.p-1{type: 'button', data: { bs_toggle: 'dropdown', bs_popper_config: '{"strategy":"fixed"}' }, 'aria-expanded': 'false', 'aria-label': 'Task actions', title: 'Task actions'}
+                        %span.mi more_vert
+                      %ul.dropdown-menu.dropdown-menu-end.shadow
+                        - if task.pending? || task.failed?
+                          %li
+                            = button_to run_now_scheduled_task_path(task), method: :post, class: 'dropdown-item d-flex align-items-center gap-2', form: { class: 'm-0', data: { turbo_confirm: "Run \"#{task.title.presence || task.summary_description}\" immediately?" } } do
+                              %span.mi.md-18.text-success play_arrow
+                              %span Run Now
+                        - if task.pending? || task.failed? || task.cancelled?
+                          %li
+                            = link_to edit_scheduled_task_path(task), class: 'dropdown-item d-flex align-items-center gap-2' do
+                              %span.mi.md-18.text-primary edit
+                              %span= task.pending? ? 'Edit / Reschedule' : 'Reschedule'
+                        - if task.pending?
+                          %li
+                            = button_to cancel_scheduled_task_path(task), method: :post, class: 'dropdown-item d-flex align-items-center gap-2', form: { class: 'm-0', data: { turbo_confirm: 'Cancel this scheduled task?' } } do
+                              %span.mi.md-18.text-warning cancel
+                              %span Cancel Task
+                        - unless task.running?
+                          %li
+                            %hr.dropdown-divider
+                          %li
+                            = button_to scheduled_task_path(task), method: :delete, class: 'dropdown-item text-danger d-flex align-items-center gap-2', form: { class: 'm-0', data: { turbo_confirm: 'Permanently delete this scheduled task?' } } do
+                              %span.mi.md-18 delete
+                              %span Delete

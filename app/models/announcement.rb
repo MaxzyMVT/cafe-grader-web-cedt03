@@ -16,15 +16,26 @@ class Announcement < ApplicationRecord
   end
 
   def self.set_announcement_number(announcement, target_pos)
-    announcements = Announcement.order(number: :desc, created_at: :desc).to_a
-    announcements.delete(announcement)
-    announcements.insert(target_pos - 1, announcement)
-    
-    num = announcements.size
-    announcements.each do |a|
-      a.update_columns(number: num)
-      num -= 1
+    transaction do
+      announcements = Announcement.order(number: :desc, created_at: :desc).to_a
+      announcements.delete(announcement)
+      clamped_pos = [[target_pos.to_i, 1].max, announcements.size + 1].min
+      announcements.insert(clamped_pos - 1, announcement)
+
+      num = announcements.size
+      announcements.each do |a|
+        a.update_columns(number: num)
+        num -= 1
+      end
     end
+  end
+
+  def self.move_to_top(announcement)
+    set_announcement_number(announcement, 1)
+  end
+
+  def self.move_to_bottom(announcement)
+    set_announcement_number(announcement, Announcement.count)
   end
 
   scope :viewable_by_user, ->(user) {

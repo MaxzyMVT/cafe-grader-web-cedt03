@@ -1,6 +1,7 @@
 class AnnouncementsController < ApplicationController
   MEMBER_METHOD = %i[show edit destroy update delete_file
                      toggle_front toggle_published reorder
+                     move_to_top move_to_bottom
                     ]
 
   before_action :set_announcement, only: MEMBER_METHOD
@@ -114,7 +115,6 @@ class AnnouncementsController < ApplicationController
   end
 
   def reorder
-    old_number = @announcement.number || 0
     target_pos = params[:target_position].to_i
     if target_pos > 0
       Announcement.set_announcement_number(@announcement, target_pos)
@@ -124,6 +124,16 @@ class AnnouncementsController < ApplicationController
       format.turbo_stream { render 'turbo_toast' }
       format.html { redirect_to action: :index, notice: "Announcement was reordered." }
     end
+  end
+
+  def move_to_top
+    Announcement.move_to_top(@announcement)
+    redirect_to announcements_path, notice: "Announcement \"#{@announcement.title}\" moved to top."
+  end
+
+  def move_to_bottom
+    Announcement.move_to_bottom(@announcement)
+    redirect_to announcements_path, notice: "Announcement \"#{@announcement.title}\" moved to bottom."
   end
 
   private

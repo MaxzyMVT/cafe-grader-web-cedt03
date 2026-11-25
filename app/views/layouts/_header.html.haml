@@ -38,6 +38,7 @@
                   %li
                     %hr.dropdown-divider
                   %li= link_to 'System config', grader_configuration_index_path, class: 'dropdown-item'+active_class_when(controller: :configurations)
+                  %li= link_to 'Scheduled Tasks', scheduled_tasks_path, class: 'dropdown-item'+active_class_when(controller: :scheduled_tasks)
                   %li= link_to 'Audit Log', audit_logs_path, class: 'dropdown-item'+active_class_when(controller: :audit_logs)
                 %li
                   %hr.dropdown-divider
@@ -136,6 +137,7 @@
           %li.nav-item= link_to 'Graders', grader_processes_path, class: 'nav-link '+active_class_when(controller: :graders)
           %li.nav-item= link_to 'Messages', console_messages_path, class: 'nav-link '+active_class_when(controller: :messages)
           %li.nav-item= link_to 'System Config', grader_configuration_index_path, class: 'nav-link '+active_class_when(controller: :configurations)
+          %li.nav-item= link_to 'Scheduled Tasks', scheduled_tasks_path, class: 'nav-link '+active_class_when(controller: :scheduled_tasks)
           %li.nav-item= link_to 'Audit Log', audit_logs_path, class: 'nav-link '+active_class_when(controller: :audit_logs)
           %li.nav-item= link_to 'Sites', sites_path, class: 'nav-link '+active_class_when(controller: :sites)
         %li.nav-item= link_to 'Contests', contests_path, class: 'nav-link '+active_class_when(controller: :contests)

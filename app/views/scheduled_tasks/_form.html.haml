@@ -1,0 +1,146 @@
+- submit_label = local_assigns.fetch(:submit_label, @scheduled_task.persisted? ? 'Save Changes' : 'Schedule Task')
+- form_url = @scheduled_task.persisted? ? scheduled_task_path(@scheduled_task) : scheduled_tasks_path
+- form_method = @scheduled_task.persisted? ? :patch : :post
+- current_payload = @scheduled_task.payload_hash
+- selected_mode = current_payload['mode'].presence || 'contest'
+- selected_conf_bool = current_payload['value'].presence || 'true'
+- selected_conf_text = current_payload['value'].to_s
+- formatted_scheduled_at = (@scheduled_task.scheduled_at || 10.minutes.from_now.change(sec: 0)).in_time_zone.strftime('%Y-%m-%dT%H:%M')
+
+= form_with url: form_url, method: form_method, scope: :scheduled_task, html: { class: 'needs-validation' } do |f|
+  - if @scheduled_task.errors.any?
+    .alert.alert-danger.mb-3
+      .fw-bold.mb-1
+        %span.mi.md-18.me-1 error
+        Could not save scheduled task:
+      %ul.mb-0.small
+        - @scheduled_task.errors.full_messages.each do |msg|
+          %li= msg
+
+  .row.g-3
+    -# Action selector
+    .col-12
+      %label.form-label.fw-semibold{for: 'scheduled_task_action_type'} Action
+      %select#scheduled_task_action_type.form-select{name: 'scheduled_task[action_type]', data: { 'scheduled-task-form-target': 'actionSelect', action: 'change->scheduled-task-form#updateActionUI' }}
+        = scheduled_task_grouped_action_options(@scheduled_task.action_type)
+      .form-text.mt-1{data: { 'scheduled-task-form-target': 'actionDescription' }}
+
+    -# Dynamic target pickers (one per target_type)
+    .col-12{data: { 'scheduled-task-form-target': 'targetSection' }}
+      -# Contest target
+      .d-none{data: { 'scheduled-task-form-target': 'targetGroup', 'target-type': 'Contest' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_contest_id'} Target Contest
+        %select#scheduled_task_contest_id.form-select.select2{name: 'scheduled_task[contest_id]'}
+          %option{value: ''} -- Select a contest --
+          - @contests.each do |contest|
+            - status_label = contest.enabled? ? 'Enabled' : 'Disabled'
+            %option{value: contest.id, selected: (@scheduled_task.target_type == 'Contest' && @scheduled_task.target_id == contest.id)}
+              = "##{contest.id} #{contest.name} [#{status_label}]"
+
+      -# Group target
+      .d-none{data: { 'scheduled-task-form-target': 'targetGroup', 'target-type': 'Group' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_group_id'} Target Group
+        %select#scheduled_task_group_id.form-select.select2{name: 'scheduled_task[group_id]'}
+          %option{value: ''} -- Select a group --
+          - @groups.each do |group|
+            - status_label = group.enabled? ? 'Enabled' : 'Disabled'
+            %option{value: group.id, selected: (@scheduled_task.target_type == 'Group' && @scheduled_task.target_id == group.id)}
+              = "#{group.name} (#{group.users.size} users) [#{status_label}]"
+
+      -# Problem target
+      .d-none{data: { 'scheduled-task-form-target': 'targetGroup', 'target-type': 'Problem' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_problem_id'} Target Problem
+        %select#scheduled_task_problem_id.form-select.select2{name: 'scheduled_task[problem_id]'}
+          %option{value: ''} -- Select a problem --
+          - @problems.each do |problem|
+            - status_label = problem.available? ? 'Available' : 'Unavailable'
+            %option{value: problem.id, selected: (@scheduled_task.target_type == 'Problem' && @scheduled_task.target_id == problem.id)}
+              = "#{problem.name} — #{problem.full_name} [#{status_label}]"
+
+      -# Announcement target
+      .d-none{data: { 'scheduled-task-form-target': 'targetGroup', 'target-type': 'Announcement' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_announcement_id'} Target Announcement
+        %select#scheduled_task_announcement_id.form-select.select2{name: 'scheduled_task[announcement_id]'}
+          %option{value: ''} -- Select an announcement --
+          - @announcements.each do |ann|
+            - flags = []
+            - flags << (ann.published? ? 'Published' : 'Draft')
+            - flags << 'Front' if ann.frontpage?
+            - flags << 'Contest' if ann.contest_only?
+            %option{value: ann.id, selected: (@scheduled_task.target_type == 'Announcement' && @scheduled_task.target_id == ann.id)}
+              = "##{ann.id} #{ann.title.presence || '(Untitled)'} [#{flags.join(', ')}]"
+
+      -# User target
+      .d-none{data: { 'scheduled-task-form-target': 'targetGroup', 'target-type': 'User' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_user_id'} Target User
+        %select#scheduled_task_user_id.form-select.select2{name: 'scheduled_task[user_id]'}
+          %option{value: ''} -- Select a user --
+          - @users.each do |user|
+            - status_label = user.enabled? ? 'Enabled' : 'Disabled'
+            %option{value: user.id, selected: (@scheduled_task.target_type == 'User' && @scheduled_task.target_id == user.id)}
+              = "#{user.login} — #{user.full_name} [#{status_label}]"
+
+      -# GraderConfiguration target
+      .d-none{data: { 'scheduled-task-form-target': 'targetGroup', 'target-type': 'GraderConfiguration' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_configuration_id'} Configuration Key
+        %select#scheduled_task_configuration_id.form-select.select2{name: 'scheduled_task[configuration_id]', data: { 'scheduled-task-form-target': 'configSelect', action: 'change->scheduled-task-form#updateConfigUI' }}
+          %option{value: ''} -- Select a system configuration key --
+          - @configurations.each do |conf|
+            %option{value: conf.id, selected: (@scheduled_task.target_type == 'GraderConfiguration' && @scheduled_task.target_id == conf.id)}
+              = "#{conf.key} = #{conf.value} (#{conf.value_type})"
+
+    -# Payload: System Mode
+    .col-12.d-none{data: { 'scheduled-task-form-target': 'systemModeSection' }}
+      %label.form-label.fw-semibold{for: 'scheduled_task_system_mode'} Target System Mode
+      %select#scheduled_task_system_mode.form-select{name: 'scheduled_task[system_mode]'}
+        %option{value: 'standard', selected: selected_mode == 'standard'} Normal (standard) — Group-based access, exam restrictions OFF
+        %option{value: 'contest', selected: selected_mode == 'contest'} Contest (contest) — Contest-only access, exam restrictions ON
+        %option{value: 'indv-contest', selected: selected_mode == 'indv-contest'} Individual Contest (indv-contest) — Individual timer, exam restrictions ON
+        %option{value: 'analysis', selected: selected_mode == 'analysis'} Analysis (analysis) — Read-only analysis mode, exam restrictions OFF
+
+    -# Payload: GraderConfiguration value
+    .col-12.d-none{data: { 'scheduled-task-form-target': 'configValueSection' }}
+      .p-2.px-3.rounded-3.border.mb-2.small.d-none{style: 'background-color: var(--color-inner-surface);', data: { 'scheduled-task-form-target': 'configInfo' }}
+        .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2
+          %span.text-secondary Current value:
+          %code{data: { 'scheduled-task-form-target': 'configCurrentValue' }}
+        .text-muted.mt-1{data: { 'scheduled-task-form-target': 'configDescription' }}
+
+      .d-none{data: { 'scheduled-task-form-target': 'configBooleanWrapper' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_config_boolean_value'} New Value
+        %select#scheduled_task_config_boolean_value.form-select{name: 'scheduled_task[config_boolean_value]', data: { 'scheduled-task-form-target': 'configBooleanInput' }}
+          %option{value: 'true', selected: selected_conf_bool == 'true'} true (Enable / On)
+          %option{value: 'false', selected: selected_conf_bool == 'false'} false (Disable / Off)
+
+      .d-none{data: { 'scheduled-task-form-target': 'configTextWrapper' }}
+        %label.form-label.fw-semibold{for: 'scheduled_task_config_text_value'} New Value
+        %input#scheduled_task_config_text_value.form-control.font-monospace{type: 'text', name: 'scheduled_task[config_text_value]', value: selected_conf_text, placeholder: 'Enter target value...', data: { 'scheduled-task-form-target': 'configTextInput' }}
+
+    -# Scheduled Date & Time
+    .col-md-7
+      %label.form-label.fw-semibold{for: 'scheduled_task_scheduled_at'}
+        Run At
+        %span.text-secondary.fw-normal.small= "(#{Time.zone.name})"
+      %input#scheduled_task_scheduled_at.form-control.font-monospace{type: 'datetime-local', name: 'scheduled_task[scheduled_at]', value: formatted_scheduled_at, required: true, data: { 'scheduled-task-form-target': 'scheduledAtInput' }}
+      .d-flex.flex-wrap.gap-1.mt-2
+        %button.btn.btn-xs.btn-outline-secondary{type: 'button', data: { action: 'scheduled-task-form#applyOffset', minutes: 5 }} +5m
+        %button.btn.btn-xs.btn-outline-secondary{type: 'button', data: { action: 'scheduled-task-form#applyOffset', minutes: 15 }} +15m
+        %button.btn.btn-xs.btn-outline-secondary{type: 'button', data: { action: 'scheduled-task-form#applyOffset', minutes: 30 }} +30m
+        %button.btn.btn-xs.btn-outline-secondary{type: 'button', data: { action: 'scheduled-task-form#applyOffset', minutes: 60 }} +1h
+        %button.btn.btn-xs.btn-outline-secondary{type: 'button', data: { action: 'scheduled-task-form#applyTodayTime', time: '15:00' }} 15:00
+        %button.btn.btn-xs.btn-outline-secondary{type: 'button', data: { action: 'scheduled-task-form#applyTodayTime', time: '16:00' }} 16:00
+        %button.btn.btn-xs.btn-outline-secondary{type: 'button', data: { action: 'scheduled-task-form#applyTodayTime', time: '16:30' }} 16:30
+
+    -# Optional Label
+    .col-md-5
+      %label.form-label.fw-semibold{for: 'scheduled_task_title'}
+        Label
+        %span.text-secondary.fw-normal.small (optional)
+      %input#scheduled_task_title.form-control{type: 'text', name: 'scheduled_task[title]', value: @scheduled_task.title, placeholder: 'e.g. Enable mock participants before exam'}
+
+    .col-12.d-flex.flex-wrap.justify-content-end.gap-2.pt-2
+      - if @scheduled_task.persisted?
+        = link_to 'Cancel', scheduled_tasks_path, class: 'btn btn-outline-secondary'
+      %button.btn.btn-primary.btn-flex.px-4{type: 'submit'}
+        %span.mi.md-18 schedule_send
+        %span= submit_label

@@ -109,6 +109,13 @@ Rails.application.routes.draw do
 
   resources :audit_logs, only: [:index, :show]
 
+  resources :scheduled_tasks, except: [:show] do
+    member do
+      post 'cancel'
+      post 'run_now'
+    end
+  end
+
   resources :messages do
     member do
       get 'hide'
@@ -127,6 +134,8 @@ Rails.application.routes.draw do
       post 'toggle_front'
       delete 'delete_file'
       post 'reorder'
+      post 'move_to_top'
+      post 'move_to_bottom'
     end
   end
 

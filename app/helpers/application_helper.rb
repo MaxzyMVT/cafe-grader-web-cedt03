@@ -16,7 +16,8 @@ module ApplicationHelper
     Submission => 'input',
     Language => 'code',
     Site => 'web',
-    GraderConfiguration => 'settings'
+    GraderConfiguration => 'settings',
+    ScheduledTask => 'schedule_send'
   }
 
   def resource_icon_name(resource_class)

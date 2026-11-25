@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_23_133000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_25_151000) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -360,6 +360,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_23_133000) do
     t.integer "role_id"
     t.integer "user_id"
     t.index ["user_id"], name: "index_roles_users_on_user_id"
+  end
+
+  create_table "scheduled_tasks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "title"
+    t.string "action_type", null: false
+    t.string "target_type"
+    t.bigint "target_id"
+    t.json "payload"
+    t.datetime "scheduled_at", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "executed_at"
+    t.text "result_message"
+    t.text "error_message"
+    t.bigint "created_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_scheduled_tasks_on_created_by_id"
+    t.index ["scheduled_at"], name: "index_scheduled_tasks_on_scheduled_at"
+    t.index ["status", "scheduled_at"], name: "index_scheduled_tasks_on_status_and_scheduled_at"
+    t.index ["target_type", "target_id"], name: "index_scheduled_tasks_on_target_type_and_target_id"
   end
 
   create_table "sessions", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

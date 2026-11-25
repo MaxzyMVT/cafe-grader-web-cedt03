@@ -1,0 +1,37 @@
+.card.border-0.shadow-sm.border-start.border-4.border-info.h-100
+  .card-body.p-4
+    .d-flex.align-items-center.mb-3
+      .bg-info-subtle.text-info-emphasis.rounded-circle.d-flex.align-items-center.justify-content-center.me-3.lh-1.flex-shrink-0{style: 'width: 44px; height: 44px;'}
+        %span.mi.md-24.fill schedule_send
+      %div
+        %h5.fw-bold.text-body-emphasis.mb-0 How Scheduled Tasks Work
+        %small.text-secondary Automated one-shot operations powered by Solid Queue.
+
+    .d-flex.flex-column.gap-3.small
+      .d-flex.align-items-start.gap-2
+        %span.mi.md-20.text-info.flex-shrink-0 bolt
+        %div
+          %strong.text-body-emphasis Exact Timing + Failsafe:
+          %span.text-secondary Tasks are queued directly in Solid Queue for their exact timestamp, backed by a 1-minute recurring sweeper in case of server restarts.
+
+      .d-flex.align-items-start.gap-2
+        %span.mi.md-20.text-info.flex-shrink-0 history
+        %div
+          %strong.text-body-emphasis Full Audit Trail:
+          %span.text-secondary Every scheduled execution is recorded in the
+          = link_to 'Audit Log', audit_logs_path, class: 'fw-semibold text-decoration-none'
+          %span.text-secondary attributing both the creator and the task ID.
+
+      .d-flex.align-items-start.gap-2
+        %span.mi.md-20.text-info.flex-shrink-0 shield
+        %div
+          %strong.text-body-emphasis Lockout Safety:
+          %span.text-secondary Bulk account disable actions automatically skip administrator accounts so admins cannot accidentally lock themselves out.
+
+      .d-flex.align-items-start.gap-2
+        %span.mi.md-20.text-info.flex-shrink-0 play_arrow
+        %div
+          %strong.text-body-emphasis Full Control:
+          %span.text-secondary Edit, cancel, or trigger
+          %strong.text-body-emphasis Run Now
+          %span.text-secondary on any pending or failed task at any time from the task queue below.

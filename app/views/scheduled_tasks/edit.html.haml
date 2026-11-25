@@ -1,0 +1,24 @@
+= render 'application/breadcrumb', steps: [{ label: 'Scheduled Tasks', path: scheduled_tasks_path, icon: 'schedule_send' }, { label: "Edit ##{@scheduled_task.id}" }]
+
+%div{data: { controller: 'scheduled-task-form init-ui-component',
+             'scheduled-task-form-actions-value': scheduled_task_actions_metadata_json,
+             'scheduled-task-form-configs-value': scheduled_task_configs_metadata_json(@configurations),
+             'scheduled-task-form-server-now-ms-value': (Time.current.to_f * 1000).to_i }}
+
+  .d-flex.flex-column.flex-sm-row.justify-content-between.align-items-start.align-items-sm-center.gap-2.mb-4
+    .d-flex.align-items-center.gap-2
+      %h2.fw-bold.text-body-emphasis.mb-0= "Edit Scheduled Task ##{@scheduled_task.id}"
+      = scheduled_task_status_badge(@scheduled_task.status)
+    .d-inline-flex.align-items-center.gap-2.px-3.py-2.rounded-3.border.small{style: 'background-color: var(--color-inner-surface);'}
+      %span.mi.md-18.text-primary schedule
+      %span.font-monospace.fw-bold.text-body-emphasis{data: { 'scheduled-task-form-target': 'serverClock' }}= Time.current.strftime('%Y-%m-%d %H:%M:%S')
+
+  .row.g-4
+    .col-xl-7
+      .card.card-shadow
+        .card-header.py-3
+          %h5.fw-bold.mb-0 Task Configuration
+        .card-body
+          = render 'form', submit_label: 'Update & Re-arm Task'
+    .col-xl-5
+      = render 'help'

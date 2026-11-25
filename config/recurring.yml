@@ -23,6 +23,9 @@ development:
   viva_turn_failsafe:
     command: "VivaTurn.fail_stale!"
     schedule: every 5 minutes
+  scheduled_tasks_sweeper:
+    command: "ScheduledTask.enqueue_due!"
+    schedule: every minute
 
 production:
   audit_log_cleanup:
@@ -31,6 +34,9 @@ production:
   viva_turn_failsafe:
     command: "VivaTurn.fail_stale!"
     schedule: every 5 minutes
+  scheduled_tasks_sweeper:
+    command: "ScheduledTask.enqueue_due!"
+    schedule: every minute
   # Moved here from config/schedule.rb (whenever). Both run nightly
   # housekeeping that's safe to skip a day if Solid Queue is down.
   # cleanup_web purges old Job rows + compiled-file blobs;
