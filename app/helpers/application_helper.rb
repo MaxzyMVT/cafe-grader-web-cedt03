@@ -44,7 +44,7 @@ module ApplicationHelper
       left_menu << add_menu("#{I18n.t 'menu.test'}", 'test', 'index')
     end
 
-    if GraderConfiguration['right.user_hall_of_fame']
+    if GraderConfiguration.hall_of_fame_enabled?
       left_menu << add_menu("#{I18n.t 'menu.hall_of_fame'}", 'report', 'problem_hof')
     end
 
@@ -94,7 +94,7 @@ module ApplicationHelper
       append_to menu_items, "[#{I18n.t 'menu.test'}]", 'test', 'index'
     end
 
-    if GraderConfiguration['right.user_hall_of_fame']
+    if GraderConfiguration.hall_of_fame_enabled?
       append_to menu_items, "[#{I18n.t 'menu.hall_of_fame'}]", 'report', 'problem_hof'
     end
     append_to menu_items, "[#{I18n.t 'menu.help'}]", 'main', 'help'
@@ -440,11 +440,15 @@ TITLEBAR
 
   def user_associated_with_problem?(user_id, problem_id)
     return true if @admin_setter_ids&.include?(user_id)
+    if @contest_mode
+      return (@user_contests[user_id] & @problem_contests[problem_id]).any?
+    end
     return true unless @problems_with_groups&.include?(problem_id)
     (@user_groups[user_id] & @problem_groups[problem_id]).any?
   end
 
   def group_associated_with_problem?(group_id, problem_id)
+    return true if @contest_mode
     return true unless @problems_with_groups&.include?(problem_id)
     @problem_groups[problem_id].include?(group_id)
   end

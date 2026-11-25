@@ -732,11 +732,10 @@ golden-btn + .golden-btn { margin-top: 1em; }
   max-height: 76vh;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  contain: layout paint;
-  will-change: scroll-position;
 }
 
 .scoreboard-table {
+  table-layout: fixed;
   border-collapse: separate !important;
   border-spacing: 0;
   margin-bottom: 0;
@@ -757,17 +756,34 @@ golden-btn + .golden-btn { margin-top: 1em; }
     vertical-align: bottom;
   }
 
-  tbody tr {
-    contain: layout style;
+  tbody tr:not(.sb-spacer-row):not(.sb-empty-row) {
+    height: 42px;
   }
 
-  tbody tr td {
+  tbody tr:not(.sb-spacer-row) td {
     border-bottom: 1px solid var(--bs-border-color, rgba(128, 128, 128, 0.14)) !important;
     border-right: 1px solid var(--bs-border-color, rgba(128, 128, 128, 0.1)) !important;
     border-top: 0 !important;
     border-left: 0 !important;
-    padding: 0.45rem 0.4rem;
+    padding: 0.35rem 0.4rem;
     vertical-align: middle;
+  }
+
+  // Lightweight row hover without Bootstrap's expensive 9999px inset box-shadow
+  // Exclude sticky columns (1..3) so they always stay 100% opaque while scrolling
+  tbody tr:not(.sb-spacer-row):not(.sb-empty-row):not(.scoreboard-group-row):not(.scoreboard-row-self):hover td:not(.sb-col-spacer):not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(3)) {
+    background-color: var(--color-surface-hover, rgba(128, 128, 128, 0.08)) !important;
+  }
+
+  // Virtualized spacer rows & columns
+  tr.sb-spacer-row,
+  tr.sb-spacer-row td,
+  th.sb-col-spacer,
+  td.sb-col-spacer {
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    pointer-events: none;
   }
 
   .vertical-text {
@@ -783,14 +799,16 @@ golden-btn + .golden-btn { margin-top: 1em; }
   }
 
   .problem-header {
-    min-width: 54px;
-    width: 54px;
+    width: 56px;
+    min-width: 56px;
+    max-width: 56px;
     padding: 6px 4px;
   }
 
   .score-cell {
-    font-size: 0.85rem;
-    padding: 0.35rem 0.3rem;
+    width: 56px;
+    font-size: 0.84rem;
+    padding: 0.25rem 0.2rem;
   }
 
   // Fixed widths for sticky columns so column 3 never overlaps long names
@@ -818,9 +836,21 @@ golden-btn + .golden-btn { margin-top: 1em; }
     max-width: 86px;
   }
 
+  .sb-col-bonus {
+    width: 74px;
+    min-width: 74px;
+    max-width: 74px;
+  }
+
+  .sb-col-deducted {
+    width: 82px;
+    min-width: 82px;
+    max-width: 82px;
+  }
+
   // Current user subtle row highlight
   tbody tr.scoreboard-row-self {
-    td {
+    td:not(.sb-col-spacer) {
       background-color: var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.08)) !important;
     }
     td:first-child {
@@ -829,7 +859,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
   }
 
   tbody tr.scoreboard-group-row {
-    td {
+    td:not(.sb-col-spacer) {
       background-color: var(--color-scoreboard-sticky-secondary-bg, #e2e8f0) !important;
       font-weight: 700;
     }
@@ -838,16 +868,16 @@ golden-btn + .golden-btn { margin-top: 1em; }
 
 // Rank Medal & Number Badges
 .sb-rank-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
   min-width: 2rem;
-  height: 1.7rem;
+  height: 1.65rem;
+  line-height: 1.65rem;
   padding: 0 0.45rem;
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .sb-rank-1 {
@@ -873,19 +903,23 @@ golden-btn + .golden-btn { margin-top: 1em; }
   color: var(--bs-secondary-color, #64748b);
 }
 
-// Modern Rounded Score Chips (static CSS classes — zero inline color-mix per cell!)
+// Modern Rounded Score Chips (lightweight inline-block — zero flex overhead per cell)
 .score-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-width: 2.6rem;
-  padding: 0.2rem 0.45rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
+  display: inline-block;
+  min-width: 2.4rem;
+  padding: 0.18rem 0.35rem;
+  border-radius: 7px;
+  font-size: 0.8rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
+  white-space: nowrap;
+
+  .sb-fb-icon {
+    font-size: 0.82rem;
+    vertical-align: -2px;
+    margin-left: 1px;
+  }
 }
 
 .score-chip--full {
@@ -920,7 +954,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
 
 @media (min-width: 769px) {
   .scoreboard-table {
-    thead th {
+    thead th:not(.sb-col-spacer) {
       position: sticky;
       top: 0;
       z-index: 20;
@@ -941,7 +975,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
       }
     }
 
-    tbody tr td {
+    tbody tr:not(.sb-spacer-row):not(.sb-empty-row) td {
       &:nth-child(1), &:nth-child(2), &:nth-child(3) {
         position: sticky;
         z-index: 5;

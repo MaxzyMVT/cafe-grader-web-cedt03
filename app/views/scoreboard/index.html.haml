@@ -1,7 +1,5 @@
 - content_for :head do
   %meta{name: "turbo-cache-control", content: "no-cache"}
-  %meta{name: "turbo-refresh-method", content: "morph"}
-  %meta{name: "turbo-refresh-scroll", content: "preserve"}
 
 .py-2{"data-controller" => "auto-refresh", id: "scoreboard-container"}
   -# Header & Controls
@@ -12,6 +10,10 @@
         %span.badge.rounded-pill.bg-success-subtle.text-success.border.border-success-subtle.d-inline-flex.align-items-center.gap-1.fw-medium
           %span.scoreboard-live-dot
           %span Live · 30s
+        - if @contest_mode
+          %span.badge.rounded-pill.bg-warning-subtle.text-warning-emphasis.border.border-warning-subtle.d-inline-flex.align-items-center.gap-1.fw-medium{data: { 'auto-refresh-target': 'contestBadge' }}
+            %span.mi.md-16 emoji_events
+            %span= @enabled_contests.any? ? "Contest Mode · #{@enabled_contests.map(&:name).join(', ')}" : "Contest Mode · No active contest"
       %h2.fw-bold.mb-0.d-flex.align-items-center.gap-2
         %span.mi.md-28.text-primary leaderboard
         %span Real-time Scoreboard
@@ -31,20 +33,23 @@
           %option{value: "rank", selected: params[:sort] != 'name'} Sort by Rank
           %option{value: "name", selected: params[:sort] == 'name'} Sort by Name
 
-      = link_to scoreboard_path(format: :csv, mode: @mode, sort: params[:sort]), class: 'btn btn-sm btn-outline-success btn-flex rounded-pill px-3', title: 'Export Scoreboard as CSV', data: { turbo: false } do
+      = link_to scoreboard_path(format: :csv, mode: @mode, sort: params[:sort]), class: 'btn btn-sm btn-outline-success btn-flex rounded-pill px-3', title: 'Export Scoreboard as CSV', data: { turbo: false, 'auto-refresh-target': 'csvLink' } do
         %span.mi.md-18 download
         %span Export CSV
 
   = turbo_frame_tag "scoreboard" do
+    -# Embedded compact JSON payload for 2D virtualized rendering
+    %script#scoreboard-data{type: "application/json", data: { 'auto-refresh-target': 'data' }}= json_escape(@scoreboard_payload.to_json).html_safe
+
     -# Stats & Score Legend Strip
     .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2.mb-3
       .d-flex.flex-wrap.align-items-center.gap-2
         %span.badge.rounded-pill.bg-primary-subtle.text-primary.border.border-primary-subtle.px-3.py-2.d-inline-flex.align-items-center.gap-1
           %span.mi.md-16= @mode == 'group' ? 'groups' : 'person'
-          %span= "#{@leaderboard.size} #{@mode == 'group' ? 'Groups' : 'Participants'}"
+          %span{data: { 'auto-refresh-target': 'entityCount' }}= "#{@leaderboard.size} #{@mode == 'group' ? 'Groups' : 'Participants'}"
         %span.badge.rounded-pill.bg-secondary-subtle.text-secondary.border.border-secondary-subtle.px-3.py-2.d-inline-flex.align-items-center.gap-1
           %span.mi.md-16 quiz
-          %span= "#{@problems.size} Problems"
+          %span{data: { 'auto-refresh-target': 'problemCount' }}= "#{@problems.size} Problems"
         - if @mode == 'group'
           %span.badge.rounded-pill.bg-info-subtle.text-info-emphasis.border.border-info-subtle.px-3.py-2.d-inline-flex.align-items-center.gap-1.text-wrap.text-start
             %span.mi.md-16 info
@@ -62,164 +67,19 @@
             %span.mi.md-16.text-danger bloodtype
             %span First Blood
 
-    -# Main Scoreboard Card
+    -# Main Scoreboard Card (2D Virtualized Table)
     .card.shadow-sm.scoreboard-card.w-100
       .card-body.p-0
-        .scoreboard-scroll-wrapper
-          %table.table.table-hover.m-0.scoreboard-table.w-100
-            %thead
+        .scoreboard-scroll-wrapper{data: { 'auto-refresh-target': 'scrollWrapper' }}
+          %table.table.m-0.scoreboard-table{data: { 'auto-refresh-target': 'table' }}
+            %thead{data: { 'auto-refresh-target': 'thead' }}
               %tr
                 %th.text-center.sb-col-rank Rank
                 %th.sb-col-name= @mode == 'group' ? 'Group / Member' : 'Participant'
                 %th.text-center.sb-col-sum Sum
-                - if GraderConfiguration.enable_bonus?
-                  %th.text-center{style: "min-width: 74px;"} Bonus
-                - if GraderConfiguration.enable_penalty?
-                  %th.text-center{style: "min-width: 82px;"} Deducted
-                - @problems.each do |p|
-                  %th.text-center.problem-header{title: p.full_name}
-                    .vertical-text= p.name
-                    .small.text-muted.fw-normal= p.effective_full_score || 100
-                    - if GraderConfiguration.show_first_bloods? && p.bonus_first_blood.to_f != 0
-                      - n = p.respond_to?(:first_n_bloods) ? p.first_n_bloods : 0
-                      - if n > 0
-                        .badge.bg-danger-subtle.text-danger.border.border-danger-subtle.px-1.py-0.mt-1{title: "First #{n} Bloods Bonus: #{p.bonus_first_blood}", style: "font-size: 0.68rem;"}
-                          %span.mi{style: "font-size: 0.75rem;"} bloodtype
-                          - formatted_bonus = p.bonus_first_blood.to_f > 0 ? "+#{format_score(p.bonus_first_blood)}" : format_score(p.bonus_first_blood)
-                          %span= "#{formatted_bonus}"
-
-            %tbody
+            %tbody{data: { 'auto-refresh-target': 'tbody' }}
               - if @leaderboard.empty?
                 %tr
-                  %td.text-center.text-muted.py-5{colspan: 5 + @problems.size}
+                  %td.text-center.text-muted.py-5{colspan: 3}
                     %span.mi.md-36.d-block.mb-2.opacity-50 leaderboard
                     No entries to display yet.
-              - elsif @mode == 'individual'
-                - @leaderboard.each do |entry|
-                  - is_self = @current_user && entry[:user].id == @current_user.id
-                  - rank_class = case entry[:rank]
-                    - when 1 then 'sb-rank-1'
-                    - when 2 then 'sb-rank-2'
-                    - when 3 then 'sb-rank-3'
-                    - else 'sb-rank-default'
-                  %tr{class: ('scoreboard-row-self' if is_self), data: { 'sb-row': 'individual', 'sb-name': entry[:user].full_name.to_s.downcase }}
-                    %td.text-center.sb-col-rank
-                      %span.sb-rank-pill{class: rank_class}= entry[:rank]
-                    %td.sb-col-name{title: entry[:user].full_name}
-                      .d-flex.align-items-center.gap-2.min-w-0
-                        %span.sb-name-truncate{class: ('fw-bold' if is_self || entry[:rank] <= 3)}= entry[:user].full_name
-                        - if is_self
-                          %span.badge.rounded-pill.bg-primary.flex-shrink-0{style: 'font-size: 0.68rem;'} You
-                    %td.text-center.fw-bold.sb-col-sum.font-monospace= format_score(entry[:total_score])
-                    - if GraderConfiguration.enable_bonus?
-                      %td.text-center.text-success.fw-semibold.font-monospace
-                        = "+#{format_score(entry[:bonus_score])}" if entry[:bonus_score].to_f > 0
-                    - if GraderConfiguration.enable_penalty?
-                      %td.text-center.text-danger.fw-semibold.font-monospace
-                        = "-#{format_score(entry[:deducted_score])}" if entry[:deducted_score].to_f > 0
-                    - @problems.each do |p|
-                      - if user_associated_with_problem?(entry[:user].id, p.id)
-                        - has_score = @scores[entry[:user].id].key?(p.id)
-                        - score = @scores[entry[:user].id][p.id] || 0
-                        - full_score = p.effective_full_score || 100
-                        - is_zero_pass = (full_score == 0 && @zero_score_passes[entry[:user].id] && @zero_score_passes[entry[:user].id][p.id])
-                        - pct = is_zero_pass ? 1.0 : ((full_score.to_f.abs > 0) ? (score.to_f.abs / full_score.to_f.abs).clamp(0, 1) : 0)
-                        %td.text-center.score-cell
-                          - if has_score
-                            - chip_class = if is_zero_pass || pct >= 1.0
-                              - 'score-chip--full'
-                            - elsif pct >= 0.5
-                              - 'score-chip--high'
-                            - elsif score.to_f > 0
-                              - 'score-chip--partial'
-                            - else
-                              - 'score-chip--zero'
-                            %span.score-chip{class: chip_class}
-                              = format_score(score)
-                              - if GraderConfiguration.show_first_bloods? && p.bonus_first_blood.to_f != 0 && @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(entry[:user].id))
-                                - formatted_bonus = p.bonus_first_blood.to_f > 0 ? "+#{format_score(p.bonus_first_blood)}" : format_score(p.bonus_first_blood)
-                                %span.mi.text-danger{style: 'font-size: 0.85rem;', title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
-                          - else
-                            %span.score-chip--unattempted ·
-                      - else
-                        %td.text-center.score-cell
-                          %span.score-chip--unattempted —
-              - else
-                - @leaderboard.each_with_index do |entry, g_idx|
-                  - group_key = "g-#{g_idx}"
-                  - member_names = entry[:members].map { |m| m[:user].full_name.to_s.downcase }.join(' ')
-                  - rank_class = case entry[:rank]
-                    - when 1 then 'sb-rank-1'
-                    - when 2 then 'sb-rank-2'
-                    - when 3 then 'sb-rank-3'
-                    - else 'sb-rank-default'
-                  %tr.scoreboard-group-row{data: { 'sb-row': 'group', 'sb-group': group_key, 'sb-name': "#{entry[:group].name.to_s.downcase} #{member_names}" }}
-                    %td.text-center.sb-col-rank
-                      %span.sb-rank-pill{class: rank_class}= entry[:rank]
-                    %td.sb-col-name{title: entry[:group].name}
-                      .d-flex.align-items-center.gap-2.min-w-0
-                        %span.mi.md-18.text-primary.flex-shrink-0 groups
-                        %span.sb-name-truncate.fw-bold= entry[:group].name
-                        %span.badge.rounded-pill.bg-secondary-subtle.text-secondary.flex-shrink-0{style: 'font-size: 0.7rem;'}= entry[:members].size
-                    %td.text-center.fw-bold.sb-col-sum.font-monospace= format_score(entry[:total_score])
-                    - if GraderConfiguration.enable_bonus?
-                      %td.text-center.text-success.fw-bold.font-monospace
-                        = "+#{format_score(entry[:bonus_score])}" if entry[:bonus_score].to_f > 0
-                    - if GraderConfiguration.enable_penalty?
-                      %td.text-center.text-danger.fw-bold.font-monospace
-                        = "-#{format_score(entry[:deducted_score])}" if entry[:deducted_score].to_f > 0
-                    - @problems.each do |p|
-                      - if group_associated_with_problem?(entry[:group].id, p.id)
-                        - group_score = @group_score_type == 'group_max' ? entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.max : entry[:members].map { |m| @scores[m[:user].id][p.id] || 0 }.sum
-                        %td.text-center.fw-bold.font-monospace
-                          - if group_score.to_f > 0
-                            = format_score(group_score)
-                          - else
-                            %span.score-chip--unattempted ·
-                      - else
-                        %td.text-center.score-cell
-                          %span.score-chip--unattempted —
-                  - entry[:members].each do |m|
-                    - is_self = @current_user && m[:user].id == @current_user.id
-                    %tr{class: ('scoreboard-row-self' if is_self), data: { 'sb-row': 'member', 'sb-group': group_key, 'sb-name': "#{entry[:group].name.to_s.downcase} #{m[:user].full_name.to_s.downcase}" }}
-                      %td.text-center.text-muted.small.sb-col-rank.font-monospace= "##{m[:rank]}"
-                      %td.ps-3.sb-col-name{title: m[:user].full_name}
-                        .d-flex.align-items-center.gap-1.min-w-0
-                          %span.mi.md-16.text-muted.flex-shrink-0 subdirectory_arrow_right
-                          %span.sb-name-truncate{class: ('fw-bold' if is_self)}= m[:user].full_name
-                          - if is_self
-                            %span.badge.rounded-pill.bg-primary.flex-shrink-0{style: 'font-size: 0.68rem;'} You
-                      %td.text-center.sb-col-sum.font-monospace= format_score(m[:total_score])
-                      - if GraderConfiguration.enable_bonus?
-                        %td.text-center.text-success.font-monospace
-                          = "+#{format_score(m[:bonus_score])}" if m[:bonus_score].to_f > 0
-                      - if GraderConfiguration.enable_penalty?
-                        %td.text-center.text-danger.font-monospace
-                          = "-#{format_score(m[:deducted_score])}" if m[:deducted_score].to_f > 0
-                      - @problems.each do |p|
-                        - if user_associated_with_problem?(m[:user].id, p.id)
-                          - has_score = @scores[m[:user].id].key?(p.id)
-                          - score = @scores[m[:user].id][p.id] || 0
-                          - full_score = p.effective_full_score || 100
-                          - is_zero_pass = (full_score == 0 && @zero_score_passes[m[:user].id] && @zero_score_passes[m[:user].id][p.id])
-                          - pct = is_zero_pass ? 1.0 : ((full_score.to_f.abs > 0) ? (score.to_f.abs / full_score.to_f.abs).clamp(0, 1) : 0)
-                          %td.text-center.score-cell
-                            - if has_score
-                              - chip_class = if is_zero_pass || pct >= 1.0
-                                - 'score-chip--full'
-                              - elsif pct >= 0.5
-                                - 'score-chip--high'
-                              - elsif score.to_f > 0
-                                - 'score-chip--partial'
-                              - else
-                                - 'score-chip--zero'
-                              %span.score-chip{class: chip_class}
-                                = format_score(score)
-                                - if GraderConfiguration.show_first_bloods? && p.bonus_first_blood.to_f != 0 && @first_blood_users[p.id] && (idx = @first_blood_users[p.id].index(m[:user].id))
-                                  - formatted_bonus = p.bonus_first_blood.to_f > 0 ? "+#{format_score(p.bonus_first_blood)}" : format_score(p.bonus_first_blood)
-                                  %span.mi.text-danger{style: 'font-size: 0.85rem;', title: "Blood Winner ##{idx + 1}! Received #{formatted_bonus} bonus!"} bloodtype
-                            - else
-                              %span.score-chip--unattempted ·
-                        - else
-                          %td.text-center.score-cell
-                            %span.score-chip--unattempted —
