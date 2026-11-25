@@ -229,6 +229,14 @@ class ScheduledTask < ApplicationRecord
       target_type: 'Announcement',
       payload_kind: nil
     },
+    'set_announcement_group' => {
+      category: 'announcement',
+      label: 'Set Announcement Group',
+      description: 'Change an announcement\'s target group (or set to Public for everyone).',
+      icon: 'group_work',
+      target_type: 'Announcement',
+      payload_kind: :announcement_group
+    },
 
     # --- Problem ---
     'enable_problem' => {
@@ -388,6 +396,10 @@ class ScheduledTask < ApplicationRecord
     when :config_value
       val = payload_hash['value']
       parts << "= #{val}" unless val.nil?
+    when :announcement_group
+      gid = payload_hash['group_id'].presence
+      group_label = gid ? (Group.find_by(id: gid)&.name || "Group ##{gid}") : 'Public'
+      parts << "-> #{group_label}"
     end
     parts.join(': ')
   end
@@ -478,6 +490,8 @@ class ScheduledTask < ApplicationRecord
       self.payload = { 'mode' => raw_payload['mode'].to_s.strip }
     when :config_value
       self.payload = { 'value' => raw_payload['value'].to_s }
+    when :announcement_group
+      self.payload = { 'group_id' => raw_payload['group_id'].presence&.to_i }
     else
       self.payload = {}
     end
@@ -518,6 +532,11 @@ class ScheduledTask < ApplicationRecord
         errors.add(:payload, 'boolean configuration value must be true or false')
       elsif conf.is_a?(GraderConfiguration) && conf.value_type == 'integer' && !val.match?(/\A-?\d+\z/)
         errors.add(:payload, 'integer configuration value must be a valid integer')
+      end
+    when :announcement_group
+      gid = payload_hash['group_id'].presence
+      if gid && !Group.exists?(id: gid)
+        errors.add(:payload, "group ##{gid} was not found")
       end
     end
   end
@@ -656,6 +675,19 @@ class ScheduledTask < ApplicationRecord
       ann.update!(contest_only: false)
       AuditLog.record!(auditable: ann, action: 'scheduled_contest_only', object_changes: { 'contest_only' => [true, false] })
       "Removed contest-only restriction from announcement \"#{ann.title}\"."
+    when 'set_announcement_group'
+      ann = require_target!(Announcement)
+      new_group_id = payload_hash['group_id'].presence&.to_i
+      new_group = new_group_id ? Group.find(new_group_id) : nil
+      old_group_id = ann.group_id
+      ann.update!(group_id: new_group&.id)
+      AuditLog.record!(
+        auditable: ann,
+        action: 'scheduled_set_group',
+        object_changes: { 'group_id' => [old_group_id, new_group&.id] }
+      )
+      target_label = new_group ? "group \"#{new_group.name}\"" : 'Public (all users)'
+      "Set announcement \"#{ann.title}\" to #{target_label}."
     when 'enable_problem'
       prob = require_target!(Problem)
       prob.update!(available: true)

@@ -100,4 +100,29 @@ class ScheduledTaskTest < ActiveSupport::TestCase
     refute task.execute!
     refute ann.reload.published?
   end
+
+  test "set_announcement_group sets group and resets to public" do
+    ann = Announcement.create!(title: "Group Move Test", body: "Hello", published: true, group_id: nil)
+    group = Group.create!(name: "sched_ann_grp", enabled: true)
+
+    task_to_group = ScheduledTask.create!(
+      action_type: "set_announcement_group",
+      target_id: ann.id,
+      payload: { "group_id" => group.id },
+      scheduled_at: 1.minute.ago,
+      created_by: users(:admin)
+    )
+    assert task_to_group.execute!
+    assert_equal group.id, ann.reload.group_id
+
+    task_to_public = ScheduledTask.create!(
+      action_type: "set_announcement_group",
+      target_id: ann.id,
+      payload: { "group_id" => nil },
+      scheduled_at: 1.minute.ago,
+      created_by: users(:admin)
+    )
+    assert task_to_public.execute!
+    assert_nil ann.reload.group_id
+  end
 end

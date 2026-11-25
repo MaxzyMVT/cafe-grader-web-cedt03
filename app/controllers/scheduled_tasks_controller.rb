@@ -124,7 +124,8 @@ class ScheduledTasksController < ApplicationController
     params.require(:scheduled_task).permit(
       :title, :action_type, :scheduled_at,
       :contest_id, :group_id, :problem_id, :announcement_id, :user_id, :configuration_id,
-      :system_mode, :config_boolean_value, :config_gimmick_value, :config_text_value
+      :system_mode, :config_boolean_value, :config_gimmick_value, :config_text_value,
+      :announcement_group_id
     )
   end
 
@@ -156,6 +157,8 @@ class ScheduledTasksController < ApplicationController
                          else
                            p[:config_text_value].to_s
                          end
+    when :announcement_group
+      payload['group_id'] = p[:announcement_group_id].presence&.to_i
     end
 
     parsed_time = if p[:scheduled_at].present?

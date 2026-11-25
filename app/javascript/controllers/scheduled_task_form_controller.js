@@ -14,6 +14,7 @@ export default class extends Controller {
     "targetGroup",
     "systemModeSection",
     "configValueSection",
+    "announcementGroupSection",
     "configSelect",
     "configInfo",
     "configCurrentValue",
@@ -91,6 +92,14 @@ export default class extends Controller {
           field.disabled = true
         })
       }
+    }
+
+    if (this.hasAnnouncementGroupSectionTarget) {
+      const showAnnGroup = payloadKind === "announcement_group"
+      this.announcementGroupSectionTarget.classList.toggle("d-none", !showAnnGroup)
+      this.announcementGroupSectionTarget.querySelectorAll("select, input").forEach((field) => {
+        field.disabled = !showAnnGroup
+      })
     }
   }
 
