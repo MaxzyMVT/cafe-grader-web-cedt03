@@ -1,24 +1,29 @@
 %h1 Listing sites
-%table.table.table-striped
-  %tr
-    %th Name
-    %th Password
-    %th Started
-    %th Start time
-    %th
-    %th
-    %th
-  - for site in @sites
-    - background = "white"
-    - background = "grey" if (site.started==true) and (site.finished? == true)
-    - background = "lightgreen" if (site.started==true) and (site.finished? != true)
-    %tr{:style => "background: #{background};"}
-      %td= h site.name
-      %td= h site.password
-      %td= h site.started
-      %td= h site.start_time
-      %td= link_to 'Show', site, class: 'btn btn-secondary'
-      %td= link_to 'Edit', edit_site_path(site), class: 'btn btn-primary'
-      %td= link_to 'Destroy', site, :confirm => 'Are you sure?', :method => :delete, class: 'btn btn-danger'
+.card.card-shadow
+  .card-body.p-0
+    .table-responsive
+      %table.table.table-hover.align-middle.mb-0
+        %thead
+          %tr
+            %th Name
+            %th Password
+            %th Started
+            %th Start time
+            %th.text-end Actions
+        %tbody
+          - for site in @sites
+            - row_class = nil
+            - row_class = "table-secondary" if (site.started == true) && (site.finished? == true)
+            - row_class = "table-success" if (site.started == true) && (site.finished? != true)
+            %tr{class: row_class}
+              %td= h site.name
+              %td.font-monospace= h site.password
+              %td= h site.started
+              %td.text-nowrap= h site.start_time
+              %td.text-end.text-nowrap
+                .d-inline-flex.gap-1
+                  = link_to 'Show', site, class: 'btn btn-sm btn-secondary'
+                  = link_to 'Edit', edit_site_path(site), class: 'btn btn-sm btn-primary'
+                  = link_to 'Destroy', site, data: { confirm: 'Are you sure?' }, method: :delete, class: 'btn btn-sm btn-danger'
 %br/
 = link_to '+ New site', new_site_path, class: 'btn btn-success'

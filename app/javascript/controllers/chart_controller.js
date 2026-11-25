@@ -73,11 +73,32 @@ export default class extends Controller {
 
   _drawChart() {
     const preset = PRESETS[this.presetValue] || PRESETS.bar
+    const styles = getComputedStyle(document.body)
+    const textColor = styles.getPropertyValue('--bs-body-color').trim() || '#333333'
+    const gridColor = styles.getPropertyValue('--bs-border-color').trim() || 'rgba(128,128,128,0.2)'
+
+    const options = structuredClone(preset.options || {})
+    options.plugins = options.plugins || {}
+    options.plugins.legend = {
+      ...(options.plugins.legend || {}),
+      labels: { color: textColor, ...(options.plugins.legend?.labels || {}) }
+    }
+    options.scales = options.scales || {}
+    ;['x', 'y'].forEach((axis) => {
+      options.scales[axis] = options.scales[axis] || {}
+      options.scales[axis].ticks = { color: textColor, ...(options.scales[axis].ticks || {}) }
+      options.scales[axis].grid = { color: gridColor, ...(options.scales[axis].grid || {}) }
+      if (options.scales[axis].title) {
+        options.scales[axis].title = { color: textColor, ...options.scales[axis].title }
+      }
+    })
+
     Chart.defaults.font.size = 15
+    Chart.defaults.color = textColor
     this.chart = new Chart(this.element, {
       type: preset.type,
       data: this.dataValue,
-      options: preset.options,
+      options: options,
     })
   }
 }

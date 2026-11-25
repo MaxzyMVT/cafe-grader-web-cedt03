@@ -1,6 +1,6 @@
 .row.row-cols-lg-auto.g-1.align-items-center.problem-chooser{'data-controller': 'init-ui-component'}
   .col-12
-    = select("submission", :problems, problems.map { |p| ["[#{p.name}] #{p.full_name}", send(target_url_method,p.id)] }, {prompt: "Select a problem", selected: selected_problem ? send(target_url_method,selected_problem.id) : nil}, class: "select2 form-control", style: 'min-width: 300px;')
+    = select("submission", :problems, problems.map { |p| ["[#{p.name}] #{p.full_name}", send(target_url_method,p.id)] }, {prompt: "Select a problem", selected: selected_problem ? send(target_url_method,selected_problem.id) : nil}, class: "select2 form-control", style: 'width: 100%;')
 :javascript
   document.addEventListener("turbo:load", function() {
     $("#submission_problems").on('change', (event) => window.location.href = event.target.value);

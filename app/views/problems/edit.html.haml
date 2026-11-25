@@ -1,7 +1,7 @@
 = render 'application/breadcrumb', steps: [{ label: 'Problems', path: problems_path, icon: resource_icon_name(Problem) }, { label: 'Edit' }]
 
-.d-flex.justify-content-between.align-items-center.mb-3
-  .d-flex.align-items-center.gap-2
+.d-flex.flex-column.flex-md-row.justify-content-between.align-items-start.align-items-md-center.gap-2.mb-3
+  .d-flex.flex-wrap.align-items-center.gap-2
     %h2.fw-bold.text-dark.mb-0
       - if @problem.full_name.present?
         = @problem.full_name
@@ -11,7 +11,7 @@
     %span.badge.bg-primary-subtle.text-primary.border.border-primary-subtle.rounded-pill.fw-medium
       %small Editing
 
-  .d-flex.gap-2.align-items-center{'data-controller': 'init-ui-component'}
+  .d-flex.flex-wrap.gap-2.align-items-center{'data-controller': 'init-ui-component'}
     = link_to stat_problem_path(@problem), class: 'btn btn-sm bg-white shadow-sm border-0 text-secondary d-inline-flex align-items-center justify-content-center', data: {bs_toggle: 'tooltip', bs_title: 'Statistics'} do
       %span.mi query_stats
     = link_to download_archive_problem_path(@problem), class: 'btn btn-sm bg-white shadow-sm border-0 text-secondary d-inline-flex align-items-center justify-content-center', data: {bs_toggle: 'tooltip', bs_title: 'Download Archive'} do

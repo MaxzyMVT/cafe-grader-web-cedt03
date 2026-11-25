@@ -31,17 +31,17 @@
               %h5.fw-bold.text-body-emphasis.mb-0 Queue Status
               .text-secondary.small Jobs waiting to be processed
 
-          .row.g-3
+          .row.g-2
             .col-4
-              .card.border-0.bg-info-subtle.text-center.p-3.rounded-3
+              .card.border-0.bg-info-subtle.text-center.p-2.p-sm-3.rounded-3
                 .fw-bold.h3.mb-1.text-info-emphasis= @wait_count['compile'] || 0
                 .text-secondary.small Compile
             .col-4
-              .card.border-0.bg-warning-subtle.text-center.p-3.rounded-3
+              .card.border-0.bg-warning-subtle.text-center.p-2.p-sm-3.rounded-3
                 .fw-bold.h3.mb-1.text-warning-emphasis= @wait_count['evaluate'] || 0
                 .text-secondary.small Evaluate
             .col-4
-              .card.border-0.bg-success-subtle.text-center.p-3.rounded-3
+              .card.border-0.bg-success-subtle.text-center.p-2.p-sm-3.rounded-3
                 .fw-bold.h3.mb-1.text-success-emphasis= @wait_count['score'] || 0
                 .text-secondary.small Score
 

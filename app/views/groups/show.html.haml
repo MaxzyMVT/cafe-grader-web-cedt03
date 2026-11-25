@@ -85,21 +85,21 @@
                         =form_tag add_user_group_path(@group), class: 'user-add-form', 
                           data: {turbo: true, action: 'turbo:submit-end->group#afterUsersAdd'} do
                           .d-flex.gap-2.align-items-center
-                            .flex-grow-1
+                            .flex-grow-1.min-w-0
                               =select_tag :user_ids, options_from_collection_for_select(User.all,'id','login_with_name'), 
                                 class: 'select2', multiple: true, style: 'width: 100%',
                                 data: {placeholder: 'Add these users...'}
-                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm'
+                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm flex-shrink-0'
 
                       .col-12
                         =form_tag add_user_by_group_group_path(@group), class: 'group-add-form',
                           data: {turbo: true, action: 'turbo:submit-end->group#afterUsersAdd'} do
                           .d-flex.gap-2.align-items-center
-                            .flex-grow-1
+                            .flex-grow-1.min-w-0
                               =select_tag :user_group_ids, options_from_collection_for_select(@current_user.groups_for_action(:edit),'id','name'), 
                                 class: 'select2', multiple: true, style: 'width: 100%',
                                 data: {placeholder: 'Add all from groups...'}
-                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm'
+                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm flex-shrink-0'
 
                 -# bulk actions dropdown
                 .d-flex.justify-content-start.align-items-center.mb-3
@@ -166,31 +166,31 @@
                         =form_tag add_problem_group_path(@group), class: 'problem-add-form',
                           data: {turbo: true, action: 'turbo:submit-end->group#afterProblemsAdd'} do
                           .d-flex.gap-2.align-items-center
-                            .flex-grow-1
+                            .flex-grow-1.min-w-0
                               =select_tag :problem_ids, options_from_collection_for_select(@current_user.problems_for_action(:edit),'id','long_name'), 
                                 class: 'select2', multiple: true, style: 'width: 100%',
                                 data: {placeholder: 'Select individual problems...'}
-                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm', 'data-group-target': 'asdf'
+                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm flex-shrink-0', 'data-group-target': 'asdf'
 
                       .col-12
                         =form_tag add_problem_by_group_group_path(@group), class: 'group-add-form',
                           data: {turbo: true, action: 'turbo:submit-end->group#afterProblemsAdd'} do
                           .d-flex.gap-2.align-items-center
-                            .flex-grow-1
+                            .flex-grow-1.min-w-0
                               =select_tag :problem_group_ids, options_from_collection_for_select(@current_user.groups_for_action(:edit),'id','name'), 
                                 class: 'select2', multiple: true, style: 'width: 100%',
                                 data: {placeholder: 'Add all problems from groups...'}
-                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm'
+                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm flex-shrink-0'
 
                       .col-12
                         =form_tag add_problem_by_tag_group_path(@group), class: 'tag-add-form',
                           data: {turbo: true, action: 'turbo:submit-end->group#afterProblemsAdd'} do
                           .d-flex.gap-2.align-items-center
-                            .flex-grow-1
+                            .flex-grow-1.min-w-0
                               =select_tag :tag_ids, options_from_collection_for_select(Tag.order(:name), 'id', 'name'), 
                                 class: 'select2', multiple: true, style: 'width: 100%',
                                 data: {placeholder: 'Add all from tags...'}
-                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm'
+                            =submit_tag "Add", class: 'btn btn-primary px-3 shadow-sm flex-shrink-0'
 
                 -# bulk actions dropdown
                 .d-flex.justify-content-start.align-items-center.mb-3
@@ -308,7 +308,7 @@
 
     // problem table
     $('#problem_table').DataTable({
-      responstive: true,
+      responsive: true,
       destroy: true,
       paging: false,
       processing: true,

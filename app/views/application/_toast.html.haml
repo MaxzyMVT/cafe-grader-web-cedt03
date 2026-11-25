@@ -7,7 +7,11 @@
   autohide: true,
   errors: local_assigns.fetch(:errors,[]) }
 - toast_params.merge!( local_assigns.fetch(:toast, {}))
-- toast_type = toast_params[:type].to_sym == :notice ? :info : toast_params[:type].to_sym
+- raw_type = toast_params[:type].to_sym
+- toast_type = case raw_type
+  - when :notice then :info
+  - when :alert, :error then :danger
+  - else raw_type
 - toast_header_class = "bg-#{toast_type}-subtle text-#{toast_type}-emphasis"
 .toast.mb-1{"aria-atomic": true, "aria-live": :assertive, role: :alert, style: "background-color: var(--bs-body-bg); border-color: var(--bs-border-color);"}
   .toast-header.py-1{class: toast_header_class}

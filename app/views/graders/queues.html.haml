@@ -1,9 +1,9 @@
 %h1.fw-bold.text-body-emphasis Solid Queue (Latest jobs)
 
-.btn-group.mb-3{role: 'group', 'aria-label': 'Status filter'}
+.d-flex.flex-wrap.gap-1.mb-3{role: 'group', 'aria-label': 'Status filter'}
   - @statuses.each do |s|
     = link_to s.titleize, queues_grader_processes_path(status: (s == 'all' ? nil : s)),
-      class: "btn btn-sm btn-outline-secondary #{'active' if @status == s}"
+      class: "btn btn-sm rounded-pill #{'btn-primary' if @status == s} #{'btn-outline-secondary' unless @status == s}"
 
 %div{ data: { turbo: true,
       controller: 'datatables--init init-ui-component',

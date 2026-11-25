@@ -1,6 +1,6 @@
 = render 'application/breadcrumb', steps: [{ label: 'Audit Logs', icon: 'history' }]
 
-.d-flex.justify-content-between.align-items-center.mb-3
+.d-flex.flex-wrap.justify-content-between.align-items-center.gap-2.mb-3
   %h2.fw-bold.text-dark.mb-0
     %span.mi.me-2 history
     Audit Log
@@ -10,7 +10,7 @@
       Clear filter
 
 - if @auditable_type.present? || @filter_user
-  .alert.alert-info.d-flex.align-items-center.mb-3
+  .alert.alert-info.d-flex.flex-wrap.align-items-center.gap-1.mb-3
     %span.mi.me-2 filter_alt
     Filtered by:
     - if @auditable_type.present?
@@ -20,43 +20,44 @@
 
 .card.shadow-sm.mb-4
   .card-body.p-0
-    %table.table.table-hover.table-condense.align-middle.mb-0
-      %thead.table-light
-        %tr
-          %th Time
-          %th User
-          %th IP
-          %th Target
-          %th Action
-          %th Changed Fields
-          %th.text-end
-      %tbody
-        - if @audits.empty?
+    .table-responsive
+      %table.table.table-hover.table-condense.align-middle.mb-0
+        %thead.table-light
           %tr
-            %td.text-center.text-muted.py-4{colspan: 7} No audit records match this filter.
-        - @audits.each do |log|
-          %tr
-            %td.font-monospace.small= log.created_at.strftime('%Y-%m-%d %H:%M:%S')
-            %td
-              - if log.user
-                = log.user.full_name.presence || log.user.login
-              - else
-                %span.text-muted.fst-italic
-                  = log.actor_note.presence || 'system'
-            %td.font-monospace.small.text-muted= log.ip_address
-            %td.font-monospace.small= audit_target_label(log)
-            %td= audit_action_badge(log.action)
-            %td.small
-              - keys = (log.object_changes || {}).keys
-              - if keys.empty?
-                %span.text-muted —
-              - else
-                = keys.first(3).join(', ')
-                - if keys.size > 3
-                  %span.text-muted= " +#{keys.size - 3} more"
-            %td.text-end.py-1.pr-2
-              = link_to audit_log_path(log), class: 'btn btn-outline-secondary border-0 py-1 px-2', title: 'View details' do
-                %span.mi visibility
+            %th Time
+            %th User
+            %th IP
+            %th Target
+            %th Action
+            %th Changed Fields
+            %th.text-end
+        %tbody
+          - if @audits.empty?
+            %tr
+              %td.text-center.text-muted.py-4{colspan: 7} No audit records match this filter.
+          - @audits.each do |log|
+            %tr
+              %td.font-monospace.small.text-nowrap= log.created_at.strftime('%Y-%m-%d %H:%M:%S')
+              %td
+                - if log.user
+                  = log.user.full_name.presence || log.user.login
+                - else
+                  %span.text-muted.fst-italic
+                    = log.actor_note.presence || 'system'
+              %td.font-monospace.small.text-muted.text-nowrap= log.ip_address
+              %td.font-monospace.small= audit_target_label(log)
+              %td= audit_action_badge(log.action)
+              %td.small
+                - keys = (log.object_changes || {}).keys
+                - if keys.empty?
+                  %span.text-muted —
+                - else
+                  = keys.first(3).join(', ')
+                  - if keys.size > 3
+                    %span.text-muted= " +#{keys.size - 3} more"
+              %td.text-end.py-1.pr-2
+                = link_to audit_log_path(log), class: 'btn btn-outline-secondary border-0 py-1 px-2', title: 'View details' do
+                  %span.mi visibility
 
 - if @total_pages > 1
   %nav.mt-3

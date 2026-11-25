@@ -30,7 +30,7 @@
             - elsif comment.kind == 'comment'
               .badge.rounded-pill.text-info.bg-info-subtle.me-2 Comment
               %span= comment.title.html_safe
-          .col-7.text-end.d-flex.justify-content-end.align-items-center.gap-1.flex-nowrap
+          .col-7.text-end.d-flex.flex-wrap.justify-content-end.align-items-center.gap-1
             = link_to 'View', submission_comment_path(submission,comment), data: {turbo: true, turbo_stream: true}, class: 'btn btn-sm btn-outline-primary'
             - if @current_user.problems_for_action(:report).where(id: submission.problem).any? && show_edit
               = link_to 'Edit', '#', class: 'btn btn-sm btn-outline-secondary',

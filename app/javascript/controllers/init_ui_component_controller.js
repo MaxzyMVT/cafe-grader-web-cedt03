@@ -44,12 +44,19 @@ export default class extends Controller {
   }
 
   initializeSelect2() {
-    $(".select2").select2({
+    const $selects = $(this.element).find(".select2");
+    $selects.select2({
       theme: "bootstrap-5",
       width: 'style',
       templateResult: this.formatArchivableOption,
       templateSelection: this.formatArchivableOption
     });
+    // Bridge select2's jQuery-triggered `select2:select` event to a native
+    // `change` event so Stimulus `data-action="change->..."` handlers fire.
+    $selects.off("select2:select.cafe_bridge")
+            .on("select2:select.cafe_bridge", (event) => {
+              event.target.dispatchEvent(new Event("change", { bubbles: true }));
+            });
   }
 
   _teardownSelect2() {
@@ -58,17 +65,6 @@ export default class extends Controller {
         $(el).select2('destroy');
       }
     });
-    // Bridge select2's jQuery-triggered `select2:select` event to a native
-    // `change` event. select2 v4 dispatches its events through jQuery, which
-    // does NOT always reach native addEventListener handlers — and Stimulus'
-    // `data-action="change->..."` uses native listeners. Without this bridge,
-    // a select2-styled dropdown's selection silently fails to trigger
-    // Stimulus actions. Namespaced .cafe_bridge so re-init doesn't stack
-    // duplicate handlers.
-    $(".select2").off("select2:select.cafe_bridge")
-                 .on("select2:select.cafe_bridge", (event) => {
-                   event.target.dispatchEvent(new Event("change", { bubbles: true }));
-                 });
   }
 
   // Render a muted "archived" pill on options flagged data-archived="true"
@@ -87,6 +83,7 @@ export default class extends Controller {
 
   initializeTempusDominus() {
     const tdTriggerList = this.element.querySelectorAll('.tempus-dominus')
+    const bsTheme = document.documentElement.dataset.bsTheme === 'dark' ? 'dark' : 'light'
 
     // Create new tempus dominus instances for the current content
     this.tdInstances = Array.from(tdTriggerList).map(tdTriggerEl => {
@@ -99,6 +96,8 @@ export default class extends Controller {
         // default to date
         options = structuredClone(cafe.config.td.date)
       }
+      options.display = options.display || {}
+      options.display.theme = bsTheme
       return new TempusDominus(tdTriggerEl, options)
     });
   }

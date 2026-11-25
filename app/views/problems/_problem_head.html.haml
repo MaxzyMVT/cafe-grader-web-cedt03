@@ -7,8 +7,8 @@
     - if local_assigns[:suffix]
       %span= suffix
 
-  .d-flex.gap-2.mb-3
-    .badge.bg-info.text-dark.d-inline-flex.align-items-center.justify-content-center{style: 'min-width: 140px; height: 24px;'}
+  .d-flex.flex-wrap.gap-2.mb-3
+    .badge.bg-info.d-inline-flex.align-items-center.justify-content-center.px-3{style: 'height: 24px;'}
       Full Score: #{number_with_precision(problem.effective_full_score, precision: 2, strip_insignificant_zeros: true)}
     - if GraderConfiguration.show_first_bloods? && problem.bonus_first_blood.to_f != 0
       - n = problem.respond_to?(:first_n_bloods) ? problem.first_n_bloods : 0

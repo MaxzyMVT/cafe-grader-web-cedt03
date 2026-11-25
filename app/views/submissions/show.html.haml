@@ -147,7 +147,9 @@
       .card.mb-3.shadow-sm
         .card-body
           %h4 Evaluations
-          = render partial: 'evaluations', locals: {testcases: @testcases, evaluations_by_tcid: @evaluations_by_tcid}
+          .overflow-x-auto
+            %div{style: 'min-width: 440px;'}
+              = render partial: 'evaluations', locals: {testcases: @testcases, evaluations_by_tcid: @evaluations_by_tcid}
           .mt-3
             = render 'main/grading_legend'
 

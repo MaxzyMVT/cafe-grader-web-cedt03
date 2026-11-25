@@ -23,15 +23,16 @@
             .mb-2
               %label.form-label.fw-semibold= "Grant #{panel[:role]} role to"
             .d-flex.gap-2.align-items-center
-              .flex-grow-1
+              .flex-grow-1.min-w-0
                 = select_tag :id, options_from_collection_for_select(User.all, 'id', 'login_with_name'),
                              id: "#{panel[:role]}_user_id",
                              class: 'select2 role-user-select', multiple: false, style: 'width: 100%'
-              = submit_tag 'Grant', class: 'btn btn-primary',
+              = submit_tag 'Grant', class: 'btn btn-primary flex-shrink-0',
                            data: {action: 'click->user-admin--admin#setGrantCommand'}
           %br
-          %table.role-table.table.table-condense.table-hover{id: panel[:table_id], data: {query_url: panel[:query_url], role: panel[:role]}}
-            %thead{:class => 'info-head'}
-              %th Login
-              %th Full name
-              %th.text-end Action
+          .table-responsive
+            %table.role-table.table.table-condense.table-hover{id: panel[:table_id], data: {query_url: panel[:query_url], role: panel[:role]}}
+              %thead{:class => 'info-head'}
+                %th Login
+                %th Full name
+                %th.text-end Action

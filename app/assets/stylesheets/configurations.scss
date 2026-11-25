@@ -6,24 +6,13 @@
 }
 
 .config-card {
-  overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  /*
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px;
-  background: white;
-  */
-
-  &:hoverxxx {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  }
+  transition: box-shadow 0.2s ease;
 
   .card-header {
     border: none;
     background: var(--color-info-subtle);
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
 
     h3 {
       font-size: 1.1rem;
@@ -40,7 +29,6 @@
       }
     }
   }
-
 }
 
 .config-subgroup-header {
@@ -81,21 +69,23 @@
 
   .config-main {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
+    gap: 10px 16px;
   }
 
   .config-info {
-    flex: 1;
-    padding-right: 20px;
+    flex: 1 1 180px;
+    min-width: 0;
 
     .config-key {
       font-weight: 600;
       font-size: 0.95rem;
       color: var(--color-text-dark);
       display: block;
-      word-break: break-all;
-      text-transform: bold;
+      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .config-description {
@@ -118,22 +108,28 @@
   }
 
   .config-value-wrapper {
-    min-width: 140px;
+    min-width: 0;
+    max-width: 100%;
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     align-items: center;
+    gap: 4px;
     text-align: right;
   }
 
   .config-value-text {
     font-family: 'Inconsolata', monospace;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--color-config-value-text, var(--color-primary-dark));
     background: var(--color-surface-alt);
     padding: 4px 10px;
     border-radius: 6px;
-    margin-right: 8px;
+    margin-right: 4px;
     border: 1px solid var(--color-border-light);
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .edit-link {
@@ -159,8 +155,8 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   .input-group-text {
-    background: transparent;
-    border-right: none;
+    background: transparent !important;
+    border-right: none !important;
     color: var(--color-text-light);
   }
 

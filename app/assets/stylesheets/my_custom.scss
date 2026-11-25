@@ -44,7 +44,7 @@ html {
 
 // Help drawer — centralized width so all offcanvas help drawers match
 .offcanvas-help {
-  width: 480px;
+  width: min(480px, 92vw) !important;
 }
 
 .mi.fill {
@@ -288,7 +288,7 @@ tr {
   border: 1px dotted var(--color-secondary-light);
   padding: 5px;
   margin: 10px 0px;
-  color: black;
+  color: var(--color-text-main);
   font-size: 13px;
 }
 
@@ -301,11 +301,11 @@ tr {
 }
 
 .errorExplanation {
-  border: 1px dotted gray;
+  border: 1px dotted var(--color-border-main);
   color: var(--color-danger-text-alt);
   padding: 5px 15px 5px 15px;
   margin-bottom: 5px;
-  background-color: white;
+  background-color: var(--color-surface);
   font-weight: normal;
 
   h2 {
@@ -316,21 +316,22 @@ tr {
 
 table.uinfo {
   border-collapse: collapse;
-  border: 1px solid black;
+  border: 1px solid var(--color-border-dark);
   font-size: 13px;
 }
 
 td.uinfo {
   vertical-align: top;
-  border: 1px solid black;
+  border: 1px solid var(--color-border-dark);
   padding: 5px;
 }
 
 th.uinfo {
-  background: lightgreen;
+  background: var(--color-success-bg);
+  color: var(--color-text-main);
   vertical-align: top;
   text-align: right;
-  border: 1px solid black;
+  border: 1px solid var(--color-border-dark);
   padding: 5px;
 }
 
@@ -402,7 +403,8 @@ table.taskdesc {
 
 .announcement {
   margin: 2px;
-  background: white;
+  background: var(--color-surface);
+  color: var(--color-text-main);
   padding: 1px;
   padding-left: 10px;
   padding-right: 10px;
@@ -473,13 +475,15 @@ div {
 
       &.body {
         border: 2px solid var(--color-border-muted);
-        background: #fff8f8;
+        background: var(--color-surface-alt);
+        color: var(--color-text-main);
         padding-left: 5px;
       }
 
       &.reply-body {
-        border: 2px solid #bbbbbb;
-        background: #fffff8;
+        border: 2px solid var(--color-border-main);
+        background: var(--color-highlight-yellow);
+        color: var(--color-text-main);
         padding-left: 5px;
       }
 
@@ -496,8 +500,8 @@ div {
         font-size: 10px;
         line-height: 1.75em;
         padding: 0 5px;
-        color: var(--color-gray-dark);
-        background: #bbbbbb;
+        color: var(--color-text-main);
+        background: var(--color-surface-gray);
         font-weight: bold;
       }
     }
@@ -510,8 +514,9 @@ div {
   }
 
   &.registration-desc, &.test-desc {
-    border: 1px dotted gray;
-    background: #f5f5f5;
+    border: 1px dotted var(--color-border-main);
+    background: var(--color-surface-alt);
+    color: var(--color-text-main);
     padding: 5px;
     margin: 10px 0;
     font-size: 12px;
@@ -574,9 +579,10 @@ golden-btn + .golden-btn { margin-top: 1em; }
                 inset 0 -1px 1px 3px rgba(250,227,133,1);
 }
 
-// Fix for dropdown size shrink on user_admin/admin page
+// Responsive Select2 sizing on user_admin/admin page (never overflow narrow cards)
 .role-user-select + .select2-container {
-  min-width: 20rem !important;
+  min-width: 0 !important;
+  width: 100% !important;
 }
 
 // Navbar nav items
@@ -588,24 +594,28 @@ golden-btn + .golden-btn { margin-top: 1em; }
   }
 }
 
-// ---- Responsive tables ----
-// Tables scroll horizontally on small screens instead of overflowing container.
+// ---- Responsive DataTables 2.x & tables ----
+// DataTables 2.x uses .dt-container and .dt-layout-table (legacy used .dataTables_wrapper).
+.dt-container,
 .dataTables_wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  min-width: 0; // prevent flex children from stretching outside
+  min-width: 0;
+  max-width: 100%;
 }
 
-#main-content {
-  // Target any table directly to make it scrollable on mobile without wrapping divs
-  table:not(.no-responsive) {
-    @media (max-width: 768px) {
-      display: block !important;
-      width: 100% !important;
-      overflow-x: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-    }
-  }
+.dt-layout-table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.dt-layout-row {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 // ---- Offcanvas nav drawer ----
@@ -688,44 +698,245 @@ golden-btn + .golden-btn { margin-top: 1em; }
   }
 }
 
-// Scoreboard card: disable compositing layers (mask-image/isolation) added by premium theme's .card hover
-.scoreboard-card, .scoreboard-card:hover {
-  isolation: auto !important;
-  -webkit-mask-image: none !important;
-  mask-image: none !important;
-  transform: none !important;
-  box-shadow: none !important;
+// ============================================
+// Modern Scoreboard
+// ============================================
+.scoreboard-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--bs-success, #10b981);
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--bs-success-bg-subtle, rgba(16, 185, 129, 0.2));
 }
 
-// Scoreboard sticky columns styling
-.scoreboard-table {
-  thead th, tbody tr td {
-    border-bottom: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.12)) !important;
+.scoreboard-toolbar {
+  border-radius: 14px !important;
+}
+
+.scoreboard-card {
+  border-radius: 14px !important;
+  overflow: hidden;
+  border: 1px solid var(--bs-border-color, #dee2e6) !important;
+  // Disable expensive hover shadow/compositing shifts on large tables
+  transform: none !important;
+  transition: none !important;
+  &:hover {
+    transform: none !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
   }
 }
 
-@media (min-width: 768px) {
-  .scoreboard-table {
-    border-collapse: separate !important;
-    border-spacing: 0;
+.scoreboard-scroll-wrapper {
+  max-height: 76vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  contain: layout paint;
+  will-change: scroll-position;
+}
 
+.scoreboard-table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  margin-bottom: 0;
+
+  tr, td, th {
+    transition: none !important;
+  }
+
+  thead th {
+    border-bottom: 2px solid var(--bs-border-color, #dee2e6) !important;
+    border-right: 1px solid var(--bs-border-color, rgba(128, 128, 128, 0.14)) !important;
+    border-top: 0 !important;
+    border-left: 0 !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.65rem 0.5rem;
+    background-color: var(--color-scoreboard-sticky-header-bg, #f1f5f9) !important;
+    vertical-align: bottom;
+  }
+
+  tbody tr {
+    contain: layout style;
+  }
+
+  tbody tr td {
+    border-bottom: 1px solid var(--bs-border-color, rgba(128, 128, 128, 0.14)) !important;
+    border-right: 1px solid var(--bs-border-color, rgba(128, 128, 128, 0.1)) !important;
+    border-top: 0 !important;
+    border-left: 0 !important;
+    padding: 0.45rem 0.4rem;
+    vertical-align: middle;
+  }
+
+  .vertical-text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    padding: 8px 0 4px;
+    max-height: 140px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .problem-header {
+    min-width: 54px;
+    width: 54px;
+    padding: 6px 4px;
+  }
+
+  .score-cell {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.3rem;
+  }
+
+  // Fixed widths for sticky columns so column 3 never overlaps long names
+  .sb-col-rank {
+    width: 68px;
+    min-width: 68px;
+    max-width: 68px;
+  }
+
+  .sb-col-name {
+    width: 210px;
+    min-width: 180px;
+    max-width: 210px;
+    .sb-name-truncate {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .sb-col-sum {
+    width: 86px;
+    min-width: 86px;
+    max-width: 86px;
+  }
+
+  // Current user subtle row highlight
+  tbody tr.scoreboard-row-self {
+    td {
+      background-color: var(--bs-primary-bg-subtle, rgba(13, 110, 253, 0.08)) !important;
+    }
+    td:first-child {
+      box-shadow: inset 3px 0 0 var(--bs-primary, #0d6efd);
+    }
+  }
+
+  tbody tr.scoreboard-group-row {
+    td {
+      background-color: var(--color-scoreboard-sticky-secondary-bg, #e2e8f0) !important;
+      font-weight: 700;
+    }
+  }
+}
+
+// Rank Medal & Number Badges
+.sb-rank-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 1.7rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sb-rank-1 {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #1c1917;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+}
+
+.sb-rank-2 {
+  background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(148, 163, 184, 0.3);
+}
+
+.sb-rank-3 {
+  background: linear-gradient(135deg, #b45309, #d97706);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.3);
+}
+
+.sb-rank-default {
+  background-color: var(--color-inner-surface, rgba(128, 128, 128, 0.1));
+  color: var(--bs-secondary-color, #64748b);
+}
+
+// Modern Rounded Score Chips (static CSS classes — zero inline color-mix per cell!)
+.score-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 2.6rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.score-chip--full {
+  background-color: var(--bs-success-bg-subtle, #d1e7dd);
+  color: var(--bs-success-text-emphasis, #0a3622);
+  border: 1px solid var(--bs-success-border-subtle, rgba(25, 135, 84, 0.35));
+}
+
+.score-chip--high {
+  background-color: var(--bs-info-bg-subtle, #cff4fc);
+  color: var(--bs-info-text-emphasis, #055160);
+  border: 1px solid var(--bs-info-border-subtle, rgba(13, 202, 240, 0.35));
+}
+
+.score-chip--partial {
+  background-color: var(--bs-warning-bg-subtle, #fff3cd);
+  color: var(--bs-warning-text-emphasis, #664d03);
+  border: 1px solid var(--bs-warning-border-subtle, rgba(255, 193, 7, 0.4));
+}
+
+.score-chip--zero {
+  background-color: var(--bs-danger-bg-subtle, #f8d7da);
+  color: var(--bs-danger-text-emphasis, #58151c);
+  border: 1px solid var(--bs-danger-border-subtle, rgba(220, 53, 69, 0.3));
+}
+
+.score-chip--unattempted {
+  color: var(--bs-tertiary-color, #94a3b8);
+  opacity: 0.55;
+  font-weight: 400;
+}
+
+@media (min-width: 769px) {
+  .scoreboard-table {
     thead th {
       position: sticky;
       top: 0;
-      z-index: 100;
-      background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-light-bg, #f8f9fa)) !important;
+      z-index: 20;
+      background-color: var(--color-scoreboard-sticky-header-bg, #f1f5f9) !important;
 
       &:nth-child(1) {
         left: 0;
-        z-index: 120;
+        z-index: 30;
       }
       &:nth-child(2) {
-        left: 60px;
-        z-index: 120;
+        left: 68px;
+        z-index: 30;
       }
       &:nth-child(3) {
-        left: 260px;
-        z-index: 120;
+        left: 278px;
+        z-index: 30;
         border-right: 2px solid var(--bs-border-color, #dee2e6) !important;
       }
     }
@@ -734,24 +945,27 @@ golden-btn + .golden-btn { margin-top: 1em; }
       &:nth-child(1), &:nth-child(2), &:nth-child(3) {
         position: sticky;
         z-index: 5;
-        background-color: var(--color-scoreboard-sticky-bg, var(--color-surface-alt, #fff)) !important;
+        background-color: var(--color-scoreboard-sticky-bg, #ffffff) !important;
       }
-      &:nth-child(1) {
-        left: 0;
-      }
-      &:nth-child(2) {
-        left: 60px;
-      }
+      &:nth-child(1) { left: 0; }
+      &:nth-child(2) { left: 68px; }
       &:nth-child(3) {
-        left: 260px;
+        left: 278px;
         border-right: 2px solid var(--bs-border-color, #dee2e6) !important;
       }
     }
 
-    tbody tr.table-secondary td {
+    tbody tr.scoreboard-row-self td {
       &:nth-child(1), &:nth-child(2), &:nth-child(3) {
-        background-color: var(--color-scoreboard-sticky-header-bg, var(--bs-table-hover-bg, #e2e3e5)) !important;
-        z-index: 6; // slightly higher than standard row td
+        background-color: var(--color-scoreboard-sticky-self-bg, var(--color-scoreboard-sticky-bg)) !important;
+        z-index: 6;
+      }
+    }
+
+    tbody tr.scoreboard-group-row td {
+      &:nth-child(1), &:nth-child(2), &:nth-child(3) {
+        background-color: var(--color-scoreboard-sticky-secondary-bg, #e2e8f0) !important;
+        z-index: 6;
       }
     }
   }
@@ -777,7 +991,7 @@ golden-btn + .golden-btn { margin-top: 1em; }
 .badge {
   border: 1px solid rgba(128, 128, 128, 0.15) !important;
 }
-[data-theme="dark"] .badge, [data-theme="premium"] .badge {
+[data-theme="dark"] .badge, [data-theme="premium"] .badge, [data-theme="space_legacy"] .badge {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
 }
 
@@ -886,20 +1100,22 @@ table.dataTable thead td span.dt-column-order {
     margin-bottom: 1rem;
     color: inherit;
     border-collapse: collapse;
+    display: block;
+    overflow-x: auto;
     
     th, td {
       padding: 0.5rem 0.75rem;
       vertical-align: top;
-      border: 1px solid var(--bs-border-color, rgba(255, 255, 255, 0.15));
+      border: 1px solid var(--bs-border-color, rgba(128, 128, 128, 0.25));
     }
     
     th {
       font-weight: bold;
-      background-color: rgba(255, 255, 255, 0.08);
+      background-color: var(--color-surface-alt, rgba(128, 128, 128, 0.1));
     }
     
     tr:nth-child(even) {
-      background-color: rgba(255, 255, 255, 0.03);
+      background-color: var(--color-surface-hover, rgba(128, 128, 128, 0.05));
     }
   }
 
@@ -910,8 +1126,8 @@ table.dataTable thead td span.dt-column-order {
   }
 }
 
-/* Responsive images in cards, announcements, and markdown wrappers */
-.card-text, .card-body, .announcements-feed {
+/* Responsive images in cards, announcements, modals, and markdown wrappers */
+.card-text, .card-body, .modal-body, .announcements-feed {
   img {
     max-width: 100% !important;
     height: auto !important;
@@ -929,10 +1145,10 @@ a:not(.btn):not(.nav-link):not(.dropdown-item):not(.badge):not(.nav-tabs .nav-li
   }
 }
 
-/* Theme-specific inner component surface styling (e.g. child replies, inner cards) */
-body:not([data-theme]) .card .card,
-body[data-theme=""] .card .card,
-[data-theme] .card .card,
+/* Theme-specific inner component surface styling (exclude semantic bg-* tiles like grader counters / viva chat bubbles) */
+body:not([data-theme]) .card .card:not([class*="bg-"]),
+body[data-theme=""] .card .card:not([class*="bg-"]),
+[data-theme] .card .card:not([class*="bg-"]),
 body:not([data-theme]) .card.bg-light,
 body[data-theme=""] .card.bg-light,
 [data-theme] .card.bg-light {
@@ -988,13 +1204,69 @@ input[type="password"]::-ms-clear {
   border-color: var(--bs-primary-border-subtle, #86b7fe);
 }
 
+// ---- Shared Dark Theme Support for Vendor Widgets (Select2, Tempus Dominus) ----
+[data-bs-theme="dark"] {
+  .select2-container--bootstrap-5 {
+    .select2-selection--single {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") !important;
+    }
+    .select2-selection__clear {
+      filter: invert(1) brightness(180%);
+    }
+    .select2-search--dropdown .select2-search__field,
+    .select2-selection--multiple .select2-search__field {
+      background-color: var(--bs-secondary-bg, #1f2b47) !important;
+      color: var(--bs-body-color, #e0e0e0) !important;
+      border-color: var(--bs-border-color, rgba(255, 255, 255, 0.15)) !important;
+    }
+    .select2-selection--multiple .select2-search__field {
+      background-color: transparent !important;
+    }
+  }
+
+  .tempus-dominus-widget.dark,
+  .tempus-dominus-widget {
+    --td-widget-background: var(--bs-secondary-bg, #1a1a2e);
+    --td-font-color: var(--bs-body-color, #e0e0e0);
+    --td-border-color: var(--bs-border-color, #2d2d44);
+    --td-active-bg: var(--bs-primary, #4a9eff);
+    --td-active-color: #ffffff;
+    --td-btn-hover-bg: var(--color-surface-hover, rgba(255, 255, 255, 0.1));
+    --td-alternate-color: var(--bs-secondary-color, #8e99a4);
+    background-color: var(--td-widget-background) !important;
+    color: var(--td-font-color) !important;
+    border-color: var(--td-border-color) !important;
+  }
+}
+
 // ---- Mobile Responsiveness and Component Fitting ----
 .select2-container {
   width: 100% !important;
   max-width: 100% !important;
 }
 
+.attachment-badge {
+  max-width: 100%;
+  white-space: normal !important;
+  word-break: break-word;
+}
+
 @media (max-width: 576px) {
+  body {
+    padding-bottom: 58px;
+  }
+
+  #main-content {
+    padding: 12px 12px 72px 12px;
+  }
+
+  .navbar-brand .site-name-text {
+    max-width: 44vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   // Reclaim margin space inside filter cards on narrow screens
   .ms-4 {
     margin-left: 0.5rem !important;

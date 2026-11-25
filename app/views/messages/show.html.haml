@@ -25,14 +25,14 @@
         = form_for 'message', url: reply_message_path(@message) do |f|
           .mb-3
             = f.text_area :body, rows: 6, class: 'form-control', placeholder: 'Type your reply here...'
-          .d-flex.justify-content-between.align-items-center
+          .d-flex.flex-wrap.justify-content-between.align-items-center.gap-2
             .text-muted.small
               %span.mi.md-18.align-middle info
               Student will see this reply on their clarification page.
             = f.submit "Post Reply", class: 'btn btn-primary px-4 shadow-sm'
 
     .card.border-0.bg-light.p-4.rounded-4
-      .d-flex.align-items-center.justify-content-between
+      .d-flex.flex-wrap.align-items-center.justify-content-between.gap-3
         .d-flex.align-items-center.gap-3
           %span.mi.text-secondary visibility_off
           %div

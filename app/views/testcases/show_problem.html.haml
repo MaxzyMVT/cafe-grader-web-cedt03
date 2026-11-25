@@ -1,11 +1,11 @@
-.container-fluid.py-4
-  .d-flex.align-items-center.justify-content-between.mb-4
+.py-2
+  .d-flex.flex-wrap.align-items-center.justify-content-between.gap-2.mb-4
     .d-flex.align-items-center.gap-3
-      = link_to problems_path, class: 'btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-2 rounded-circle shadow-sm', 'data-bs-toggle' => 'tooltip', title: 'Back to Problems' do
+      = link_to problems_path, class: 'btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center p-2 rounded-circle shadow-sm flex-shrink-0', 'data-bs-toggle' => 'tooltip', title: 'Back to Problems' do
         %span.mi.md-18 arrow_back
       %div
         %h2.fw-bold.mb-0 Test Cases
-        %p.text-muted.mb-0= @problem.long_name
+        %p.text-muted.mb-0.text-break= @problem.long_name
     
     - if @managers.count > 0
       .dropdown
@@ -58,7 +58,7 @@
                     %span.mi.md-14 download
                     Download
               .card-body.p-0
-                %textarea.form-control.font-monospace.border-0.rounded-0.bg-surface.text-primary{rows: 25, readonly: true, style: "resize: none; font-size: 0.85rem;"}= (tc.inp_file.download.force_encoding('UTF-8') if tc.inp_file.attached?)
+                %textarea.form-control.font-monospace.border-0.rounded-0.bg-surface{rows: 25, readonly: true, style: "resize: none; font-size: 0.85rem;"}= (tc.inp_file.download.force_encoding('UTF-8') if tc.inp_file.attached?)
           
           .col-md-6
             .card.card-shadow.border-0
@@ -71,5 +71,5 @@
                     %span.mi.md-14 download
                     Download
               .card-body.p-0
-                %textarea.form-control.font-monospace.border-0.rounded-0.bg-surface.text-primary{rows: 25, readonly: true, style: "resize: none; font-size: 0.85rem;"}= (tc.ans_file.download.force_encoding('UTF-8') if tc.ans_file.attached?)
+                %textarea.form-control.font-monospace.border-0.rounded-0.bg-surface{rows: 25, readonly: true, style: "resize: none; font-size: 0.85rem;"}= (tc.ans_file.download.force_encoding('UTF-8') if tc.ans_file.attached?)
 

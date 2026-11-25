@@ -1,11 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
+  static targets = ["searchInput"]
+
   connect() {
-    // Set 30s auto-refresh on the scoreboard page.
     if (this.element.id === "scoreboard-container") {
       this.interval = setInterval(() => {
-        this.refresh() 
+        this.refresh()
       }, 30000)
     }
   }
@@ -13,66 +14,57 @@ export default class extends Controller {
   disconnect() {
     if (this.interval) {
       clearInterval(this.interval)
+      this.interval = null
     }
   }
 
-  async refresh() {
-    if (this.element.id === "scoreboard-container") {
-      try {
-        const response = await fetch(window.location.href, {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        if (!response.ok) return
-        const htmlText = await response.text()
-        
-        const parser = new DOMParser()
-        const newDoc = parser.parseFromString(htmlText, 'text/html')
-        const newContainer = newDoc.getElementById('scoreboard-container')
-        
-        if (newContainer) {
-          // Save inner scrollable element scroll positions
-          const scrollPositions = []
-          const currentScrollables = this.element.querySelectorAll('.table-responsive, [style*="overflow"]')
-          currentScrollables.forEach((el, index) => {
-            scrollPositions.push({
-              index: index,
-              scrollTop: el.scrollTop,
-              scrollLeft: el.scrollLeft
-            })
-          })
-          
-          // Save main window scroll position
-          const winScrollTop = window.scrollY
-          const winScrollLeft = window.scrollX
-          
-          // Inject style to force instant scrolling during restoration.
-          // This prevents smooth scroll animations from triggering during restoration
-          // when CSS scroll-behavior: smooth is enabled.
-          const disableSmoothScrollStyle = document.createElement('style')
-          disableSmoothScrollStyle.textContent = '* { scroll-behavior: auto !important; }'
-          document.head.appendChild(disableSmoothScrollStyle)
-          
-          // Replace content
-          this.element.innerHTML = newContainer.innerHTML
-          
-          // Restore inner scrollable element scroll positions
-          const newScrollables = this.element.querySelectorAll('.table-responsive, [style*="overflow"]')
-          scrollPositions.forEach(pos => {
-            if (newScrollables[pos.index]) {
-              newScrollables[pos.index].scrollTop = pos.scrollTop
-              newScrollables[pos.index].scrollLeft = pos.scrollLeft
-            }
-          })
-          
-          // Restore main window scroll position
-          window.scrollTo(winScrollLeft, winScrollTop)
+  filterRows() {
+    const query = this.hasSearchInputTarget ? this.searchInputTarget.value.trim().toLowerCase() : ""
+    const rows = this.element.querySelectorAll("tr[data-sb-row]")
+    rows.forEach((row) => {
+      const name = (row.dataset.sbName || "").toLowerCase()
+      const match = !query || name.includes(query)
+      row.classList.toggle("d-none", !match)
+    })
+  }
 
-          // Remove the style block to restore normal smooth scrolling behavior for user interactions
-          disableSmoothScrollStyle.remove()
+  async refresh() {
+    if (this.element.id !== "scoreboard-container") return
+
+    try {
+      const response = await fetch(window.location.href, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      })
+      if (!response.ok) return
+
+      const htmlText = await response.text()
+      const parser = new DOMParser()
+      const newDoc = parser.parseFromString(htmlText, "text/html")
+      const newFrame = newDoc.getElementById("scoreboard")
+      const currentFrame = this.element.querySelector("#scoreboard")
+
+      if (newFrame && currentFrame) {
+        // Save scroll position inside the scoreboard scroll container
+        const currentScrollEl = currentFrame.querySelector(".scoreboard-scroll-wrapper")
+        const savedScrollTop = currentScrollEl ? currentScrollEl.scrollTop : 0
+        const savedScrollLeft = currentScrollEl ? currentScrollEl.scrollLeft : 0
+
+        // Safely replace only the turbo frame body (keeps search input focus & value untouched!)
+        const importedNodes = Array.from(newFrame.childNodes).map((node) =>
+          document.importNode(node, true)
+        )
+        currentFrame.replaceChildren(...importedNodes)
+
+        // Restore scroll position & active filter
+        const nextScrollEl = currentFrame.querySelector(".scoreboard-scroll-wrapper")
+        if (nextScrollEl) {
+          nextScrollEl.scrollTop = savedScrollTop
+          nextScrollEl.scrollLeft = savedScrollLeft
         }
-      } catch (e) {
-        console.error('Auto-refresh failed:', e)
+        this.filterRows()
       }
+    } catch (e) {
+      console.error("Scoreboard auto-refresh failed")
     }
   }
 }
