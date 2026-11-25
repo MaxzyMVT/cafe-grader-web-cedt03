@@ -242,7 +242,7 @@ class CommentsController < ApplicationController
 
     def can_request_llm
       # check global allow llm
-      unless GraderConfiguration['system.llm_assist']
+      unless GraderConfiguration.llm_assist_enabled?
         @toast = {title: 'LLM Assist Error', body: "The system does not allow LLM Assist at the moment", type: 'alert' }
         render 'submission_and_toast' and return
       end

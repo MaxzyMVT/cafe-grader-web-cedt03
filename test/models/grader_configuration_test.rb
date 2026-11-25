@@ -112,27 +112,38 @@ class GraderConfigurationTest < ActiveSupport::TestCase
     assert_not GraderConfiguration.enable_bonus?
   end
 
-  test "scoreboard_enabled? and hall_of_fame_enabled? support 3 states" do
+  test "scoreboard_enabled?, hall_of_fame_enabled?, and llm_assist_enabled? support 3 states" do
     set_grader_config("system.scoreboard_enabled", "outside_contest")
     set_grader_config("right.user_hall_of_fame", "outside_contest")
+    GraderConfiguration.find_or_create_by!(key: "system.llm_assist") do |c|
+      c.value_type = "string"
+      c.value = "outside_contest"
+    end.update!(value_type: "string", value: "outside_contest")
+    reset_grader_config_cache
 
     set_grader_config("system.mode", "standard")
     assert GraderConfiguration.scoreboard_enabled?
     assert GraderConfiguration.hall_of_fame_enabled?
+    assert GraderConfiguration.llm_assist_enabled?
 
     set_grader_config("system.mode", "contest")
     assert_not GraderConfiguration.scoreboard_enabled?
     assert_not GraderConfiguration.hall_of_fame_enabled?
+    assert_not GraderConfiguration.llm_assist_enabled?
 
     set_grader_config("system.scoreboard_enabled", "always_on")
     set_grader_config("right.user_hall_of_fame", "always_on")
+    set_grader_config("system.llm_assist", "always_on")
     assert GraderConfiguration.scoreboard_enabled?
     assert GraderConfiguration.hall_of_fame_enabled?
+    assert GraderConfiguration.llm_assist_enabled?
 
     set_grader_config("system.scoreboard_enabled", "off")
     set_grader_config("right.user_hall_of_fame", "off")
+    set_grader_config("system.llm_assist", "off")
     set_grader_config("system.mode", "standard")
     assert_not GraderConfiguration.scoreboard_enabled?
     assert_not GraderConfiguration.hall_of_fame_enabled?
+    assert_not GraderConfiguration.llm_assist_enabled?
   end
 end

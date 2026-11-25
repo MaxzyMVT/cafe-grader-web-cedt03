@@ -282,9 +282,9 @@ CONFIGURATIONS =
 
    {
      key: 'system.llm_assist',
-     value_type: 'boolean',
-     default_value: 'false',
-     description: "When true, a user can request LLM assist on each submission"
+     value_type: 'string',
+     default_value: 'off',
+     description: "Allow users to request LLM assist on submissions (Always on, Outside contest, or Off)."
    },
 
     #---------------------------- gimmicks --------------------------------

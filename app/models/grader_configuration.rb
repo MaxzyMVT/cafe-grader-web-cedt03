@@ -24,6 +24,7 @@ class GraderConfiguration < ApplicationRecord
   SYSTEM_MINIMUM_LAST_LOGIN_TIME = 'system.min_last_login_time'
   SYSTEM_MESSAGE_ENABLED = 'system.message_enabled'
   SYSTEM_SCOREBOARD_ENABLED = 'system.scoreboard_enabled'
+  SYSTEM_LLM_ASSIST = 'system.llm_assist'
   RIGHT_USER_HALL_OF_FAME = 'right.user_hall_of_fame'
   HINT_ENABLE_ALL_HINTS = 'gimmicks.enable_all_hints'
   SYSTEM_ENABLE_PENALTY = 'gimmicks.enable_penalty'
@@ -36,6 +37,7 @@ class GraderConfiguration < ApplicationRecord
   GIMMICK_STATES = %w[always_on outside_contest off].freeze
   THREE_STATE_EXTRA_KEYS = [
     SYSTEM_SCOREBOARD_ENABLED,
+    SYSTEM_LLM_ASSIST,
     RIGHT_USER_HALL_OF_FAME,
     'system.theme_selector_enabled'
   ].freeze
@@ -231,6 +233,10 @@ class GraderConfiguration < ApplicationRecord
 
   def self.hall_of_fame_enabled?
     gimmick_active?(RIGHT_USER_HALL_OF_FAME)
+  end
+
+  def self.llm_assist_enabled?
+    gimmick_active?(SYSTEM_LLM_ASSIST)
   end
 
   def self.contest_time_limit
