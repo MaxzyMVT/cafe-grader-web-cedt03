@@ -272,11 +272,6 @@ export default class extends Controller {
 
     const p = this._payload
     const scrollEl = this.scrollWrapperTarget
-    const scrollTop = scrollEl.scrollTop
-    const scrollLeft = scrollEl.scrollLeft
-    const clientHeight = scrollEl.clientHeight || 600
-    const clientWidth = scrollEl.clientWidth || 1200
-
     const bonusW = p.enable_bonus ? BONUS_COL_W : 0
     const deductedW = p.enable_penalty ? DEDUCTED_COL_W : 0
     const stickyWidth = window.innerWidth > 768 ? (RANK_COL_W + NAME_COL_W + SUM_COL_W) : 0
@@ -284,6 +279,13 @@ export default class extends Controller {
 
     const totalCols = p.problems.length
     const totalRows = this._filteredRows.length
+    const totalTableW = leftColsWidth + totalCols * COL_WIDTH
+
+    const scrollTop = scrollEl.scrollTop
+    const scrollLeft = scrollEl.scrollLeft
+    const clientHeight = scrollEl.clientHeight || 600
+    const containerW = this.element.clientWidth || 1200
+    const clientWidth = Math.max(scrollEl.clientWidth, Math.min(totalTableW, containerW))
 
     // Calculate visible problem column slice
     let startCol = 0
@@ -316,7 +318,6 @@ export default class extends Controller {
 
     const leftSpacerW = startCol * COL_WIDTH
     const rightSpacerW = (totalCols - endCol) * COL_WIDTH
-    const totalTableW = leftColsWidth + totalCols * COL_WIDTH
     this.tableTarget.style.width = `${totalTableW}px`
 
     const fixedColCount = 3 + (p.enable_bonus ? 1 : 0) + (p.enable_penalty ? 1 : 0)
